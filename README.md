@@ -4,7 +4,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * [Microsoft Build OpenJDK™](https://www.microsoft.com/openjdk)
 
 ### Running Todo App on your computer
-* Start the command line, clone the whole repo and change your current directory to ```todo``` sub-dir
+* Start the command line, clone the repo using ```git clone https://github.com/martinabrle/tiny-java.git``` and change your current directory to ```todo``` sub-dir
 * Log in into Azure from the command line using ```az login``` [link](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
 * List available Azure subscriptions using ```az account list -o table``` [link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
 * Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
