@@ -3,15 +3,20 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * How to install Azure CLI (https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 * Microsoft Build OpenJDK™ (https://www.microsoft.com/openjdk)
 
-### Running todo app on your computer
+### Running Todo App on your computer
 * Start the command line, clone the whole repo and change your current directory to ```todo``` sub-dir
-* Log in into Azure from the command line using ```az login``` (https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
-* List available Azure subscriptions using ```az account list -o table``` (https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
-* Select your Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000``` (https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
-* Create a new resource group ```az group create -l eastus -n MY_RG_NAME_rg``` (https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); replace ```eastus``` with the region you are deploying to and ```MY_RG_NAME_rg``` with a resource group name, unique to your subscription
+* Log in into Azure from the command line using ```az login```
+  (https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
+* List available Azure subscriptions using ```az account list -o table```
+  (https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
+* Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
+  (https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
+* Create a new resource group ```az group create -l eastus -n MY_RG_NAME_rg```; replace ```eastus``` with the region you are deploying to and ```MY_RG_NAME_rg``` with a resource group name, unique to your subscription
+  (https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
 * Generate a one time strong password, for example using ```openssl rand -base64 24```  (can be re-set from portal later, if needed)
 * Create a new flexible PostgreSQL server ```az postgres flexible-server create --name MY_UNIQUE_DNS_SERVER_NAME -g MY_RG_NAME_rg -l eastus --admin-user {your_admin_name} --admin-password {your_password} --tier Burstable --sku-name Standard_B2s``` and choose yes to add the current IP into firewall
-* Create a ```tododb``` database using ```az postgres flexible-server db create --resource-group MY_RG_NAME_rg --server-name MY_UNIQUE_DNS_SERVER_NAME --database-name tododb``` (https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server/db#az-postgres-flexible-server-db-create)
+* Create a ```tododb``` database using ```az postgres flexible-server db create --resource-group MY_RG_NAME_rg --server-name MY_UNIQUE_DNS_SERVER_NAME --database-name tododb```
+  (https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server/db#az-postgres-flexible-server-db-create)
 * Connect to the newly created server using ```psql "host=MY_UNIQUE_DNS_SERVER_NAME.postgres.database.azure.com port=5432 dbname=tododb user={your_admin_name} password={your_password} sslmode=require"```
 * Create database schema
   ```
@@ -58,7 +63,8 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
       set SPRING_DATASOURCE_SHOW_SQL=true
 * Run the Todo app on http://localhost:8080 using ```./mvnw spring-boot:run```
 * Test it by opening the URL http://localhost:8080 in your browser and creating a few tasks
-* Delete previously created resources ```az group delete -n MY_RG_NAME_rg``` (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
+* Delete previously created resources ```az group delete -n MY_RG_NAME_rg```
+  (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
 ### Running todo app in AppService on Azure using CLI
 
