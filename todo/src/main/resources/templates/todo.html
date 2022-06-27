@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Todo 3 Tier Demo App</title>
+    <link rel="stylesheet" href="todo.css">
+    <script src="todo.js" defer></script>
+    <script th:inline="javascript">
+      let checkStatusAsync = /*[[${checkStatusAsync}]]*/ false;
+      let trackingId = /*[[${trackingId}]]*/ "";
+    </script>
+  </head>
+
+  <body>
+    <div>
+      <div>
+        <form method="post" th:action="@{/create}" th:object="${newTodo}">
+          <input id="todoText" placeholder="Enter the next task" required type="text" th:field="*{todoText}" />
+          <input type="submit" value="Create Task" />
+        </form>
+      </div>
+      <div id="message-box" th:if="${!#strings.isEmpty(message)}" th:classappend="${#strings.isEmpty(status) ? 'none' : status}">
+        <p id="message-text" th:text="*{message}"></p>
+      </div>
+      <div id="todo-list">
+        <div th:if="${todos.empty && !strings.equals(status,'error')}">
+          <p>All TO DOs completed. Yay!</p>
+        </div>
+        <div th:if="${!todos.empty}" th:each="todo : ${todos}" th:key="${todo.id}" class="todo-item" th:classappend="${todo.id==createdTodoId ? 'created' : ''}">
+          <div th:text="${todo.createdDateTimeShortString}">text</div>
+          <div th:text="${todo.todoText}">text</div>
+          <div th:text="${todo.status}">text</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
