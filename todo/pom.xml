@@ -62,8 +62,8 @@
           <appName>maabrletest</appName>  
           <pricingTier>S1</pricingTier>  
           <region>eastus</region>  
-          <appServicePlanName>maabrletest-plan</appServicePlanName>  
-          <appServicePlanResourceGroup>maabrle_test_rg</appServicePlanResourceGroup>  
+          <appServicePlanName/>  
+          <appServicePlanResourceGroup/>  
           <runtime> 
             <os>Linux</os>  
             <javaVersion>Java 11</javaVersion>  
