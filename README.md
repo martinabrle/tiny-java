@@ -5,16 +5,14 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 
 ### Running Todo App on your computer
 * Start the command line, clone the repo using ```git clone https://github.com/martinabrle/tiny-java.git``` and change your current directory to ```todo``` sub-dir
-* Log in into Azure from the command line using ```az login``` [link](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
-* List available Azure subscriptions using ```az account list -o table``` [link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
+* Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
+* List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
 * Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
-  (https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
-* Create a new resource group ```az group create -l eastus -n MY_RG_NAME_rg```; replace ```eastus``` with the region you are deploying to and ```MY_RG_NAME_rg``` with a resource group name, unique to your subscription
-  (https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
+  [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
+* Create a new resource group ```az group create -l eastus -n MY_RG_NAME_rg```; replace ```eastus``` with the region you are deploying to and ```MY_RG_NAME_rg``` with a resource group name, unique to your subscription [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
 * Generate a one time strong password, for example using ```openssl rand -base64 24```  (can be re-set from portal later, if needed)
 * Create a new flexible PostgreSQL server ```az postgres flexible-server create --name MY_UNIQUE_DNS_SERVER_NAME -g MY_RG_NAME_rg -l eastus --admin-user {your_admin_name} --admin-password {your_password} --tier Burstable --sku-name Standard_B2s``` and choose yes to add the current IP into firewall
-* Create a ```tododb``` database using ```az postgres flexible-server db create --resource-group MY_RG_NAME_rg --server-name MY_UNIQUE_DNS_SERVER_NAME --database-name tododb```
-  (https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server/db#az-postgres-flexible-server-db-create)
+* Create a ```tododb``` database using ```az postgres flexible-server db create --resource-group MY_RG_NAME_rg --server-name MY_UNIQUE_DNS_SERVER_NAME --database-name tododb``` [(link)](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server/db#az-postgres-flexible-server-db-create)
 * Connect to the newly created server using ```psql "host=MY_UNIQUE_DNS_SERVER_NAME.postgres.database.azure.com port=5432 dbname=tododb user={your_admin_name} password={your_password} sslmode=require"```
 * Create database schema
   ```
