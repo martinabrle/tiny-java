@@ -9,11 +9,11 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
 * Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
   [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
-* Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
+* Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
 * Generate a one time strong password, for example using ```openssl rand -base64 24```  (can be re-set from portal later, if needed)
-* Create a new flexible PostgreSQL server ```az postgres flexible-server create --name {PGSQL_SERVER_NAME} -g {YOUR_RG_NAME_rg} -l eastus --admin-user {your_admin_name} --admin-password {your_password} --tier Burstable --sku-name Standard_B2s``` [(link)](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server#az-postgres-flexible-server-create) and choose yes to allow your current IP to go through Postgresql's firewall
+* Create a new flexible PostgreSQL server ```az postgres flexible-server create --name {PGSQL_SERVER_NAME} -g {YOUR_RG_NAME_rg} -l eastus --admin-user {your_admin_name} --admin-password {your_admin_password} --tier Burstable --sku-name Standard_B2s``` [(link)](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server#az-postgres-flexible-server-create) and choose yes to allow your current IP to go through Postgresql's firewall
 * Create a ```tododb``` database using ```az postgres flexible-server db create --resource-group {YOUR_RG_NAME_rg} --server-name {PGSQL_SERVER_NAME} --database-name tododb``` [(link)](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server/db#az-postgres-flexible-server-db-create)
-* Connect to the newly created server using ```psql "host={PGSQL_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=tododb user={your_admin_name} password={your_password} sslmode=require"```
+* Connect to the newly created server using ```psql "host={PGSQL_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=tododb user={your_admin_name} password={your_admin_password} sslmode=require"```
 * Create database schema
   ```
   CREATE TABLE IF NOT EXISTS todo (
@@ -82,12 +82,35 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
   az webapp config appsettings set -g {YOUR_RG_NAME_rg} -n {YOUR_APPSERVICE_NAME} --settings SPRING_DATASOURCE_SHOW_SQL=true
   ```
 * Configure the application with Maven Plugin by running ```./mvnw com.microsoft.azure:azure-webapp-maven-plugin:2.2.0:config```. This maven goal will first authenticate with Azure and than it will ask you which App Service (or in other words, which Java WebApp) do you want to deploy the app into. Confirm the selection and you will find an updated configuration in the project's ```pom.xml```.
-* Deploy the application by running ```/mvnw azure-webapp:deploy```
+* Deploy the application by running ```./mvnw azure-webapp:deploy```
 * Open the app's URL (https://{YOUR_APPSERVICE_NAME}.azurewebsites.net/) in the browser and test it by creating and reviewing tasks
 * Explore the SCM console on (https://{YOUR_APPSERVICE_NAME}.scm.azurewebsites.net/)
 * Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
-
 ### Running todo app in AppService on Azure using a Bicep template
+(we are deploying Azure KeyVault to manage secrets, but skippinh Log Analytics and AppInsights to reduce App and Bicep template complexity)
+* Follow all the steps described in [Running Todo App on your computer](https://github.com/martinabrle/tiny-java#running-todo-app-on-your-computer), test the application but do not delete the resource group ```{YOUR_RG_NAME_rg}``` in the end
+* change the current directory into ```./scripts``` sub-dir
+* Deploy the app using a Bicep script
+```
+ az deployment group create --resource-group {YOUR_RG_NAME_rg} --template-file ./app-service.bicep \
+                        --parameters keyVaultName={YOUR_KEY_VAULT_NAME}  \
+                                     dbServerName={PGSQL_SERVER_NAME} \
+                                     dbName=tododb \
+                                     dbAdminName={your_admin_name} \
+                                     dbAdminPassword={your_admin_password} \
+                                     dbUserName={your_app_user_name} \
+                                     dbUserPassword={your_app_user_password} \
+                                     appServiceName={YOUR_APPSERVICE_NAME} \
+                                     appServicePort=443 \
+                                     clientIPAddress={YOUR_IP_FOR_FIREWALL_EXCEPTION}
+```
+* Configure the application with Maven Plugin by running ```./mvnw com.microsoft.azure:azure-webapp-maven-plugin:2.2.0:config```. This maven goal will first authenticate with Azure and than it will ask you which App Service (or in other words, which Java WebApp) do you want to deploy the app into. Confirm the selection and you will find an updated configuration in the project's ```pom.xml```.
+* Deploy the application by running ```./mvnw azure-webapp:deploy```
+* Open the app's URL (https://{YOUR_APPSERVICE_NAME}.azurewebsites.net/) in the browser and test it by creating and reviewing tasks
+* Explore the SCM console on (https://{YOUR_APPSERVICE_NAME}.scm.azurewebsites.net/)
+* Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
+  (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
+### Running todo app in SpringApps service on Azure using an ARM template
