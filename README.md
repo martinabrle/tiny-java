@@ -11,7 +11,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
   [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
 * Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
 * Generate a one time strong password, for example using ```openssl rand -base64 24```  (can be re-set from portal later, if needed)
-* Create a new flexible PostgreSQL server ```az postgres flexible-server create --name {PGSQL_SERVER_NAME} -g {YOUR_RG_NAME_rg} -l eastus --admin-user {your_admin_name} --admin-password {your_password} --tier Burstable --sku-name Standard_B2s``` [(link)](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server#az-postgres-flexible-server-create) and choose yes to add the current IP into firewall
+* Create a new flexible PostgreSQL server ```az postgres flexible-server create --name {PGSQL_SERVER_NAME} -g {YOUR_RG_NAME_rg} -l eastus --admin-user {your_admin_name} --admin-password {your_password} --tier Burstable --sku-name Standard_B2s``` [(link)](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server#az-postgres-flexible-server-create) and choose yes to allow your current IP to go through Postgresql's firewall
 * Create a ```tododb``` database using ```az postgres flexible-server db create --resource-group {YOUR_RG_NAME_rg} --server-name {PGSQL_SERVER_NAME} --database-name tododb``` [(link)](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server/db#az-postgres-flexible-server-db-create)
 * Connect to the newly created server using ```psql "host={PGSQL_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=tododb user={your_admin_name} password={your_password} sslmode=require"```
 * Create database schema
@@ -65,8 +65,9 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Delete previously created resources ```az group delete -n {YOUR_RG_NAME_rg}```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
-### Running Todo App in AppService on Azure using CLI
-* Follow all the steps described in [Running Todo App on your computer](https://github.com/martinabrle/tiny-java#running-todo-app-on-your-computer), test the application but do not delete resource group in the end
+### Running Todo App in AppService on Azure using AZ CLI
+(we are not using Azure KeyVault in this example due to time constraints)
+* Follow all the steps described in [Running Todo App on your computer](https://github.com/martinabrle/tiny-java#running-todo-app-on-your-computer), test the application but do not delete the resource group ```{YOUR_RG_NAME_rg}``` in the end
 * First list all available runtimes for running Todo App on Linux with ```az webapp list-runtimes --linux```, here we will be using ```JAVA:11-java11```. Make sure that you have the right subscription selected as your default, available runtimes may differ by regions
 * Create a new AppService plan using ```az appservice plan create -g {YOUR_RG_NAME_rg} -n {YOUR_APPSERVICE_PLAN_NAME} --is-linux --sku S1 --location eastus```
 * Create a new AppService on the previously created AppService plan using ```az webapp create --name {YOUR_APPSERVICE_NAME} --plan {YOUR_APPSERVICE_PLAN_NAME} --resource-group {YOUR_RG_NAME_rg} --runtime "JAVA|11-java11"```. ```{YOUR_APPSERVICE_NAME}``` is a part of the app's FQDN and must be unique.
