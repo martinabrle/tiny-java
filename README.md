@@ -107,6 +107,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
                                      clientIPAddress={YOUR_IP_FOR_FIREWALL_EXCEPTION}
 ```
 * Configure the application with Maven Plugin by running ```./mvnw com.microsoft.azure:azure-webapp-maven-plugin:2.2.0:config```. This maven goal will first authenticate with Azure and than it will ask you which App Service (or in other words, which Java WebApp) do you want to deploy the app into. Confirm the selection and you will find an updated configuration in the project's ```pom.xml```.
+* WARNING: Maven add-in sometimes does not overwrite <appServicePlanName> and <appServicePlanResourceGroup> after these been filled in. Solution is either to clear those values manually, or replace whatever is in there with right values (```{YOUR_APPSERVICE_NAME}-plan``` for <appServicePlanName> and ```{YOUR_RG_NAME_rg}``` for <appServicePlanResourceGroup>; {YOUR_APPSERVICE_NAME}-plan is the name automatically generated in the Bicep script
 * Deploy the application by running ```./mvnw azure-webapp:deploy```
 * Open the app's URL (https://{YOUR_APPSERVICE_NAME}.azurewebsites.net/) in the browser and test it by creating and reviewing tasks
 * Explore the SCM console on (https://{YOUR_APPSERVICE_NAME}.scm.azurewebsites.net/)
