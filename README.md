@@ -1,4 +1,4 @@
-# Spring Boot Kafka Todo App
+# Spring Boot Todo App
 Before starting, make sure that you have Azure CLI and Java installed on your computer:
 * How to install Azure CLI (https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
 * Microsoft Build OpenJDK™ (https://www.microsoft.com/openjdk)
@@ -63,10 +63,20 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
       set SPRING_DATASOURCE_SHOW_SQL=true
 * Run the Todo app on http://localhost:8080 using ```./mvnw spring-boot:run```
 * Test it by opening the URL http://localhost:8080 in your browser and creating a few tasks
+* Close the app by pressing ```CTRL+C```
 * Delete previously created resources ```az group delete -n MY_RG_NAME_rg```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
 ### Running todo app in AppService on Azure using CLI
+* Follow all the steps described in [Running Todo App on your computer](https://github.com/martinabrle/tiny-java#running-todo-app-on-your-computer), test the application but do not delete resource group in the end
+* Create a new AppService plan using ```az ...```
+* Create a new AppService on the previously created AppService plan using ```az ...``` and write down the URL
+* Configure
+* Deploy the application
+* Open the app's URL in the browser and test it by creating a few tasks
+* Explore the SCM console on 
+
+
 
 ### Running todo app in AppService on Azure using a Bicep template
 
