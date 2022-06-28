@@ -110,7 +110,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
                                      appServicePort=443 \
                                      clientIPAddress={YOUR_IP_FOR_FIREWALL_EXCEPTION}
 ```
-* Validate that an App Service, App Service Plan, Key Vault and a Postgresql flexible server has been created
+* Validate that an App Service, App Service Plan, Key Vault and a Postgresql flexible server has been created.
 * Connect to the newly created server using ```psql "host={PGSQL_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=tododb user={your_admin_name} password={your_admin_password} sslmode=require"```
 * Create database schema
   ```
@@ -152,5 +152,47 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
 ### Running todo app in SpringApps service on Azure using an ARM template
+
+
+* Build the app using ```./mvnw clean``` and ```./mvnw build```
+* Deploy the app using
+  ```
+  psql "host=maabrle-todo-pg.postgres.database.azure.com port=5432 dbname=postgres user=pgadmin91c5666c5b@maabrle-todo-pg password=******** sslmode=require"
+
+create database tododb;
+
+\q to close the psql connection
+
+psql "host=maabrle-todo-pg.postgres.database.azure.com port=5432 dbname=postgres user=pgadmin91c5666c5b@maabrle-todo-pg password=******** sslmode=require"
+
+````
+* Create database schema
+  ```
+  CREATE TABLE IF NOT EXISTS todo (
+      "id" UUID PRIMARY KEY NOT NULL,
+      "todo_text" VARCHAR(255) NOT NULL,
+      "created_date_time" TIMESTAMP DEFAULT NOW()::date,
+      "completed_date_time" TIMESTAMP DEFAULT NULL
+  );
+  ```
+* Load demo data
+  ```
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000001','Create Stark Enterprises','2011-12-30 15:27:25-07') ON CONFLICT DO NOTHING;
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000002','Invent the first Iron Man Suit','2012-03-08 13:53:25-07') ON CONFLICT DO NOTHING;
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000003','Become a Hero','2013-01-08 15:14:25-07') ON CONFLICT DO NOTHING;
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000004','Help build S.H.I.E.L.D.','2013-12-03 12:59:25-07') ON CONFLICT DO NOTHING;
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000005','Form the Avengers','2015-02-23 11:09:25-07') ON CONFLICT DO NOTHING;
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000006','Put Hawkeye on the right path','2017-03-22 14:51:25-07') ON CONFLICT DO NOTHING;
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000007','Make Stark Industries a massive success','2018-04-16 12:05:25-07') ON CONFLICT DO NOTHING;
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000008','Keep escaping death in the most Tony Stark way possible','2019-04-11 14:08:25-07') ON CONFLICT DO NOTHING;
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000009','Learn Spring boot','2019-11-21 10:44:00-07') ON CONFLICT DO NOTHING;
+  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000010','Deploy a multi tier Spring boot app into Azure','2022-04-22 19:10:25-07') ON CONFLICT DO NOTHING;
+  ```
+
+  ```
+
+  az spring app deploy -n todo-app -s maabrle-spring-apps -g maabrle_spring_apps_rg --artifact-path target/todo-0.0.1-SNAPSHOT.jar
+  ```
+* Test the app by opening https://maabrle-spring-apps-todo-app.azuremicroservices.io in your browser
 
 ### Bonus: deploying with Github actions (CI/CD Pipeline)
