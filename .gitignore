@@ -19,6 +19,9 @@
 *.tar.gz
 *.rar
 
+# Ignore changes to pom.xml to avoid confusion during the deployment #
+pom.xml
+
 # Cache files #
 .DS_Store
 
