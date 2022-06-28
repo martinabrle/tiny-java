@@ -165,6 +165,8 @@ create database tododb;
 
 psql "host=maabrle-todo-pg.postgres.database.azure.com port=5432 dbname=postgres user=pgadmin91c5666c5b@maabrle-todo-pg password=******** sslmode=require"
 
+TODO: https://docs.microsoft.com/en-us/azure/spring-cloud/quickstart?tabs=Azure-CLI&pivots=programming-language-java
+
 ````
 * Create database schema
   ```
