@@ -57,11 +57,11 @@
         <version>2.2.0</version>  
         <configuration> 
           <schemaVersion>v2</schemaVersion>  
-          <subscriptionId>66443209-bef6-4fde-a74d-6155cb9f9db5</subscriptionId>  
-          <resourceGroup>maabrle_test_rg</resourceGroup>  
-          <appName>maabrletest</appName>  
-          <pricingTier>S1</pricingTier>  
-          <region>eastus</region>  
+          <subscriptionId></subscriptionId>  
+          <resourceGroup></resourceGroup>  
+          <appName></appName>  
+          <pricingTier></pricingTier>  
+          <region></region>  
           <appServicePlanName/>  
           <appServicePlanResourceGroup/>  
           <runtime> 
