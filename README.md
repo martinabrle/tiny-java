@@ -90,7 +90,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
 ### Running todo app in AppService on Azure using a Bicep template
-(we are deploying Azure KeyVault to manage secrets, but skippinh Log Analytics and AppInsights to reduce App and Bicep template complexity)
+(we are deploying Azure KeyVault to manage secrets, but skipping Log Analytics and AppInsights to reduce App and Bicep template complexity)
 * Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
 * List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
 * Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
@@ -151,35 +151,29 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
-### Running todo app in SpringApps service on Azure using an ARM template
-
-
-* Build the app using ```./mvnw clean``` and ```./mvnw build```
-* Deploy the app using
-  ```
-  psql "host=maabrle-todo-pg.postgres.database.azure.com port=5432 dbname=postgres user=pgadmin91c5666c5b@maabrle-todo-pg password=******** sslmode=require"
-
-create database tododb;
-
-\q to close the psql connection
-
-psql "host=maabrle-todo-pg.postgres.database.azure.com port=5432 dbname=postgres user=pgadmin91c5666c5b@maabrle-todo-pg password=******** sslmode=require"
-
-TODO: https://docs.microsoft.com/en-us/azure/spring-cloud/quickstart?tabs=Azure-CLI&pivots=programming-language-java
-
-````
+### Running todo app in SpringApps service on Azure, while using a Bicep template
+(we are deploying Azure KeyVault to manage secrets, and also deploy Log Analytics and AppInsights to to provide a more realistic example. Log analytics is deployed into another resource group as this is a resource you will typically wan to share this resource between many workloads in the same geography. We will be using a parameters file for the deployment - DO NOT CHECK THIS ONE IN into your source code repo as it will contain secrets)
+* Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
+* List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
+* Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
+  [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
+* Change the current directory into ```./scripts``` sub-dir
+* Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
+* Modify the ```parameters.json``` and fill in all the parameters. Easiest way to generate strong passwords on your computer is by using ```openssl rand -base64 26```; and you can also use it to generate unique user names and passwords
+* Now we need to use a workaround due to an issue with the current Bicep version and first transpile Bicep into ARM. Run ```az bicep build --file .\spring-apps.bicep``` to generate an ARM template from our Bicep tamplate 
+* Deploy all the resources into the previously created resource group by running ```az group deployment create -g {YOUR_RG_NAME_rg} --template-file .\spring-apps.json --parameters .\parameters.json```
+* Connect to the newly created server using ```psql "host={PGSQL_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=tododb user={your_admin_name} password={your_admin_password} sslmode=require"```
 * Create database schema
   ```
   CREATE TABLE IF NOT EXISTS todo (
-      "id" UUID PRIMARY KEY NOT NULL,
+      "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
       "todo_text" VARCHAR(255) NOT NULL,
       "created_date_time" TIMESTAMP DEFAULT NOW()::date,
       "completed_date_time" TIMESTAMP DEFAULT NULL
   );
   ```
 * Load demo data
-  ```
-  INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000001','Create Stark Enterprises','2011-12-30 15:27:25-07') ON CONFLICT DO NOTHING;
+  ```INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000001','Create Stark Enterprises','2011-12-30 15:27:25-07') ON CONFLICT DO NOTHING;
   INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000002','Invent the first Iron Man Suit','2012-03-08 13:53:25-07') ON CONFLICT DO NOTHING;
   INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000003','Become a Hero','2013-01-08 15:14:25-07') ON CONFLICT DO NOTHING;
   INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000004','Help build S.H.I.E.L.D.','2013-12-03 12:59:25-07') ON CONFLICT DO NOTHING;
@@ -190,11 +184,19 @@ TODO: https://docs.microsoft.com/en-us/azure/spring-cloud/quickstart?tabs=Azure-
   INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000009','Learn Spring boot','2019-11-21 10:44:00-07') ON CONFLICT DO NOTHING;
   INSERT INTO todo ("id", "todo_text", "created_date_time") VALUES ('00000000000000000000000000000010','Deploy a multi tier Spring boot app into Azure','2022-04-22 19:10:25-07') ON CONFLICT DO NOTHING;
   ```
-
+* Create an application user and grant appropriate permissions
   ```
-
-  az spring app deploy -n todo-app -s maabrle-spring-apps -g maabrle_spring_apps_rg --artifact-path target/todo-0.0.1-SNAPSHOT.jar
+  CREATE USER {your_app_user_name} WITH PASSWORD '{your_app_user_password}';
+  GRANT CONNECT ON DATABASE tododb TO {your_app_user_name};
+  GRANT USAGE ON SCHEMA public TO {your_app_user_name};
+  GRANT SELECT ON todo TO {your_app_user_name};
+  GRANT INSERT ON todo TO {your_app_user_name};   
   ```
-* Test the app by opening https://maabrle-spring-apps-todo-app.azuremicroservices.io in your browser
+* Close the psql session by running ```\q``` in psql
+* Change the directory into ```../todo``` sub-dir
+* Build the app using ```./mvnw clean``` and ```./mvnw build```
+* Deploy the app using ```az spring app deploy -n {YOUR_APPSERVICE_NAME} -s {SPRING_APPS_CLUSTER_NAME} -g {YOUR_RG_NAME_rg} --artifact-path target/todo-0.0.1-SNAPSHOT.jar```
+* Check the logs using ```az spring app logs --name {YOUR_APPSERVICE_NAME}``` ; use ``` --follow ``` switch for continuous log streaming
+* Test the app by opening https://{SPRING_APPS_CLUSTER_NAME}-{YOUR_APPSERVICE_NAME}.azuremicroservices.io in your browser
 
 ### Bonus: deploying with Github actions (CI/CD Pipeline)
