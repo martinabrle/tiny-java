@@ -244,7 +244,6 @@ az ad sp create-for-rbac --name {YOUR_DEPLOYMENT_PRINCIPAL_NAME} --role owner --
 ```
 * Copy the output JSON into a new variable ```AZURE_CREDENTIALS``` in *Settings->Secrets->Actions* in your GitHub Repo
 * Add ```Owner``` and ```Contributor``` roles to the newly created service principal
-```
 * Check all three roles (Owner, Contributor and Key Vault Administrator) have been assigned correctly
 ```
 az role assignment list --assignee {SERVICE_PRINCIPAL_FROM_JSON_OUTPUT} -o table
