@@ -22,6 +22,10 @@
 # Ignore changes to pom.xml to avoid confusion during the deployment #
 pom.xml
 
+# Do not check in the spring-apps.json template or parameters.json, containing credentials #
+spring-apps.json
+parameters*.json
+
 # Cache files #
 .DS_Store
 
