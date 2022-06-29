@@ -65,7 +65,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Delete previously created resources ```az group delete -n {YOUR_RG_NAME_rg}```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
-### Running Todo App in AppService on Azure using AZ CLI
+### Running Todo App in AppService on Azure: deployment using AZ CLI
 (we are not using Azure KeyVault in this example due to time constraints)
 * Follow all the steps described in [Running Todo App on your computer](https://github.com/martinabrle/tiny-java#running-todo-app-on-your-computer), test the application but do not delete the resource group ```{YOUR_RG_NAME_rg}``` in the end
 * First list all available runtimes for running Todo App on Linux with ```az webapp list-runtimes --linux```, here we will be using ```JAVA:11-java11```. Make sure that you have the right subscription selected as your default, available runtimes may differ by regions
@@ -89,7 +89,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
-### Running todo app in AppService on Azure using a Bicep template
+### Running todo app in AppService on Azure: deployment using AZ CLI and Bicep template
 (we are deploying Azure KeyVault to manage secrets, but skipping Log Analytics and AppInsights to reduce App and Bicep template complexity)
 * Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
 * List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
@@ -151,7 +151,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
-### Running todo app in SpringApps service on Azure, while using a Bicep template
+### Running todo app in SpringApps closter on Azure: deployment using AZ CLI and Bicep templates
 (we are deploying Azure KeyVault to manage secrets, and also deploy Log Analytics and AppInsights to to provide a more realistic example. Log analytics is deployed into another resource group as this is a resource you will typically wan to share this resource between many workloads in the same geography. We will be using a parameters file for the deployment - DO NOT CHECK THIS ONE IN into your source code repo as it will contain secrets)
 * Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
 * List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
@@ -199,4 +199,16 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Check the logs using ```az spring app logs --name {YOUR_APPSERVICE_NAME}``` ; use ``` --follow ``` switch for continuous log streaming
 * Test the app by opening https://{SPRING_APPS_CLUSTER_NAME}-{YOUR_APPSERVICE_NAME}.azuremicroservices.io in your browser
 
-### Bonus: deploying with Github actions (CI/CD Pipeline)
+### Bonus: deploying into Spring Apps cluster with Github actions (CI/CD Pipeline)
+* copy the repoßs content into your personal or organizational GitHub Account
+* Open your repository in the browser and select Settings->Secrets->Actions
+* Set the following variables:
+```
+```
+* Follow the TODO LINK and create a TODO
+* Give "Key Vault Administrator" and "Owner" permission to the TODO on the subscription you are going to deploy into. This may not be ideal if you are not using a separated subscription for each workload as a part of some landing zones; the alternative is to modify deployment scripts so that these do not create resource groups and give RBAC contributor,owner and Key Vault administrator roles to TODO on the reasource group ```{YOUR_RG_NAME_rg}```. However, using a subscription per workload and giving TODO these permissions allows you to have ```{YOUR_RG_NAME_rg}``` not only automatically deployed, but also automatically deleted. By deleting the resource group, Azure Resource Manager makes sure that resources have been deleted in the right order.
+* Create a variable "AZURE_CREDENTIALS" and copy the output of ``` TODO ``` into it
+* Run the infra deployment by running Actions->cicd-spring-infra manually
+* Run the code deployment by running Actions->cicd-spring manually
+* Check that all resources have been deployed in Azure portal by 
+
