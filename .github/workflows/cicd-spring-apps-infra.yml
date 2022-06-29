@@ -117,7 +117,7 @@ jobs:
           az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./spring-apps.json \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
                                      logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
-                                     logAnalyticsWorkspaceRG=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }}  \
+                                     logAnalyticsWorkspaceRG=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} \
                                      keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
                                      appInsightsName=${{ secrets.AZURE_APP_INSIGHTS_NAME }}  \
                                      dbServerName=${{ secrets.AZURE_DB_SERVER_NAME }} \
@@ -126,6 +126,7 @@ jobs:
                                      dbAdminPassword="${dbAdminPassword}" \
                                      dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }} \
                                      dbUserPassword=${{ secrets.AZURE_DB_APP_USER_PASSWORD }} \
+                                     springAppsServiceName=${{ secrets.AZURE_SPRING_SERVICE_NAME }} \
                                      appName=${{ secrets.AZURE_APP_NAME }} \
                                      appPort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=$clientIP
