@@ -151,7 +151,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
-### Running todo app in SpringApps closter on Azure: deployment using AZ CLI and Bicep templates
+### Running todo app in Spring Apps cluster on Azure: deployment using AZ CLI and Bicep templates
 (we are deploying Azure KeyVault to manage secrets, and also deploy Log Analytics and AppInsights to to provide a more realistic example. Log analytics is deployed into another resource group as this is a resource you will typically wan to share this resource between many workloads in the same geography. We will be using a parameters file for the deployment - DO NOT CHECK THIS ONE IN into your source code repo as it will contain secrets)
 * Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
 * List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
