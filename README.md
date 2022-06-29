@@ -144,7 +144,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Close the psql session by running ```\q``` in psql
 * Build the app using ```./mvnw clean``` and ```./mvnw build```
 * Configure the application with Maven Plugin by running ```./mvnw com.microsoft.azure:azure-webapp-maven-plugin:2.2.0:config```. This maven goal will first authenticate with Azure and than it will ask you which App Service (or in other words, which Java WebApp) do you want to deploy the app into. Confirm the selection and you will find an updated configuration in the project's ```pom.xml```.
-* WARNING: Maven add-in sometimes does not overwrite <appServicePlanName> and <appServicePlanResourceGroup> after these been filled in. Solution is either to clear those values manually, or replace whatever is in there with right values (```{YOUR_APPSERVICE_NAME}-plan``` for <appServicePlanName> and ```{YOUR_RG_NAME_rg}``` for <appServicePlanResourceGroup>; {YOUR_APPSERVICE_NAME}-plan is the name automatically generated in the Bicep script
+* WARNING: Maven add-in sometimes does not overwrite <appServicePlanName> and <appServicePlanResourceGroup> after these been filled in. Solution is either to clear those values manually, or replace whatever is in there with right values (```{YOUR_APPSERVICE_NAME}-plan``` for <appServicePlanName> and ```{YOUR_RG_NAME_rg}``` for <appServicePlanResourceGroup>; ```{YOUR_APPSERVICE_NAME}-plan``` is the name automatically generated in the Bicep script
 * Deploy the application by running ```./mvnw azure-webapp:deploy```
 * Open the app's URL (https://{YOUR_APPSERVICE_NAME}.azurewebsites.net/) in the browser and test it by creating and reviewing tasks
 * Explore the SCM console on (https://{YOUR_APPSERVICE_NAME}.scm.azurewebsites.net/)
@@ -211,13 +211,13 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Test the app by opening https://{SPRING_APPS_CLUSTER_NAME}-{YOUR_APPSERVICE_NAME}.azuremicroservices.io in your browser
 
 ### Bonus: deploying into Spring Apps cluster with Github actions (CI/CD Pipeline)
-* copy the repoßs content into your personal or organizational GitHub Account
+* Copy the repo's content into your personal or organizational GitHub Account
 * Open your repository in the browser and select Settings->Secrets->Actions
 * Set the following variables:
 ```
 ```
 * Follow the TODO LINK and create a TODO
-* Give "Key Vault Administrator" and "Owner" permission to the TODO on the subscription you are going to deploy into. This may not be ideal if you are not using a separated subscription for each workload as a part of some landing zones; the alternative is to modify deployment scripts so that these do not create resource groups and give RBAC contributor,owner and Key Vault administrator roles to TODO on the reasource group ```{YOUR_RG_NAME_rg}```. However, using a subscription per workload and giving TODO these permissions allows you to have ```{YOUR_RG_NAME_rg}``` not only automatically deployed, but also automatically deleted. By deleting the resource group, Azure Resource Manager makes sure that resources have been deleted in the right order.
+* Give "Key Vault Administrator" and "Owner" permission to the TODO on the subscription you are going to deploy into. This may not be ideal, if you are not using a separated subscription for each workload as a part of your landing zones; the alternative is to modify deployment scripts so that these do not create resource groups and give RBAC contributor,owner and Key Vault administrator roles to TODO on the reasource group ```{YOUR_RG_NAME_rg}```. However, using a subscription per workload and giving TODO these permissions allows you to have ```{YOUR_RG_NAME_rg}``` not only automatically deployed, but also automatically deleted. By deleting the resource group, Azure Resource Manager makes sure that resources have been deleted in the right order.
 * Create a variable "AZURE_CREDENTIALS" and copy the output of ``` TODO ``` into it
 * Run the infrastructure deployment by running *Actions-cicd-spring-apps-infra* manually; this action is defined in ```./tiny-java/.github/workflows/cicd-spring-apps-infra.yml```
 * Run the code deployment by running *Actions->cicd-spring-apps* manually; this action is defined in ```./tiny-java/.github/workflows/cicd-spring-apps.yml```
