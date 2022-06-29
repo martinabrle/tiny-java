@@ -1,0 +1,147 @@
+name: cicd-app-service-simple
+
+on:
+  #push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - 'api/**'  
+  workflow_dispatch:
+    inputs:
+    
+
+jobs:  
+  init_db:    
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./scripts
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        #see https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-cli%2Clinux
+        #    az account list-locations -o table
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      #Debug: - name: Setup tmate session
+      #         uses: mxschmitt/action-tmate@v3.11
+
+      # Review: instead of running the --file=./db.sql db init script,
+      #         run mvwm and init it from java spring-boot on the admin connection (?)
+      - name: Initialize database
+        run: |
+              az postgres flexible-server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password ${{ secrets.AZURE_DB_ADMIN_PASSWORD }}
+
+              dbConnectionStringTodoDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=${{ secrets.AZURE_DB_NAME }} user=${{ secrets.AZURE_DB_ADMIN_NAME }} password=${{ secrets.AZURE_DB_ADMIN_PASSWORD }} sslmode=require"
+              dbConnectionStringPostgresDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=postgres user=${{ secrets.AZURE_DB_ADMIN_NAME }} password=${{ secrets.AZURE_DB_ADMIN_PASSWORD }} sslmode=require"
+              
+              psql "${dbConnectionStringTodoDB}" --file=./db.sql
+              
+              dbUserName="${{secrets.AZURE_API_DB_USER_NAME}}"
+              dbUserPassword="${{secrets.AZURE_API_DB_USER_PASSWORD}}"
+
+              dbUserExists=`psql "${dbConnectionStringPostgresDB}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$dbUserName';"`
+
+              if [[ $dbUserExists -ne '1' ]]; then
+                echo "...creating the user"
+                psql "${dbConnectionStringPostgresDB}" -tAc "CREATE USER $dbUserName WITH PASSWORD '$dbUserPassword';"
+              else
+                echo "...re-setting the password"
+                psql "${dbConnectionStringPostgresDB}" -tAc "ALTER USER $dbUserName WITH PASSWORD '$dbUserPassword';"
+              fi
+              echo "Granting user access"
+              psql "${dbConnectionStringPostgresDB}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO $dbUserName;"
+              psql "${dbConnectionStringTodoDB}" -tAc "GRANT USAGE ON SCHEMA public TO $dbUserName;"
+              psql "${dbConnectionStringTodoDB}" -tAc "GRANT SELECT ON todo TO $dbUserName;"
+              psql "${dbConnectionStringTodoDB}" -tAc "GRANT INSERT ON todo TO $dbUserName;"              
+
+  build_app:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./api
+    outputs:
+      RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
+      RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
+      RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
+      
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'microsoft'
+      
+      - name: Build the .jar
+        run: |
+          ./mvnw clean package -DskipTests
+      
+      # Review: Implement some more mature mono repo versioning 
+      - name: Figure out the version info
+        id: version
+        run: |
+          cd ./target
+          files=(api*.jar)
+          mv "$files" "./api-${GITHUB_SHA}.jar"
+          ls -la
+          cd ..
+          echo "::set-output name=RELEASE_VERSION::${GITHUB_SHA}"
+          echo "::set-output name=RELEASE_NAME::api-${GITHUB_SHA}"
+          echo "::set-output name=RELEASE_FILE_NAME::api-${GITHUB_SHA}.jar"
+          
+      - name: Display next version
+        run: |
+          echo "Version: ${{ steps.version.outputs.RELEASE_VERSION }}"
+          echo "Release name: ${{ steps.version.outputs.RELEASE_NAME }}"
+          echo "Release file name: ${{ steps.version.outputs.RELEASE_FILE_NAME }}"
+      
+      - name: 'Upload build artifact'
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.version.outputs.RELEASE_NAME }}
+          path: ./api/target/${{ steps.version.outputs.RELEASE_FILE_NAME }}
+          if-no-files-found: error
+          retention-days: 1
+  
+  deploy_app:
+    needs: [build_api, init_db]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build artefacts
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{needs.build_api.outputs.RELEASE_NAME}}
+      - name: Check downloaded files
+        run: |
+          pwd
+          ls -la
+          ls -la ./${{ needs.build_api.outputs.RELEASE_FILE_NAME }}
+      
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        #see https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-cli%2Clinux
+        #    az account list-locations -o table
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+      - name: Deploy to AppService
+        uses: azure/webapps-deploy@v2
+        with: 
+          app-name: "${{ secrets.AZURE_API_SERVICE_NAME }}"
+          package: ./${{ needs.build_api.outputs.RELEASE_FILE_NAME }}
+      
+      - name: Run integration test(s)
+        run: |
+          echo "Run integration tests...."
+  
