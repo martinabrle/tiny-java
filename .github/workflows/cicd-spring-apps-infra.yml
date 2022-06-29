@@ -111,10 +111,11 @@ jobs:
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
           dbAdminName="a`openssl rand -hex 5`"
           dbAdminPassword="`openssl rand -base64 25`"
+          echo $dbAdminName
+          cd ./templates
+          az bicep build --file ./spring-apps.bicep
 
-          az bicep build --file ./templates/spring-apps.bicep
-
-          az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/spring-apps.json \
+          az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./spring-apps.json \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
                                      logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
                                      logAnalyticsWorkspaceRG=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }}  \
@@ -123,12 +124,13 @@ jobs:
                                      dbServerName=${{ secrets.AZURE_DB_SERVER_NAME }} \
                                      dbName=${{ secrets.AZURE_DB_NAME }} \
                                      dbAdminName=${dbAdminName} \
-                                     dbAdminPassword="${dbAdminPassword}"" \
+                                     dbAdminPassword="${dbAdminPassword}" \
                                      dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }} \
                                      dbUserPassword=${{ secrets.AZURE_DB_APP_USER_PASSWORD }} \
                                      appName=${{ secrets.AZURE_APP_NAME }} \
                                      appPort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=$clientIP
+          cd ..
       
       #Debug: - name: Setup tmate session
       #         uses: mxschmitt/action-tmate@v3.11
