@@ -1,4 +1,4 @@
-name: cicd-app-service-simple
+name: cicd-app-spring-apps
 
 on:
   #push:
