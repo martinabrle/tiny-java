@@ -15,7 +15,6 @@ on:
 jobs:
   cleanup_if_requested:
     runs-on: ubuntu-latest
-    environment: APP_SERVICE_COMPLETE
     steps:
       - name: Azure login
         if: github.event.inputs.run_cleanup == 'true'
@@ -45,7 +44,6 @@ jobs:
     # workspace would be outside of the current subscription
     needs: [cleanup_if_requested]
     runs-on: ubuntu-latest
-    environment: APP_SERVICE_COMPLETE
     defaults:
       run:
         working-directory: ./scripts
@@ -84,7 +82,6 @@ jobs:
   deploy_infra:
     needs: [deploy_log_analytics_if_needed]
     runs-on: ubuntu-latest
-    environment: APP_SERVICE_COMPLETE
     defaults:
       run:
         working-directory: ./scripts
@@ -111,9 +108,11 @@ jobs:
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
           dbAdminName="a`openssl rand -hex 5`"
           dbAdminPassword="`openssl rand -base64 25`"
-          echo $dbAdminName
+
           cd ./templates
           az bicep build --file ./spring-apps.bicep
+
+          ls -la
 
           az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./spring-apps.json \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
@@ -130,6 +129,7 @@ jobs:
                                      appName=${{ secrets.AZURE_APP_NAME }} \
                                      appPort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=$clientIP
+          
           cd ..
       
       #Debug: - name: Setup tmate session
