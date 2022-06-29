@@ -89,7 +89,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
-### Running todo app in AppService on Azure: deployment using AZ CLI and Bicep template
+### Running Todo App in AppService on Azure: deployment using AZ CLI and Bicep template
 (we are deploying Azure KeyVault to manage secrets, but skipping Log Analytics and AppInsights to reduce App and Bicep template complexity)
 * Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
 * List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
@@ -151,7 +151,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
   (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
 
-### Running todo app in Spring Apps cluster on Azure: deployment using AZ CLI and Bicep templates
+### Running Todo App in Spring Apps cluster on Azure: deployment using AZ CLI and Bicep templates
 (we are deploying Azure KeyVault to manage secrets, and also deploy Log Analytics and AppInsights to to provide a more realistic example. Log analytics is deployed into another resource group as this is a resource you will typically wan to share this resource between many workloads in the same geography. We will be using a parameters file for the deployment - DO NOT CHECK THIS ONE IN into your source code repo as it will contain secrets)
 * Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
 * List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
@@ -210,7 +210,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Check the logs using ```az spring app logs --name {YOUR_APPSERVICE_NAME}``` ; use ``` --follow ``` switch for continuous log streaming
 * Test the app by opening https://{SPRING_APPS_CLUSTER_NAME}-{YOUR_APPSERVICE_NAME}.azuremicroservices.io in your browser
 
-### Bonus: deploying into Spring Apps cluster with Github actions (CI/CD Pipeline)
+### Bonus: deploying Todo App into Spring Apps cluster with Github actions (CI/CD Pipeline)
 * Copy the repo's content into your personal or organizational GitHub Account
 * Open your repository in the browser and select Settings->Secrets->Actions
 * Set the following variables:
