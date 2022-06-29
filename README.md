@@ -158,7 +158,18 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
   [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
 * Change the current directory into ```./scripts``` sub-dir
-* Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
+* Create a new resource group for Log Analytics```az group create -l eastus -n {YOUR_LOGS_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_LOGS_RG_NAME_rg}``` with a resource group name, unique to your subscription [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create)
+
+* Deploy Log Analytics using a Bicep template by running  
+  ```
+  az deployment group create --resource-group {YOUR_LOGS_RG_NAME_rg} --template-file ./templates/components/logs.bicep \
+              --parameters location=eastus  \
+                            logAnalyticsWorkspaceName={YOUR_LOGS_WORKSPACE_ANALYTICS_NAME}
+  ```
+
+
+* Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription  [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
+
 * Modify the ```parameters.json``` and fill in all the parameters. Easiest way to generate strong passwords on your computer is by using ```openssl rand -base64 26```; and you can also use it to generate unique user names and passwords
 * Now we need to use a workaround due to an issue with the current Bicep version and first transpile Bicep into ARM. Run ```az bicep build --file .\spring-apps.bicep``` to generate an ARM template from our Bicep tamplate 
 * Deploy all the resources into the previously created resource group by running ```az group deployment create -g {YOUR_RG_NAME_rg} --template-file .\spring-apps.json --parameters .\parameters.json```
@@ -208,7 +219,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Follow the TODO LINK and create a TODO
 * Give "Key Vault Administrator" and "Owner" permission to the TODO on the subscription you are going to deploy into. This may not be ideal if you are not using a separated subscription for each workload as a part of some landing zones; the alternative is to modify deployment scripts so that these do not create resource groups and give RBAC contributor,owner and Key Vault administrator roles to TODO on the reasource group ```{YOUR_RG_NAME_rg}```. However, using a subscription per workload and giving TODO these permissions allows you to have ```{YOUR_RG_NAME_rg}``` not only automatically deployed, but also automatically deleted. By deleting the resource group, Azure Resource Manager makes sure that resources have been deleted in the right order.
 * Create a variable "AZURE_CREDENTIALS" and copy the output of ``` TODO ``` into it
-* Run the infra deployment by running Actions->cicd-spring-infra manually
-* Run the code deployment by running Actions->cicd-spring manually
-* Check that all resources have been deployed in Azure portal by 
+* Run the infrastructure deployment by running *Actions-cicd-spring-apps-infra* manually; this action is defined in ```./tiny-java/.github/workflows/cicd-spring-apps-infra.yml```
+* Run the code deployment by running *Actions->cicd-spring-apps* manually; this action is defined in ```./tiny-java/.github/workflows/cicd-spring-apps.yml```
+* Check that all resources have been deployed in Azure portal in the  ```{YOUR_RG_NAME_rg}``` resource group you defined in the parameter file 
 
