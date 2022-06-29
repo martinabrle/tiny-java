@@ -62,8 +62,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Run the Todo app on http://localhost:8080 using ```./mvnw spring-boot:run```
 * Test it by opening the URL http://localhost:8080 in your browser and creating a few tasks
 * Close the app by pressing ```CTRL+C```
-* Delete previously created resources ```az group delete -n {YOUR_RG_NAME_rg}```
-  (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
+* Delete previously created resources using ```az group delete -n {YOUR_RG_NAME_rg}``` ([link](https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete))
 
 ### Running Todo App in AppService on Azure: deployment using AZ CLI
 (we are not using Azure KeyVault in this example due to time constraints)
@@ -86,8 +85,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Deploy the application by running ```./mvnw azure-webapp:deploy```
 * Open the app's URL (https://{YOUR_APPSERVICE_NAME}.azurewebsites.net/) in the browser and test it by creating and reviewing tasks
 * Explore the SCM console on (https://{YOUR_APPSERVICE_NAME}.scm.azurewebsites.net/)
-* Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
-  (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
+* Delete previously created resources using ```az group delete -n {YOUR_RG_NAME_rg}``` ([link](https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete))
 
 ### Running Todo App in AppService on Azure: deployment using AZ CLI and Bicep template
 (we are deploying Azure KeyVault to manage secrets, but skipping Log Analytics and AppInsights to reduce App and Bicep template complexity)
@@ -148,8 +146,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Deploy the application by running ```./mvnw azure-webapp:deploy```
 * Open the app's URL (https://{YOUR_APPSERVICE_NAME}.azurewebsites.net/) in the browser and test it by creating and reviewing tasks
 * Explore the SCM console on (https://{YOUR_APPSERVICE_NAME}.scm.azurewebsites.net/)
-* Delete previously created resources ```az group delete -n YOUR_RG_NAME_rg```
-  (https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete)
+* Delete previously created resources using ```az group delete -n {YOUR_RG_NAME_rg}``` ([link](https://docs.microsoft.com/en-us/cli/azure/group?view=azure-cli-latest#az-group-delete))
 
 ### Running Todo App in Spring Apps cluster on Azure: deployment using AZ CLI and Bicep templates
 (we are deploying Azure KeyVault to manage secrets, and also deploy Log Analytics and AppInsights to to provide a more realistic example. Log analytics is deployed into another resource group as this is a resource you will typically wan to share this resource between many workloads in the same geography. We will be using a parameters file for the deployment - DO NOT CHECK THIS ONE IN into your source code repo as it will contain secrets)
@@ -212,7 +209,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 
 ### Bonus: deploying Todo App into Spring Apps cluster with Github actions (CI/CD Pipeline)
 * Copy the repo's content into your personal or organizational GitHub Account
-* Open your repository in the browser and select Settings->Secrets->Actions
+* Open your repository in the browser and select *Settings->Secrets->Actions*
 * Set the following variables:
 ```
 ```
@@ -222,4 +219,6 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 * Run the infrastructure deployment by running *Actions-cicd-spring-apps-infra* manually; this action is defined in ```./tiny-java/.github/workflows/cicd-spring-apps-infra.yml```
 * Run the code deployment by running *Actions->cicd-spring-apps* manually; this action is defined in ```./tiny-java/.github/workflows/cicd-spring-apps.yml```
 * Check that all resources have been deployed in Azure portal in the  ```{YOUR_RG_NAME_rg}``` resource group you defined in the parameter file 
-
+* Check the logs using ```az spring app logs --name {YOUR_APPSERVICE_NAME}``` ; use ``` --follow ``` switch for continuous log streaming
+* Test the app by opening https://{SPRING_APPS_CLUSTER_NAME}-{YOUR_APPSERVICE_NAME}.azuremicroservices.io in your browser
+* Delete created resources by running *Actions->Cleanup*
