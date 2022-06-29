@@ -17,7 +17,6 @@ param appServiceName string
 param appServicePort string
 
 param location string = resourceGroup().location
-
 param tagsArray object = resourceGroup().tags
 
 resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {

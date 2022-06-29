@@ -1,0 +1,48 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "logAnalyticsWorkspaceName": {
+            "value": ""
+        },
+        "logAnalyticsWorkspaceRG": {
+            "value": ""
+        },
+        "appInsightsName": {
+            "value": ""
+        },
+        "keyVaultName": {
+            "value": ""
+        },
+        "dbServerName": {
+            "value": ""
+        },
+        "dbName": {
+            "value": ""
+        },
+        "dbAdminName": {
+            "value": ""
+        },
+        "dbAdminPassword": {
+            "value": ""
+        },
+        "dbUserName": {
+            "value": ""
+        },
+        "dbUserPassword": {
+            "value": ""
+        },
+        "clientIPAddress": {
+            "value": ""
+        },
+        "springAppsServiceName": {
+            "value": ""
+        },
+        "appName": {
+            "value": ""
+        },
+        "appPort": {
+            "value": ""
+        }
+    }
+}
