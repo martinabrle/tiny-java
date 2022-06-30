@@ -74,10 +74,8 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
   ```
   az webapp config appsettings set -g {YOUR_RG_NAME_rg} -n {YOUR_APPSERVICE_NAME} --settings SPRING_DATASOURCE_URL="jdbc:postgresql://{PGSQL_SERVER_NAME}.postgres.database.azure.com:5432/tododb"
 
-  az webapp config appsettings set -g {YOUR_RG_NAME_rg} -n {YOUR_APPSERVICE_NAME} --settings SPRING_DATASOURCE_USERNAME=
-  {your_app_user_name}
-  az webapp config appsettings set -g {YOUR_RG_NAME_rg} -n {YOUR_APPSERVICE_NAME} --settings SPRING_DATASOURCE_PASSWORD=
-  {your_app_user_password}
+  az webapp config appsettings set -g {YOUR_RG_NAME_rg} -n {YOUR_APPSERVICE_NAME} --settings SPRING_DATASOURCE_USERNAME={your_app_user_name}
+  az webapp config appsettings set -g {YOUR_RG_NAME_rg} -n {YOUR_APPSERVICE_NAME} --settings SPRING_DATASOURCE_PASSWORD={your_app_user_password}
   az webapp config appsettings set -g {YOUR_RG_NAME_rg} -n {YOUR_APPSERVICE_NAME} --settings SPRING_DATASOURCE_SHOW_SQL=true
   ```
 *  Build the app using ```./mvnw clean``` and ```./mvnw build```
