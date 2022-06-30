@@ -5,14 +5,14 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 
 ### Running Todo App on your computer (with Postgresql in Azure)
 * Start the command line, clone the repo using ```git clone https://github.com/martinabrle/tiny-java.git``` and change your current directory to ```todo``` sub-dir
-* Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
-* List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
+* Log in into Azure from the command line using ```az login``` ([link](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli))
+* List available Azure subscriptions using ```az account list -o table``` ([link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list))
 * Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
-  [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
-* Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
+  ([link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set)); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
+* Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription ([link](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create)); 
 * Generate a one time strong password, for example using ```openssl rand -base64 24```  (can be re-set from portal later, if needed)
-* Create a new flexible PostgreSQL server ```az postgres flexible-server create --name {PGSQL_SERVER_NAME} -g {YOUR_RG_NAME_rg} -l eastus --admin-user {your_admin_name} --admin-password {your_admin_password} --tier Burstable --sku-name Standard_B2s``` [(link)](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server#az-postgres-flexible-server-create) and choose yes to allow your current IP to go through Postgresql's firewall
-* Create a ```tododb``` database using ```az postgres flexible-server db create --resource-group {YOUR_RG_NAME_rg} --server-name {PGSQL_SERVER_NAME} --database-name tododb``` [(link)](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server/db#az-postgres-flexible-server-db-create)
+* Create a new flexible PostgreSQL server ```az postgres flexible-server create --name {PGSQL_SERVER_NAME} -g {YOUR_RG_NAME_rg} -l eastus --admin-user {your_admin_name} --admin-password {your_admin_password} --tier Burstable --sku-name Standard_B2s``` ([link](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server#az-postgres-flexible-server-create)) and choose yes to allow your current IP to go through Postgresql's firewall
+* Create a ```tododb``` database using ```az postgres flexible-server db create --resource-group {YOUR_RG_NAME_rg} --server-name {PGSQL_SERVER_NAME} --database-name tododb``` ([link](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server/db#az-postgres-flexible-server-db-create))
 * Connect to the newly created server using ```psql "host={PGSQL_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=tododb user={your_admin_name} password={your_admin_password} sslmode=require"```
 * Create database schema
   ```
@@ -89,10 +89,10 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 
 ### Running Todo App in an AppService on Azure: deployment using AZ CLI and Bicep template
 (we are deploying Azure KeyVault to manage secrets, but skipping Log Analytics and AppInsights to reduce App and Bicep template complexity)
-* Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
-* List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
+* Log in into Azure from the command line using ```az login``` ([link](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli))
+* List available Azure subscriptions using ```az account list -o table``` ([link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list))
 * Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
-  [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
+  ([link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set)); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
 * Change the current directory into ```./scripts``` sub-dir
 * Deploy the app using a Bicep script
 ```
@@ -150,12 +150,12 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
 
 ### Running Todo App in a Spring Apps cluster on Azure: deployment using AZ CLI and Bicep templates
 (we are deploying Azure KeyVault to manage secrets, and also deploy Log Analytics and AppInsights to to provide a more realistic example. Log analytics is deployed into another resource group as this is a resource you will typically wan to share this resource between many workloads in the same geography. We will be using a parameters file for the deployment - DO NOT CHECK THIS ONE IN into your source code repo as it will contain secrets)
-* Log in into Azure from the command line using ```az login``` [(link)](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli)
-* List available Azure subscriptions using ```az account list -o table``` [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list)
+* Log in into Azure from the command line using ```az login``` ([link](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli))
+* List available Azure subscriptions using ```az account list -o table``` ([link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list))
 * Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
-  [(link)](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
+  ([link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set)); replace ```00000000-0000-0000-0000-000000000000``` with your Azure subscription Id
 * Change the current directory into ```./scripts``` sub-dir
-* Create a new resource group for Log Analytics```az group create -l eastus -n {YOUR_LOGS_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_LOGS_RG_NAME_rg}``` with a resource group name, unique to your subscription [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create)
+* Create a new resource group for Log Analytics```az group create -l eastus -n {YOUR_LOGS_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_LOGS_RG_NAME_rg}``` with a resource group name, unique to your subscription ([link](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create))
 
 * Deploy Log Analytics using a Bicep template by running  
   ```
@@ -165,7 +165,7 @@ Before starting, make sure that you have Azure CLI and Java installed on your co
   ```
 
 
-* Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription  [(link)](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create); 
+* Create a new resource group ```az group create -l eastus -n {YOUR_RG_NAME_rg}  tagsArray='{ "CostCentre": "DEV", "DeleteNightly": "true" }' ```; replace ```eastus``` with the region you are deploying to and ```{YOUR_RG_NAME_rg}``` with a resource group name, unique to your subscription  ([link](https://docs.microsoft.com/en-us/cli/azure/group#az-group-create)); 
 
 * Modify the ```parameters.json``` and fill in all the parameters. Easiest way to generate strong passwords on your computer is by using ```openssl rand -base64 26```; and you can also use it to generate unique user names and passwords
 * Now we need to use a workaround due to an issue with the current Bicep version and first transpile Bicep into ARM. Run ```az bicep build --file .\spring-apps.bicep``` to generate an ARM template from our Bicep tamplate 
