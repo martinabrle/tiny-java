@@ -36,10 +36,16 @@ jobs:
       #         run mvwm and init it from java spring-boot on the admin connection (?)
       - name: Initialize database
         run: |
-              az postgres flexible-server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password ${{ secrets.AZURE_DB_ADMIN_PASSWORD }}
+              
+              pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin"
 
-              dbConnectionStringTodoDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=${{ secrets.AZURE_DB_NAME }} user=${{ secrets.AZURE_DB_ADMIN_NAME }} password=${{ secrets.AZURE_DB_ADMIN_PASSWORD }} sslmode=require"
-              dbConnectionStringPostgresDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=postgres user=${{ secrets.AZURE_DB_ADMIN_NAME }} password=${{ secrets.AZURE_DB_ADMIN_PASSWORD }} sslmode=require"
+              $dbAdminName=`az postgres server list --query "$pgsqlServerAdminQuery" --output tsv`
+              $dbAdminPassword="#`openssl rand -base64 25`#"
+
+              az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
+
+              dbConnectionStringTodoDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=${{ secrets.AZURE_DB_NAME }} user=$dbAdminName password=\"$dbAdminPassword\" sslmode=require"
+              dbConnectionStringPostgresDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=postgres user=$dbAdminName password=\"$dbAdminPassword\" sslmode=require"
               
               psql "${dbConnectionStringTodoDB}" --file=./db.sql
               
@@ -107,23 +113,23 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ steps.version.outputs.RELEASE_NAME }}
-          path: ./api/target/${{ steps.version.outputs.RELEASE_FILE_NAME }}
+          path: ./todo/target/${{ steps.version.outputs.RELEASE_FILE_NAME }}
           if-no-files-found: error
           retention-days: 1
   
   deploy_app:
-    needs: [build_api, init_db]
+    needs: [build_app, init_db]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artefacts
         uses: actions/download-artifact@v2
         with:
-          name: ${{needs.build_api.outputs.RELEASE_NAME}}
+          name: ${{needs.build_app.outputs.RELEASE_NAME}}
       - name: Check downloaded files
         run: |
           pwd
           ls -la
-          ls -la ./${{ needs.build_api.outputs.RELEASE_FILE_NAME }}
+          ls -la ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
       
       - name: Azure login
         uses: azure/login@v1
@@ -135,7 +141,7 @@ jobs:
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
-      - name: Deploy to AppService
+      - name: TODO: Deploy to SpringApps
         uses: azure/webapps-deploy@v2
         with: 
           app-name: "${{ secrets.AZURE_API_SERVICE_NAME }}"
