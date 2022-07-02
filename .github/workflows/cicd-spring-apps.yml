@@ -141,11 +141,16 @@ jobs:
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
-      - name: TODO: Deploy to SpringApps
-        uses: azure/webapps-deploy@v2
-        with: 
-          app-name: "${{ secrets.AZURE_API_SERVICE_NAME }}"
-          package: ./${{ needs.build_api.outputs.RELEASE_FILE_NAME }}
+      - name: Deploy to Spring Apps
+        uses: azure/spring-cloud-deploy@v1
+        with:
+          azure-subscription: ${{ secrets.AZURE_SUBSCRIPTION }}
+          action: Deploy
+          service-name: "${{ secrets.AZURE_SPRING_SERVICE_NAME }}"
+          app-name: "${{ secrets.AZURE_APP_NAME }}"
+          use-staging-deployment: false
+          package: ./todo/target/**/*.jar
+
       
       - name: Run integration test(s)
         run: |
