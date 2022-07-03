@@ -278,13 +278,13 @@ resource springAppsAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@
         memory: '1Gi'
       }
       environmentVariables: {
-        'PORT': appPort
-        'SPRING_DATASOURCE_URL': '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-URL)'
-        'SPRING_DATASOURCE_USERNAME': '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-USERNAME)'
-        'SPRING_DATASOURCE_PASSWORD': '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-PASSWORD)'
-        'APPLICATIONINSIGHTS_CONNECTION_STRING': '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATIONINSIGHTS-CONNECTION-STRING)'
-        'SPRING_DATASOURCE_SHOW_SQL': 'true'
-        'SCM_DO_BUILD_DURING_DEPLOYMENT': 'false'
+        PORT: appPort
+        SPRING_DATASOURCE_URL: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-URL)'
+        SPRING_DATASOURCE_USERNAME: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-USERNAME)'
+        SPRING_DATASOURCE_PASSWORD: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-PASSWORD)'
+        APPLICATIONINSIGHTS_CONNECTION_STRING: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATIONINSIGHTS-CONNECTION-STRING)'
+        SPRING_DATASOURCE_SHOW_SQL: 'true'
+        SCM_DO_BUILD_DURING_DEPLOYMENT: 'false'
       }
     }
     source: any({
