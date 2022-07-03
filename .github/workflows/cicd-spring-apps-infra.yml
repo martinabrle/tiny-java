@@ -106,6 +106,7 @@ jobs:
       - name: Deploy Azure resources
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
+          dbAdminPassword="`openssl rand -hex 25`#@"
           dbAdminName=""
           dbServerName="${{secrets.AZURE_DB_SERVER_NAME}}"
           pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${dbServerName}.postgres.database.azure.com'].administratorLogin"
@@ -115,11 +116,10 @@ jobs:
             dbAdminName="a`openssl rand -hex 5`"
             echo "New admin user: $dbAdminName"
           else
-            echo "Existing admin user: $dbAdminName"
+            echo "Re-setting password for an existing admin user: $dbAdminName to $dbAdminPassword"
+            az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
           fi
           
-          dbAdminPassword="`openssl rand -base64 25`"
-
           cd ./templates
           az bicep build --file ./spring-apps.bicep
 
