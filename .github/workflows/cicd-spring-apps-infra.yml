@@ -113,6 +113,9 @@ jobs:
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
+            echo "New admin user: $dbAdminName"
+          else
+            echo "Existing admin user: $dbAdminName"
           fi
           
           dbAdminPassword="`openssl rand -base64 25`"
