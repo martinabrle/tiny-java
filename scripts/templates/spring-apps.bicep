@@ -158,7 +158,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = {
+resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = if (!empty(dbName)) {
   parent: postgreSQLServer
   name: dbName
   properties: {
