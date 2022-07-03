@@ -156,28 +156,31 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
     administratorLogin: dbAdminName
     administratorLoginPassword: dbAdminPassword
   }
-  resource postgreSQLDatabase 'databases@2017-12-01' = {
-    name: dbName
-    properties: {
-      charset: 'utf8'
-      collation: 'en_US.utf8'
-    }
-  }
-  resource allowClientIPFirewallRule 'firewallRules@2017-12-01' = {
-    name: 'allowClientIP'
-    properties: {
-      endIpAddress: clientIPAddress
-      startIpAddress: clientIPAddress
-    }
-  }
-  resource allowAllIPsFirewallRule 'firewallRules@2017-12-01' = {
-    name: 'allowAllIps'
-    properties: {
-      startIpAddress: '0.0.0.0'
-      endIpAddress: '255.255.255.255'
-    }
-  }
+}
 
+resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = {
+  parent: postgreSQLServer
+  name: dbName
+  properties: {
+    charset: 'utf8'
+    collation: 'en_US.utf8'
+  }
+}
+resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
+  name: 'allowClientIP'
+  parent: postgreSQLServer
+  properties: {
+    endIpAddress: clientIPAddress
+    startIpAddress: clientIPAddress
+  }
+}
+resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
+  name: 'allowAllIps'
+  parent: postgreSQLServer
+  properties: {
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '255.255.255.255'
+  }
 }
 
 resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
