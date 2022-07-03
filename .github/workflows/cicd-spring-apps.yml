@@ -5,11 +5,10 @@ on:
   #  branches:
   #    - main
   #  paths:
-  #    - 'api/**'  
+  #    - 'todo/**'  
   workflow_dispatch:
     inputs:
     
-
 jobs:  
   init_db:    
     runs-on: ubuntu-latest
@@ -53,8 +52,8 @@ jobs:
               
           psql "${dbConnectionStringTodoDB}" --file=./db.sql
               
-          dbUserName="${{secrets.AZURE_API_DB_USER_NAME}}"
-          dbUserPassword="${{secrets.AZURE_API_DB_USER_PASSWORD}}"
+          dbUserName="${{secrets.AZURE_DB_APP_USER_NAME}}"
+          dbUserPassword="${{secrets.AZURE_DB_APP_USER_PASSWORD}}"
 
           dbUserExists=`psql "${dbConnectionStringPostgresDB}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$dbUserName';"`
 
@@ -75,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./api
+        working-directory: ./todo
     outputs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
@@ -99,13 +98,13 @@ jobs:
         id: version
         run: |
           cd ./target
-          files=(api*.jar)
-          mv "$files" "./api-${GITHUB_SHA}.jar"
+          files=(todo*.jar)
+          mv "$files" "./todo-${GITHUB_SHA}.jar"
           ls -la
           cd ..
           echo "::set-output name=RELEASE_VERSION::${GITHUB_SHA}"
-          echo "::set-output name=RELEASE_NAME::api-${GITHUB_SHA}"
-          echo "::set-output name=RELEASE_FILE_NAME::api-${GITHUB_SHA}.jar"
+          echo "::set-output name=RELEASE_NAME::todo-${GITHUB_SHA}"
+          echo "::set-output name=RELEASE_FILE_NAME::todo-${GITHUB_SHA}.jar"
           
       - name: Display next version
         run: |
@@ -117,7 +116,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: ${{ steps.version.outputs.RELEASE_NAME }}
-          path: ./api/target/${{ steps.version.outputs.RELEASE_FILE_NAME }}
+          path: ./todo/target/${{ steps.version.outputs.RELEASE_FILE_NAME }}
           if-no-files-found: error
           retention-days: 1
   
@@ -128,12 +127,12 @@ jobs:
       - name: Download build artefacts
         uses: actions/download-artifact@v2
         with:
-          name: ${{needs.build_api.outputs.RELEASE_NAME}}
+          name: ${{needs.build_app.outputs.RELEASE_NAME}}
       - name: Check downloaded files
         run: |
           pwd
           ls -la
-          ls -la ./${{ needs.build_api.outputs.RELEASE_FILE_NAME }}
+          ls -la ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
       
       - name: Azure login
         uses: azure/login@v1
@@ -144,12 +143,6 @@ jobs:
 
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-      
-      - name: Deploy to AppService
-        uses: azure/webapps-deploy@v2
-        with: 
-          app-name: "${{ secrets.AZURE_API_SERVICE_NAME }}"
-          package: ./${{ needs.build_api.outputs.RELEASE_FILE_NAME }}
       
       - name: Deploy to Spring Apps
         uses: azure/spring-cloud-deploy@v1
