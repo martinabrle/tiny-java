@@ -106,7 +106,14 @@ jobs:
       - name: Deploy Azure resources
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
-          dbAdminName="a`openssl rand -hex 5`"
+          dbAdminName=""
+          pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin"
+          dbAdminName=`az postgres server list --query "$pgsqlServerAdminQuery" --output tsv`
+          if [[ $dbAdminName -z ]]; then
+            echo "This is a new deployment, generating a new admin name"
+            dbAdminName="a`openssl rand -hex 5`"
+          fi
+          
           dbAdminPassword="`openssl rand -base64 25`"
 
           cd ./templates
