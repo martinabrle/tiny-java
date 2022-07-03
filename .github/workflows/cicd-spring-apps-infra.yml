@@ -109,7 +109,7 @@ jobs:
           dbAdminName=""
           pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin"
           dbAdminName=`az postgres server list --query "$pgsqlServerAdminQuery" --output tsv`
-          if [[ $dbAdminName -z ]]; then
+          if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
           fi
