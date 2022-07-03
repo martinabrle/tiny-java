@@ -41,15 +41,17 @@ jobs:
           dbServerName="${{secrets.AZURE_DB_SERVER_NAME}}"
           pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${dbServerName}.postgres.database.azure.com'].administratorLogin"
           dbAdminName=`az postgres server list --query "$pgsqlServerAdminQuery" -o tsv`
+          echo "::add-mask::$dbAdminName"
           if [[ -z $dbAdminName ]]; then
             error "Unable to retrieve admin name"
             exit 1;
           fi
           az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
           
-          dbConnectionStringTodoDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=${{ secrets.AZURE_DB_NAME }} user=${dbAdminName} password=${dbAdminPassword} sslmode=require"
-          dbConnectionStringPostgresDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminName} password=${dbAdminPassword} sslmode=require"
-              
+          dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }"
+          dbConnectionStringTodoDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=${{ secrets.AZURE_DB_NAME }} user=${dbAdminFullName} password=${dbAdminPassword} sslmode=require"
+          dbConnectionStringPostgresDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminFullName} password=${dbAdminPassword} sslmode=require"
+          
           psql "${dbConnectionStringTodoDB}" --file=./db.sql
               
           dbUserName="${{secrets.AZURE_DB_APP_USER_NAME}}"
