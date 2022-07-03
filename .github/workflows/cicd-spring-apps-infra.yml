@@ -107,6 +107,7 @@ jobs:
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
           dbAdminPassword="`openssl rand -hex 25`#@"
+          echo "::add-mask::$dbAdminPassword"
           dbAdminName=""
           dbServerName="${{secrets.AZURE_DB_SERVER_NAME}}"
           pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${dbServerName}.postgres.database.azure.com'].administratorLogin"
@@ -114,9 +115,10 @@ jobs:
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
-            echo "New admin user: $dbAdminName"
+            echo "::add-mask::$dbAdminName"
           else
-            echo "Re-setting password for an existing admin user: $dbAdminName to $dbAdminPassword"
+            echo "::add-mask::$dbAdminName"
+            echo "Re-setting password for an existing admin user"
             az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
           fi
           
