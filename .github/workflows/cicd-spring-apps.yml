@@ -122,7 +122,7 @@ jobs:
           retention-days: 1
   
   deploy_app:
-    needs: [build_api, init_db]
+    needs: [build_app, init_db]
     runs-on: ubuntu-latest
     steps:
       - name: Download build artefacts
