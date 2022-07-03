@@ -154,7 +154,7 @@ jobs:
           service-name: "${{ secrets.AZURE_SPRING_SERVICE_NAME }}"
           app-name: "${{ secrets.AZURE_APP_NAME }}"
           use-staging-deployment: false
-          package: ./todo/target/**/*.jar
+          package: ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
 
       - name: Run integration test(s)
         run: |
