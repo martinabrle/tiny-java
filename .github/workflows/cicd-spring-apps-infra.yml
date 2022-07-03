@@ -112,6 +112,7 @@ jobs:
           dbServerName="${{secrets.AZURE_DB_SERVER_NAME}}"
           pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${dbServerName}.postgres.database.azure.com'].administratorLogin"
           dbAdminName=`az postgres server list --query "$pgsqlServerAdminQuery" -o tsv`
+          dbName=${{ secrets.AZURE_DB_NAME }}
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
@@ -120,6 +121,7 @@ jobs:
             echo "::add-mask::$dbAdminName"
             echo "Re-setting password for an existing admin user"
             az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
+            dbName=""
           fi
           
           cd ./templates
@@ -134,9 +136,9 @@ jobs:
                                      keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
                                      appInsightsName=${{ secrets.AZURE_APP_INSIGHTS_NAME }}  \
                                      dbServerName=${{ secrets.AZURE_DB_SERVER_NAME }} \
-                                     dbName=${{ secrets.AZURE_DB_NAME }} \
+                                     dbName="${dbName}" \
                                      dbAdminName=${dbAdminName} \
-                                     dbAdminPassword="$dbAdminPassword" \
+                                     dbAdminPassword=$dbAdminPassword \
                                      dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }} \
                                      dbUserPassword=${{ secrets.AZURE_DB_APP_USER_PASSWORD }} \
                                      springAppsServiceName=${{ secrets.AZURE_SPRING_SERVICE_NAME }} \
