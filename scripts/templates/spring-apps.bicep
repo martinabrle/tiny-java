@@ -5,6 +5,7 @@ param appInsightsName string
 param keyVaultName string
 param dbServerName string
 param dbName string
+param createDB bool = true
 
 @secure()
 param dbAdminName string
@@ -158,7 +159,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = if (!empty(dbName)) {
+resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = if (createDB) {
   parent: postgreSQLServer
   name: dbName
   properties: {
