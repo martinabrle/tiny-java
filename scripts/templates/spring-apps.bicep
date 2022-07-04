@@ -67,7 +67,7 @@ resource keyVaultSecretSpringDatasourceUserName 'Microsoft.KeyVault/vaults/secre
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
-    value: dbUserName
+    value: '${dbUserName}@${dbServerName}'
     contentType: 'string'
   }
 }
@@ -102,7 +102,7 @@ resource keyVaultSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/
   parent: keyVault
   name: 'APP-INSIGHTS-INSTRUMENTATION-KEY'
   properties: {
-    value: appInsights.properties.ConnectionString
+    value: appInsights.properties.InstrumentationKey
     contentType: 'string'
   }
 }
@@ -283,10 +283,16 @@ resource springAppsAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@
       }
       environmentVariables: {
         PORT: appPort
-        SPRING_DATASOURCE_URL: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-URL)'
-        SPRING_DATASOURCE_USERNAME: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-USERNAME)'
-        SPRING_DATASOURCE_PASSWORD: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-PASSWORD)'
-        APPLICATIONINSIGHTS_CONNECTION_STRING: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATIONINSIGHTS-CONNECTION-STRING)'
+        // SPRING_DATASOURCE_URL: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-URL)'
+        // SPRING_DATASOURCE_USERNAME: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-USERNAME)'
+        // SPRING_DATASOURCE_PASSWORD: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-PASSWORD)'
+        // APPLICATIONINSIGHTS_CONNECTION_STRING: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATION-INSIGHTS-CONNECTION-STRING)'
+        // APPINSIGHTS_INSTRUMENTATIONKEY: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APP-INSIGHTS-INSTRUMENTATION-KEY)'
+        SPRING_DATASOURCE_URL: 'jdbc:postgresql://${dbServerName}.postgres.database.azure.com:5432/${dbName}'
+        SPRING_DATASOURCE_USERNAME: '${dbUserName}@${dbServerName}'
+        SPRING_DATASOURCE_PASSWORD: dbUserPassword
+        APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
+        APPINSIGHTS_INSTRUMENTATIONKEY: appInsights.properties.InstrumentationKey
         SPRING_DATASOURCE_SHOW_SQL: 'true'
         SCM_DO_BUILD_DURING_DEPLOYMENT: 'false'
       }
