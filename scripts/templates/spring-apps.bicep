@@ -283,10 +283,10 @@ resource springAppsAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@
       }
       environmentVariables: {
         PORT: appPort
-        // SPRING_DATASOURCE_URL: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-URL)'
-        // SPRING_DATASOURCE_USERNAME: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-USERNAME)'
-        // SPRING_DATASOURCE_PASSWORD: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-PASSWORD)'
-        // APPLICATIONINSIGHTS_CONNECTION_STRING: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATION-INSIGHTS-CONNECTION-STRING)'
+        // SPRING_DATASOURCE_URL: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName={keyVaultSecretSpringDataSourceURL.name})'
+        // SPRING_DATASOURCE_USERNAME: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretSpringDatasourceUserName.name})'
+        // SPRING_DATASOURCE_PASSWORD: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretSpringDatasourceUserPassword.name})'
+        // APPLICATIONINSIGHTS_CONNECTION_STRING: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretAppInsightsKey.name})'
         // APPINSIGHTS_INSTRUMENTATIONKEY: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APP-INSIGHTS-INSTRUMENTATION-KEY)'
         SPRING_DATASOURCE_URL: 'jdbc:postgresql://${dbServerName}.postgres.database.azure.com:5432/${dbName}'
         SPRING_DATASOURCE_USERNAME: '${dbUserName}@${dbServerName}'
