@@ -103,7 +103,6 @@ jobs:
            --parameters name=${{ secrets.AZURE_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
 
 
-
       - name: Deploy Azure resources
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
@@ -137,8 +136,8 @@ jobs:
                                      dbAdminPassword="${dbAdminPassword}" \
                                      dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }} \
                                      dbUserPassword=${{ secrets.AZURE_DB_APP_USER_PASSWORD }} \
-                                     appName=${{ secrets.AZURE_APP_NAME }} \
-                                     appPort=${{ secrets.AZURE_APP_PORT }} \
+                                     appServiceName=${{ secrets.AZURE_APP_NAME }} \
+                                     appServicePort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=$clientIP
       
       #Debug: - name: Setup tmate session
