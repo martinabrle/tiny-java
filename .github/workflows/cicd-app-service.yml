@@ -1,0 +1,144 @@
+name: cicd-app-service-complete-infra
+
+on:
+  #push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - 'api/**'
+  workflow_dispatch:
+    inputs:
+      run_cleanup:
+        type: boolean
+        description: Delete all existing resources first
+
+jobs:
+  cleanup_if_requested:
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE
+    steps:
+      - name: Azure login
+        if: github.event.inputs.run_cleanup == 'true'
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        if: github.event.inputs.run_cleanup == 'true'
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Remove the resource group
+        run: |
+          RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
+          if [[RG_EXISTS -eq true]]; then
+             echo "Deleting the Todo App app resource group"
+             az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
+          fi
+
+  deploy_log_analytics_if_needed:
+    # Having this as a separte Job, as there are many situations where Log Analytics
+    # workspace would be outside of the current subscription
+    needs: [cleanup_if_requested]
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE
+    defaults:
+      run:
+        working-directory: ./scripts
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Check the resource group exists
+        id: logs_rg_exists
+        run: |
+          LOGS_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
+          echo "::set-output name=LOGS_RG_EXISTS::${LOGS_RG_EXISTS}"
+
+      - name: Create Logs Workspace Azure resource group
+        if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
+        run: |
+          az deployment sub create \
+           --location ${{ secrets.AZURE_LOCATION }} \
+           --template-file ./templates/components/rg.bicep \
+           --parameters name=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
+
+      - name: Deploy Log Workspace
+        if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
+        run: |
+          az deployment group create --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --template-file ./templates/components/logs.bicep \
+                        --parameters location=${{ secrets.AZURE_LOCATION }}  \
+                                     logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}
+
+  deploy_infra:
+    needs: [deploy_log_analytics_if_needed]
+    runs-on: ubuntu-latest
+    environment: APP-SERVICE
+    defaults:
+      run:
+        working-directory: ./scripts
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create Azure resource group
+        run: |
+          az deployment sub create \
+           --location ${{ secrets.AZURE_LOCATION }} \
+           --template-file ./templates/components/rg.bicep \
+           --parameters name=${{ secrets.AZURE_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
+
+
+
+      - name: Deploy Azure resources
+        run: |
+          clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
+          dbAdminPassword="`openssl rand -hex 25`#@"
+          echo "::add-mask::$dbAdminPassword"
+          dbAdminName=""
+          dbServerName="${{secrets.AZURE_DB_SERVER_NAME}}"
+          pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${dbServerName}.postgres.database.azure.com'].administratorLogin"
+          dbAdminName=`az postgres server list --query "$pgsqlServerAdminQuery" -o tsv`
+          createDB=true
+          if [[ -z "$dbAdminName" ]]; then
+            echo "This is a new deployment, generating a new admin name"
+            dbAdminName="a`openssl rand -hex 5`"
+            echo "::add-mask::$dbAdminName"
+          else
+            echo "::add-mask::$dbAdminName"
+            echo "Re-setting password for an existing admin user"
+            az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
+            createDB=false
+          fi
+          
+          az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/app-service-complete.bicep \
+                        --parameters location=${{ secrets.AZURE_LOCATION }}  \
+                                     logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
+                                     logAnalyticsWorkspaceRG=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }}  \
+                                     keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
+                                     appInsightsName=${{ secrets.AZURE_APP_INSIGHTS_NAME }}  \
+                                     dbServerName=${{ secrets.AZURE_DB_SERVER_NAME }} \
+                                     dbName=${{ secrets.AZURE_DB_NAME }} \
+                                     dbAdminName=${dbAdminName} \
+                                     dbAdminPassword="${dbAdminPassword}"" \
+                                     dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }} \
+                                     dbUserPassword=${{ secrets.AZURE_DB_APP_USER_PASSWORD }} \
+                                     appName=${{ secrets.AZURE_APP_NAME }} \
+                                     appPort=${{ secrets.AZURE_APP_PORT }} \
+                                     clientIPAddress=$clientIP
+      
+      #Debug: - name: Setup tmate session
+      #         uses: mxschmitt/action-tmate@v3.11
