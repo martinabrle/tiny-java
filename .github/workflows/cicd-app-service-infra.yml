@@ -134,7 +134,7 @@ jobs:
                                      dbServerName=${{ secrets.AZURE_DB_SERVER_NAME }} \
                                      dbName=${{ secrets.AZURE_DB_NAME }} \
                                      dbAdminName=${dbAdminName} \
-                                     dbAdminPassword="${dbAdminPassword}"" \
+                                     dbAdminPassword="${dbAdminPassword}" \
                                      dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }} \
                                      dbUserPassword=${{ secrets.AZURE_DB_APP_USER_PASSWORD }} \
                                      appName=${{ secrets.AZURE_APP_NAME }} \
