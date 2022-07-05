@@ -96,8 +96,8 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      # - name: Set default Azure subscription
+      #   run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Create Azure resource group
         run: |
