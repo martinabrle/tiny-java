@@ -219,6 +219,8 @@ resource springApps 'Microsoft.AppPlatform/Spring@2022-05-01-preview' = {
   }
   properties: {
     zoneRedundant: false
+    networkProfile: {
+    }
   }
 }
 
@@ -254,9 +256,18 @@ resource springAppsApp 'Microsoft.AppPlatform/Spring/apps@2022-05-01-preview' = 
     type: 'SystemAssigned'
   }
   properties: {
-    enableEndToEndTLS: true
-    httpsOnly: true
+    httpsOnly: false
     public: true
+    fqdn: '${springAppsServiceName}-${appName}.azuremicroservices.io'
+    temporaryDisk: {
+      sizeInGB: 5
+      mountPath: '/tmp'
+    }
+    persistentDisk: {
+      sizeInGB: 0
+      mountPath: '/persistent'
+    }
+    enableEndToEndTLS: false
   }
 }
 
