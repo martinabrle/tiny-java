@@ -127,6 +127,7 @@ jobs:
   deploy_app:
     needs: [build_app, init_db]
     runs-on: ubuntu-latest
+    environment: APP-SERVICE
     steps:
       - name: Download build artefacts
         uses: actions/download-artifact@v2
@@ -147,7 +148,13 @@ jobs:
 
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
+      
+      - name: Deploy to AppService
+        uses: azure/webapps-deploy@v2
+        with: 
+          app-name: "${{ secrets.AZURE_WEB_SERVICE_NAME }}"
+          package: ./${{ needs.build_web.outputs.RELEASE_FILE_NAME }}
+      
       - name: Run integration test(s)
         run: |
           echo "Run integration tests...."
