@@ -5,6 +5,7 @@ param appInsightsName string
 param keyVaultName string
 param dbServerName string
 param dbName string
+param createDB bool = true
 
 @secure()
 param dbAdminName string
@@ -84,7 +85,7 @@ resource keyVaultSecretSpringDatasourceUserName 'Microsoft.KeyVault/vaults/secre
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
-    value: dbUserName
+    value: '${dbUserName}@${dbServerName}'
     contentType: 'string'
   }
 }
@@ -157,47 +158,43 @@ resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   }
 }
 
-resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2021-06-01-preview' = {
+resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
   name: dbServerName
   location: location
   tags: tagsArray
   sku: {
-    name: 'Standard_B2s'
-    tier: 'Burstable'
+    name: 'B_Gen5_1'
+    tier: 'Basic'
+    family: 'Gen5'
+    capacity: 1
   }
   properties: {
-    administratorLogin: dbAdminName
-    administratorLoginPassword: dbAdminPassword
-    backup: {
+    storageProfile: {
+      storageMB: 5120
       backupRetentionDays: 7
       geoRedundantBackup: 'Disabled'
+      storageAutogrow: 'Disabled'
     }
     createMode: 'Default'
-    highAvailability: {
-      mode: 'Disabled'
-      standbyAvailabilityZone: ''
-    }
-    network: {
-      delegatedSubnetResourceId: ''
-      privateDnsZoneArmResourceId: ''
-    }
-    storage: {
-      storageSizeGB: 32
-    }
-    version: '13'
+    version: '11'
+    sslEnforcement: 'Enabled'
+    minimalTlsVersion: 'TLSEnforcementDisabled'
+    infrastructureEncryption: 'Disabled'
+    publicNetworkAccess: 'Enabled'
+    administratorLogin: dbAdminName
+    administratorLoginPassword: dbAdminPassword
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2021-06-01' = {
-  name: dbName
+resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = if (createDB) {
   parent: postgreSQLServer
+  name: dbName
   properties: {
     charset: 'utf8'
     collation: 'en_US.utf8'
   }
 }
-
-resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2021-06-01' = {
+resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
   name: 'allowClientIP'
   parent: postgreSQLServer
   properties: {
@@ -205,8 +202,7 @@ resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/fi
     startIpAddress: clientIPAddress
   }
 }
-
-resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2021-06-01' = {
+resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
   name: 'allowAllIps'
   parent: postgreSQLServer
   properties: {
@@ -224,10 +220,10 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
         categoryGroup: 'allLogs'
         enabled: true
       }
-      {
-        categoryGroup: 'audit'
-        enabled: true
-      }
+      // {
+      //   categoryGroup: 'audit'
+      //   enabled: true
+      // }
     ]
     metrics: [
       {
@@ -303,7 +299,7 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
       }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATIONINSIGHTS-CONNECTION-STRING)'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATION-INSIGHTS-CONNECTION-STRING)'
       }
       {
         name: 'APPINSIGHTS_INSTRUMENTATIONKEY'

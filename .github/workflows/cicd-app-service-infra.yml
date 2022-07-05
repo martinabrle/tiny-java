@@ -102,7 +102,6 @@ jobs:
            --template-file ./templates/components/rg.bicep \
            --parameters name=${{ secrets.AZURE_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
 
-
       - name: Deploy Azure resources
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
