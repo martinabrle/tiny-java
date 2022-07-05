@@ -12,6 +12,7 @@ on:
 jobs:  
   init_db:    
     runs-on: ubuntu-latest
+    environment: SPRING-APPS
     defaults:
       run:
         working-directory: ./scripts
@@ -74,6 +75,7 @@ jobs:
 
   build_app:
     runs-on: ubuntu-latest
+    environment: SPRING-APPS
     defaults:
       run:
         working-directory: ./todo
@@ -125,6 +127,7 @@ jobs:
   deploy_app:
     needs: [build_app, init_db]
     runs-on: ubuntu-latest
+    environment: SPRING-APPS
     steps:
       - name: Download build artefacts
         uses: actions/download-artifact@v2
