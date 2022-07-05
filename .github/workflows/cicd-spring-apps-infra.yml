@@ -15,6 +15,7 @@ on:
 jobs:
   cleanup_if_requested:
     runs-on: ubuntu-latest
+    environment: SPRING-APPS
     steps:
       - name: Azure login
         if: github.event.inputs.run_cleanup == 'true'
@@ -44,6 +45,7 @@ jobs:
     # workspace would be outside of the current subscription
     needs: [cleanup_if_requested]
     runs-on: ubuntu-latest
+    environment: SPRING-APPS
     defaults:
       run:
         working-directory: ./scripts
@@ -82,6 +84,7 @@ jobs:
   deploy_infra:
     needs: [deploy_log_analytics_if_needed]
     runs-on: ubuntu-latest
+    environment: SPRING-APPS
     defaults:
       run:
         working-directory: ./scripts
