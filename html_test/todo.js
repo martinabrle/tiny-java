@@ -50,7 +50,7 @@ function saveTodo() {
                 2000
               );
               hideAddTodoForm();
-              showAddTodoButton();
+              showCommandBar();
             } catch (ex) {
               //Unable to parse, but the task has been saved
               console.log(
@@ -255,7 +255,7 @@ function showAddTodoForm() {
   let addTodoSectionElememt = document.createElement("section");
   addTodoSectionElememt.setAttribute("id", "todo-form");
 
-  let formElememt = document.createElement("form");
+  let formElememt = document.createElement("div");
   formElememt.setAttribute("id", "todo-new-todo-form");
   addTodoSectionElememt.appendChild(formElememt);
 
@@ -278,7 +278,7 @@ function showAddTodoForm() {
   let submitButtonElememt = document.createElement("button");
   submitButtonElememt.setAttribute("type", "submit");
   submitButtonElememt.setAttribute("class", "button");
-  submitButtonElememt.setAttribute("value", "submit");
+  submitButtonElememt.setAttribute("value", "create");
   submitButtonElememt.setAttribute("id", "todo-save-button");
   submitButtonElememt.appendChild(document.createTextNode("Save"));
   submitButtonElememt.addEventListener("click", onSaveConfirmButtonClick);
@@ -314,24 +314,24 @@ function hideAddTodoForm() {
   addTodoSectionElememt.parentElement.removeChild(addTodoSectionElememt);
 }
 
-function showAddTodoButton() {
-  let localAddButton = document.getElementById("todo-show-form-button");
-  if (localAddButton != undefined) {
-    localAddButton.style.display = "unset";
+function showCommandBar() {
+  let commandBar = document.getElementById("todos-command-bar");
+  if (commandBar != undefined) {
+    commandBar.style.display = "unset";
   }
 }
 
-function hideAddTodoButton() {
-  let localAddButton = document.getElementById("todo-show-form-button");
-  if (localAddButton != undefined) {
-    localAddButton.style.display = "none";
+function hideCommandBar() {
+  let commandBar = document.getElementById("todos-command-bar");
+  if (commandBar != undefined) {
+    commandBar.style.display = "none";
   }
 }
 
 function onAddTodoButtonClick(e) {
   e.preventDefault();
   showAddTodoForm();
-  hideAddTodoButton();
+  hideCommandBar();
 }
 
 function onSaveConfirmButtonClick(e) {
@@ -342,7 +342,12 @@ function onSaveConfirmButtonClick(e) {
 function onSaveCancelButtonClick(e) {
   e.preventDefault();
   hideAddTodoForm();
-  showAddTodoButton();
+  showCommandBar();
+}
+
+function onRefreshUpdateButtonClick(e) {
+  e.preventDefault();
+  alert("not implemented yet");
 }
 
 function onDocumentLoad() {
@@ -350,13 +355,18 @@ function onDocumentLoad() {
   if (addButton != undefined) {
     addButton.addEventListener("click", onAddTodoButtonClick);
   }
+  let refreshUpdateButton = document.getElementById("todo-update-refresh-todos-button");
+  if (refreshUpdateButton != undefined) {
+    refreshUpdateButton.addEventListener("click", onRefreshUpdateButtonClick);
+  }
+
   let cancelButton = document.getElementById("todo-cancel-button");
   if (cancelButton != undefined) {
     cancelButton.addEventListener("click", onSaveCancelButtonClick);
   }
-  let saveConfirmButtonClick = document.getElementById("todo-save-button");
-  if (saveConfirmButtonClick != undefined) {
-    saveConfirmButtonClick.addEventListener("click", onSaveConfirmButtonClick);
+  let saveConfirmButton = document.getElementById("todo-save-button");
+  if (saveConfirmButton != undefined) {
+    saveConfirmButton.addEventListener("click", onSaveConfirmButtonClick);
   }
 }
 
