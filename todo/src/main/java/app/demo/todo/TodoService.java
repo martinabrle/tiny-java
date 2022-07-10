@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.data.domain.Sort;
 
+import app.demo.todo.exception.NewTodoIsEmptyException;
 import app.demo.todo.exception.TodoCreationFailedException;
 import app.demo.todo.exception.TodoNotFoundException;
 import app.demo.todo.exception.TodosRetrievalFailedException;
@@ -69,11 +70,18 @@ public class TodoService {
         return retVal;
     }
 
-    public static Todo CreateTodo(TodoRepository repository, NewTodo newTodo) throws TodoCreationFailedException {
+    public static Todo CreateTodo(TodoRepository repository, NewTodo newTodo)
+            throws TodoCreationFailedException, NewTodoIsEmptyException {
         Todo todo = null;
 
+        if (newTodo == null)
+            throw new NewTodoIsEmptyException();
+
         try {
-            LOGGER.debug("Create a new Todo synchronously using CreateTodoSync({})", newTodo);
+            LOGGER.debug("Create a new Todo synchronously using CreateTodo({})", newTodo);
+            String todoText = newTodo.getTodoText();
+            if (todoText == null || todoText.trim() == "")
+                throw new NewTodoIsEmptyException();
 
             var tmpTodo = new Todo(UUID.randomUUID(), newTodo.getTodoText());
             if (tmpTodo.getCreatedDateTime() == null) {
@@ -83,6 +91,8 @@ public class TodoService {
             todo = repository.save(tmpTodo);
 
             LOGGER.debug("Saved a new TODO: {}", todo);
+        } catch (NewTodoIsEmptyException ex) {
+            throw ex;
         } catch (Exception ex) {
             LOGGER.error("Todo creation failed: {}\n{}", ex.getMessage(), ex);
             throw new TodoCreationFailedException(ex.getMessage());

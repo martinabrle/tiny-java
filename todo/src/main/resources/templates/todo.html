@@ -1,37 +1,40 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html lang="en">
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Todo 3 Tier Demo App</title>
-    <link rel="stylesheet" href="todo.css">
+    <meta charset="utf-8" />
+    <link rel="icon" href="favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="Demo Java Thymeleaf site" />
+    <title>Demo Java site App</title>
+    <link rel="stylesheet" href="todo.css" />
     <script src="todo.js" defer></script>
-    <script th:inline="javascript">
-      let checkStatusAsync = /*[[${checkStatusAsync}]]*/ false;
-      let trackingId = /*[[${trackingId}]]*/ "";
-    </script>
   </head>
-
   <body>
-    <div>
-      <div>
-        <form method="post" th:action="@{/create}" th:object="${newTodo}">
-          <input id="todoText" placeholder="Enter the next task" required type="text" th:field="*{todoText}" />
-          <input type="submit" value="Create Task" />
-        </form>
-      </div>
-      <div id="message-box" th:if="${!#strings.isEmpty(message)}" th:classappend="${#strings.isEmpty(status) ? 'none' : status}">
-        <p id="message-text" th:text="*{message}"></p>
-      </div>
-      <div id="todo-list">
-        <div th:if="${todos.empty && !strings.equals(status,'error')}">
-          <p>All TO DOs completed. Yay!</p>
-        </div>
-        <div th:if="${!todos.empty}" th:each="todo : ${todos}" th:key="${todo.id}" class="todo-item" th:classappend="${todo.id==createdTodoId ? 'created' : ''}">
-          <div th:text="${todo.createdDateTimeShortString}">text</div>
-          <div th:text="${todo.todoText}">text</div>
-          <div th:text="${todo.status}">text</div>
-        </div>
+    <div id="root">
+      <div id="container">
+        <section id="todo-form" th:if="${createTodoMode}" >
+          <form id="todo-new-todo-form" method="post" th:action="@{/}" th:object="${newTodo}">
+            <div class="form-control">
+              <label id="todo-label" for="new-todo-input-text">New task</label>
+              <input type="text" id="new-todo-input-text" required th:field="*{todoText}">
+            </div>
+            <div id="new-todo-form-message-box" class="message-box" th:if="${!#strings.isEmpty(message)}" th:classappend="${#strings.isEmpty(status) ? 'none' : status}">
+              <div id="new-todo-form-message-text" class="message-text" th:text="*{message}">Message text</div>
+              <a href="#" class="close-icon"><img src="cancel.svg" title="Clear" alt="Clear message" class="close-img"></a>
+            </div>
+            <button type="submit" class="button" value="submit" id="todo-save-button">Save</button>
+            <button type="submit" class="button" value="cancel" id="todo-cancel-button">Cancel</button>
+          </form>
+        </section>
+        <section id="todos">
+          <form th:if="${!createTodoMode}" method="get" action="/create" id="todo-show-form"><button type="submit" class="button" id="todo-show-form-button">Add Task</button></form>
+          <ul id="todo-list" th:each="todo : ${todos}" th:key="${todo.id}" class="todo-list">
+            <li class="todo-item">
+              <input type="checkbox" id="completed" class="complete-checkbox"/><span th:text="${todo.todoText}">todo text</span><div class="todo-status" th:text="${todo.statusText}"></div>
+            </li>
+          </ul>
+        </section>
       </div>
     </div>
   </body>

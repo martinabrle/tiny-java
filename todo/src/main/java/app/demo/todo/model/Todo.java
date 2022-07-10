@@ -101,11 +101,17 @@ public class Todo {
         return (completedDateTime != null ? "Completed" : "Pending");
     }
 
-    public String getCreatedDateTimeShortString() {
-        if (createdDateTime == null)
+    public String getStatusText() {
+        if (createdDateTime == null) {
             return "";
-        SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss ");
-        return "Created: " + sdf.format(createdDateTime);
+        }
+
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.YYYY");
+
+        if (completedDateTime != null) {
+            return "created: " + sdf.format(createdDateTime) + ", " + sdf.format(completedDateTime);
+        }
+        return "created: " + sdf.format(createdDateTime);
     }
 
     @Override

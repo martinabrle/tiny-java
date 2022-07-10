@@ -11,7 +11,7 @@ function saveTodo() {
 
   showAddTaskFormMessage("saving", "Saving the new Todo...", 2000);
   
-  fetch(`/api/todos/`, {
+  fetch(`/todos/`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -226,7 +226,7 @@ function addTodoToList(todo) {
 
   let newTodoStatusTextDivElement = document.createElement("div");
   newTodoStatusTextDivElement.classList.add("todo-status");
-  newTodoStatusTextDivElement.appendChild(document.createTextNode(" - " + todo.statusText));
+  newTodoStatusTextDivElement.appendChild(document.createTextNode(" - " + todo.status));
   newTodoElement.appendChild(newTodoStatusTextDivElement);
 
   let todoListElement = document.getElementById("todo-list");
@@ -257,9 +257,6 @@ function showAddTodoForm() {
 
   let formElememt = document.createElement("form");
   formElememt.setAttribute("id", "todo-new-todo-form");
-  formElememt.setAttribute("method", "post");
-  formElememt.setAttribute("action", "/");
-
   addTodoSectionElememt.appendChild(formElememt);
 
   let formControlDivElement = document.createElement("div");

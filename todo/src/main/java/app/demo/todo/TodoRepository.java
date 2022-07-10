@@ -4,6 +4,6 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import app.demo.todo.model.Todo;
 
-interface TodoRepository extends JpaRepository<Todo, UUID> {
+public interface TodoRepository extends JpaRepository<Todo, UUID> {
 
 }
