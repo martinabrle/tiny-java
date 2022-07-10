@@ -12,28 +12,26 @@
   </head>
   <body>
     <div id="root">
-      <div id="container">
-        <form method="post" action="/">
-          <section id="todos">
-            <div id="todos-command-bar">
-              <button type="submit" class="button" value="add-new" id="todo-show-form-button">Add Task</button>
-              <button type="submit" class="button right" value="update-refresh" id="todo-update-refresh-todos-button" >Refresh</button>
-            </div>
-            <ul id="todo-list" class="todo-list">
-              <li class="todo-item">
-                <input type="checkbox" id="completed-1" class="complete-checkbox"/>
-                Start the course!
-                <div class="todo-status">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- created on 1.5.2010, completed on 23.5.2010</div>
-              </li>
-              <li class="todo-item">
-                <input type="checkbox" id="completed-2" class="complete-checkbox"/>
-                Finish the course!
-                <div class="todo-status">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- created on 1.5.2010, completed on 23.5.2010</div>
-              </li>
-            </ul>
-          </section>
-        </form>
-      </div>
+      <form  id="container" method="post" action="/">
+        <section id="todos">
+          <div id="todos-command-bar">
+            <button type="submit" class="button" value="add-new" id="todo-show-form-button">Add Task</button>
+            <button type="submit" class="button right" value="update-refresh" id="todo-update-refresh-todos-button" >Refresh</button>
+          </div>
+          <ul id="todo-list" class="todo-list">
+            <li class="todo-item">
+              <input type="checkbox" id="completed-1" class="complete-checkbox"/>
+              Start the course!
+              <div class="todo-status">created on 1.5.2010, completed on 23.5.2010</div>
+            </li>
+            <li class="todo-item">
+              <input type="checkbox" id="completed-2" class="complete-checkbox"/>
+              Finish the course!
+              <div class="todo-status">created on 1.5.2010, completed on 23.5.2010</div>
+            </li>
+          </ul>
+        </section>
+      </form>
     </div>
   </body>
 </html>
