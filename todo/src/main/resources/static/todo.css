@@ -16,7 +16,7 @@ body {
   margin: 3rem auto;
 }
 
-#todo-new-todo-form {
+#todo-create-form {
   width: 30rem;
   max-width: 90%;
   margin: 3rem auto;
@@ -85,6 +85,10 @@ body {
   cursor: pointer;
 }
 
+.button.right {
+  float: right;
+}
+
 .button:focus {
   outline: none;
 }
@@ -109,7 +113,6 @@ body {
 .todo-status {
   font-style: italic;
   font-size: 80%;
-  margin-left: 1.8rem;
 }
 
 .message-box {
@@ -125,13 +128,13 @@ body {
   margin-bottom: 15px;
 }
 
-.message-box.error {
-  color: red;
-}
-
 .message-text {
   margin-left: 5px;
- }
+}
+
+.message-text.error {
+  color: red;
+}
 
 .close-img {
   width: 20px;
@@ -139,11 +142,11 @@ body {
 }
 
 .close-icon {
-  float:right;
-  position:absolute;
+  float: right;
+  position: absolute;
   right: 0px;
   top: 0px;
-  margin-top:-15px;
+  margin-top: -15px;
   margin-right: -11px;
   cursor: pointer;
   width: 20px;

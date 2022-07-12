@@ -4,38 +4,49 @@
     <meta charset="utf-8" />
     <link rel="icon" href="favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
     <meta name="description" content="Demo Java Thymeleaf site" />
     <title>Demo Java site App</title>
     <link rel="stylesheet" href="todo.css" />
-    <script src="todo.js" defer></script>
+    <!-- <script src="todo.js" defer></script> -->
   </head>
   <body>
     <div id="root">
-      <div id="container">
-        <section id="todo-form" th:if="${createTodoMode}" >
-          <form id="todo-new-todo-form" method="post" th:action="@{/}" th:object="${newTodo}">
+      <form id="container" method="post" th:action="@{/}" th:object="${page}">
+        <section th:if="${createMode}" id="todo-create" >
+          <div id="todo-create-form">
             <div class="form-control">
               <label id="todo-label" for="new-todo-input-text">New task</label>
-              <input type="text" id="new-todo-input-text" required th:field="*{todoText}">
+              <input type="text" id="new-todo-input-text" th:field="*{todoText}">
             </div>
-            <div id="new-todo-form-message-box" class="message-box" th:if="${!#strings.isEmpty(message)}" th:classappend="${#strings.isEmpty(status) ? 'none' : status}">
-              <div id="new-todo-form-message-text" class="message-text" th:text="*{message}">Message text</div>
-              <a href="#" class="close-icon"><img src="cancel.svg" title="Clear" alt="Clear message" class="close-img"></a>
+            <div id="todo-create-form-message-box" class="message-box" th:if="${!#strings.isEmpty(formMessage)}">
+              <div id="todo-create-form-message-box-text" class="message-text" th:text="${formMessage}" th:classappend="${#strings.isEmpty(formStatus) ? 'none' : status}">Message text</div>
+              <a href="/add-new" class="close-icon"><img src="cancel.svg" title="Clear" alt="Clear message" class="close-img"></a>
             </div>
-            <button type="submit" class="button" value="submit" id="todo-save-button">Save</button>
-            <button type="submit" class="button" value="cancel" id="todo-cancel-button">Cancel</button>
-          </form>
+            <button type="submit" class="button" th:formaction="@{/submit}" id="todo-save-button">Save</button>
+            <button type="submit" class="button" th:formaction="@{/cancel}" id="todo-cancel-button">Cancel</button>
+          </div>
         </section>
         <section id="todos">
-          <form th:if="${!createTodoMode}" method="get" action="/create" id="todo-show-form"><button type="submit" class="button" id="todo-show-form-button">Add Task</button></form>
-          <ul id="todo-list" th:each="todo : ${todos}" th:key="${todo.id}" class="todo-list">
-            <li class="todo-item">
-              <input type="checkbox" id="completed" class="complete-checkbox"/><span th:text="${todo.todoText}">todo text</span><div class="todo-status" th:text="${todo.statusText}"></div>
+          <div th:if="${!createMode}" id="todos-command-bar" style="display: unset;">
+              <button type="submit" class="button" th:formaction="@{/add-new}" id="todos-create-button">Add Task</button>
+            <button type="submit" class="button right" th:formaction="@{/update-refresh}" id="todos-update-refresh-button">Refresh</button>
+          </div>
+          <div id="todos-message-box" class="message-box" th:if="${!#strings.isEmpty(todoListMessage) || (!#strings.isEmpty(formMessage) && !createMode)}">
+            <div th:if="${!#strings.isEmpty(formMessage)}" id="todos-form-message-box-text" class="message-text" th:classappend="${#strings.isEmpty(formStatus) ? 'none' : status}" th:text="${formMessage}">Message text</div>
+            <div th:if="${!#strings.isEmpty(todoListMessage)}" id="todos-message-box-text" class="message-text" th:classappend="${#strings.isEmpty(todoListStatus) ? 'none' : status}" th:text="${todoListMessage}">Message text</div>
+            <a href="/add-new" class="close-icon"><img src="cancel.svg" title="Clear" alt="Clear message" class="close-img"></a>
+          </div>
+          <ul id="todo-list" class="todo-list">
+            <li class="todo-item" th:if="*{todoList != null}" th:each="todo, itemStat : *{todoList}" th:key="${todo.id}" >
+              <input type="checkbox" th:name="|todoList[${itemStat.index}].completed|" th:checked="${todo.completed}" class="complete-checkbox"/>
+              <span th:text="${todo.todoText}">todo text</span>
+              <div class="todo-status" th:text="${todo.statusText}">status text</div>
+              <input hidden th:name="|todoList[${itemStat.index}].id|" th:value="${todo.getId()}"/>
+              <input hidden th:name="|todoList[${itemStat.index}].completedOrig|" th:value="${todo.completedOrig}"/>
             </li>
           </ul>
         </section>
-      </div>
+      </form>
     </div>
   </body>
 </html>

@@ -1,4 +1,4 @@
-package app.demo.todo.model;
+package app.demo.todo.model.UI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,23 +22,35 @@ public class TodoList extends ArrayList<Todo> {
         }
         // This is just for the impossible case where the ObjectMapper throws an
         // exception
-        String retVal = "{ ";
+        String retVal = "[ ";
         for (int i = 0; i < this.size(); i++) {
             if (i > 0)
                 retVal += ",";
             retVal += this.get(i).toString();
         }
-        retVal += " }";
+        retVal += " ]";
         return retVal;
     }
 
-    public static final TodoList fromTodoList(final List<Todo> todos) {
+    public static final TodoList fromDBTodoListUI(final List<Todo> todos) {
         TodoList retVal = null;
 
         if (todos != null) {
             retVal = new TodoList();
             for (Todo e : todos) {
                 retVal.add(e);
+            }
+        }
+        return retVal;
+    }
+
+    public static final TodoList fromTodoListDB(final List<app.demo.todo.model.DB.Todo> todos) {
+        TodoList retVal = null;
+
+        if (todos != null) {
+            retVal = new TodoList();
+            for (app.demo.todo.model.DB.Todo e : todos) {
+                retVal.add(new Todo(e));
             }
         }
         return retVal;

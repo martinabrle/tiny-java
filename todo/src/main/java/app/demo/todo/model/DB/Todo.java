@@ -1,4 +1,4 @@
-package app.demo.todo.model;
+package app.demo.todo.model.DB;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,7 +9,8 @@ import javax.persistence.Id;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.text.SimpleDateFormat;
+import app.demo.todo.utils.Utils;
+
 import java.util.Date;
 import java.util.Objects;
 import java.util.UUID;
@@ -20,27 +21,27 @@ public class Todo {
 
     private @Id UUID id;
 
-    private Date createdDateTime;
-
     private String todoText;
 
+    private Date createdDateTime;
+    
     private Date completedDateTime;
 
     public Todo() {
     }
 
-    public Todo(UUID id, Date createdDateTime, String todoText) {
+    public Todo(UUID id, String todoText, Date createdDateTime, Date completedDateTime) {
         this.id = id;
+        this.completedDateTime = completedDateTime;
         this.createdDateTime = createdDateTime;
         this.todoText = todoText;
-        this.completedDateTime = null;
     }
 
-    public Todo(UUID id, String todoText) {
-        this.id = id;
-        this.createdDateTime = null;
-        this.todoText = todoText;
-        this.completedDateTime = null;
+    public Todo(app.demo.todo.model.UI.Todo todo) {
+        this.id = todo.getId();
+        this.createdDateTime = todo.getCreatedDateTime();
+        this.completedDateTime = todo.getCompletedDateTime();
+        this.todoText = todo.getTodoText();
     }
 
     @Override
@@ -97,23 +98,6 @@ public class Todo {
         this.completedDateTime = completedDateTime;
     }
 
-    public String getStatus() {
-        return (completedDateTime != null ? "Completed" : "Pending");
-    }
-
-    public String getStatusText() {
-        if (createdDateTime == null) {
-            return "";
-        }
-
-        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.YYYY");
-
-        if (completedDateTime != null) {
-            return "created: " + sdf.format(createdDateTime) + ", " + sdf.format(completedDateTime);
-        }
-        return "created: " + sdf.format(createdDateTime);
-    }
-
     @Override
     public String toString() {
         try {
@@ -125,9 +109,9 @@ public class Todo {
         // exception
         return "{" +
                 "id=" + id +
-                ", todoText='" + (todoText != null ? todoText : "").replace("\'", "\\'") + '\'' +
-                ", created='" + createdDateTime + '\'' +
-                ", completed='" + completedDateTime + '\'' +
+                ", todoText='" + Utils.toJsonValueContent(todoText) + '\'' +
+                ", createdDateTime='" + Utils.toJsonValueContent(createdDateTime) + '\'' +
+                ", completedDateTime='" + Utils.toJsonValueContent(completedDateTime) + '\'' +
                 '}';
     }
 }

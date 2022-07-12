@@ -1,4 +1,4 @@
-package app.demo.todo.model;
+package app.demo.todo.model.UI;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -6,13 +6,15 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import app.demo.todo.utils.Utils;
+
 public class NewTodo {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(NewTodo.class);
 
     private String todoText;
 
-    public NewTodo(String todoText, String processingType) {
+    public NewTodo(String todoText) {
         this.todoText = todoText;
     }
 
@@ -37,7 +39,7 @@ public class NewTodo {
         // This is just for the impossible case where the ObjectMapper throws an
         // exception
         return "{" +
-                " todoText='" + (todoText != null ? todoText : "").replace("\'", "\\'") + '\'' +
+                " todoText:'" + Utils.toJsonValueContent(todoText) + "\' " +
                 '}';
     }
 }

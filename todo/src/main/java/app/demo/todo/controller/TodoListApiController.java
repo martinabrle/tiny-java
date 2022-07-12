@@ -21,9 +21,9 @@ import app.demo.todo.exception.NewTodoIsEmptyException;
 import app.demo.todo.exception.TodoCreationFailedException;
 import app.demo.todo.exception.TodoNotFoundException;
 import app.demo.todo.exception.TodosRetrievalFailedException;
-import app.demo.todo.model.NewTodo;
-import app.demo.todo.model.Todo;
-import app.demo.todo.model.TodoList;
+import app.demo.todo.model.UI.NewTodo;
+import app.demo.todo.model.UI.Todo;
+import app.demo.todo.model.UI.TodoList;
 
 @Controller
 @RequestMapping(value = {"/api"})
@@ -42,7 +42,7 @@ public class TodoListApiController {
 
 		TodoList retVal = null;
 		try {
-			retVal = TodoService.GetTodos(repository);
+			retVal = TodoService.GetTodosUI(repository);
 		} catch (TodosRetrievalFailedException ex) {
 			return new ResponseEntity<TodoList>(HttpStatus.BAD_REQUEST);
 		} catch (Exception ex) {
@@ -59,7 +59,7 @@ public class TodoListApiController {
 
 		Todo retVal = null;
 		try {
-			retVal = TodoService.GetTodo(repository, UUID.fromString(id));
+			retVal = TodoService.GetTodoUI(repository, UUID.fromString(id));
 		} catch (TodoNotFoundException ex) {
 			return new ResponseEntity<Todo>(HttpStatus.NOT_FOUND);
 		} catch (TodosRetrievalFailedException ex) {
@@ -78,7 +78,10 @@ public class TodoListApiController {
 
 		Todo retVal = null;
 		try {
-			retVal = TodoService.CreateTodo(repository, newTodo);
+			if (newTodo == null) {
+				throw new NewTodoIsEmptyException();
+			}
+			retVal = TodoService.CreateTodoUI(repository, newTodo.getTodoText());
 		} catch (NewTodoIsEmptyException ex) {
 			return new ResponseEntity<Todo>(HttpStatus.BAD_REQUEST);
 		} catch (TodoCreationFailedException ex) {
