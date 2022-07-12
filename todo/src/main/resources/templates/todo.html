@@ -19,7 +19,7 @@
               <input type="text" id="new-todo-input-text" th:field="*{todoText}">
             </div>
             <div id="todo-create-form-message-box" class="message-box" th:if="${!#strings.isEmpty(formMessage)}">
-              <div id="todo-create-form-message-box-text" class="message-text" th:text="${formMessage}" th:classappend="${#strings.isEmpty(formStatus) ? 'none' : status}">Message text</div>
+              <div id="todo-create-form-message-box-text" class="message-text" th:text="${formMessage}" th:classappend="${#strings.isEmpty(formStatus) ? 'none' : formStatus}">Message text</div>
               <a href="/add-new" class="close-icon"><img src="cancel.svg" title="Clear" alt="Clear message" class="close-img"></a>
             </div>
             <button type="submit" class="button" th:formaction="@{/submit}" id="todo-save-button">Save</button>
@@ -32,8 +32,8 @@
             <button type="submit" class="button right" th:formaction="@{/update-refresh}" id="todos-update-refresh-button">Refresh</button>
           </div>
           <div id="todos-message-box" class="message-box" th:if="${!#strings.isEmpty(todoListMessage) || (!#strings.isEmpty(formMessage) && !createMode)}">
-            <div th:if="${!#strings.isEmpty(formMessage)}" id="todos-form-message-box-text" class="message-text" th:classappend="${#strings.isEmpty(formStatus) ? 'none' : status}" th:text="${formMessage}">Message text</div>
-            <div th:if="${!#strings.isEmpty(todoListMessage)}" id="todos-message-box-text" class="message-text" th:classappend="${#strings.isEmpty(todoListStatus) ? 'none' : status}" th:text="${todoListMessage}">Message text</div>
+            <div th:if="${!#strings.isEmpty(formMessage)}" id="todos-form-message-box-text" class="message-text" th:classappend="${#strings.isEmpty(formStatus) ? 'none' : formStatus}" th:text="${formMessage}">Message text</div>
+            <div th:if="${!#strings.isEmpty(todoListMessage)}" id="todos-message-box-text" class="message-text" th:classappend="${#strings.isEmpty(todoListStatus) ? 'none' : todoListStatus}" th:text="${todoListMessage}">Message text</div>
             <a href="/add-new" class="close-icon"><img src="cancel.svg" title="Clear" alt="Clear message" class="close-img"></a>
           </div>
           <ul id="todo-list" class="todo-list">
