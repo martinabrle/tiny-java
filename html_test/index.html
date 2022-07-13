@@ -10,28 +10,97 @@
     <link rel="stylesheet" href="todo.css" />
     <script src="todo.js" defer></script>
   </head>
+
   <body>
-    <div id="root">
-      <form  id="container" method="post" action="/">
-        <section id="todos">
-          <div id="todos-command-bar">
-            <button type="submit" class="button" value="add-new" id="todo-show-form-button">Add Task</button>
-            <button type="submit" class="button right" value="update-refresh" id="todo-update-refresh-todos-button" >Refresh</button>
+    <form id="container" method="post" action="/">
+      <section id="todo-create">
+        <div id="todo-create-form">
+          <div class="form-control">
+            <label id="todo-create-form-text-label" for="todo-create-form-text-input">New task</label>
+            <input type="text" id="todo-create-form-text-input" name="todoText" value="" />
           </div>
-          <ul id="todo-list" class="todo-list">
-            <li class="todo-item">
-              <input type="checkbox" id="completed-1" class="complete-checkbox"/>
-              Start the course!
-              <div class="todo-status">created on 1.5.2010, completed on 23.5.2010</div>
-            </li>
-            <li class="todo-item">
-              <input type="checkbox" id="completed-2" class="complete-checkbox"/>
-              Finish the course!
-              <div class="todo-status">created on 1.5.2010, completed on 23.5.2010</div>
-            </li>
-          </ul>
-        </section>
-      </form>
-    </div>
+          <button type="submit" class="button" formaction="/submit" id="todo-save-button">Save</button>
+          <button type="submit" class="button" formaction="/cancel" id="todo-cancel-button">Cancel</button>
+        </div>
+      </section>
+      <section id="todos">
+        <div id="todos-command-bar" style="display: unset">
+          <button type="submit" class="button" formaction="/add-new" id="todos-create-button">Add Task</button>
+          <button type="submit" class="button right" formaction="/update-refresh" id="todos-update-refresh-button">Refresh</button>
+        </div>
+        <ul id="todo-list" class="todo-list">
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000010">
+            <input type="checkbox" name="todoList[35].completed" class="complete-checkbox" />
+            <span>Deploy a multi tier Spring boot app into Azure</span>
+            <div class="todo-status">created: 22.04.2022</div>
+            <input hidden="" name="todoList[35].id" value="00000000-0000-0000-0000-000000000010" />
+            <input hidden="" name="todoList[35].completedOrig" value="false" />
+          </li>
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000009">
+            <input type="checkbox" name="todoList[36].completed" class="complete-checkbox" />
+            <span>Learn Spring boot</span>
+            <div class="todo-status">created: 21.11.2019</div>
+            <input hidden="" name="todoList[36].id" value="00000000-0000-0000-0000-000000000009" />
+            <input hidden="" name="todoList[36].completedOrig" value="false" />
+          </li>
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000008">
+            <input type="checkbox" name="todoList[37].completed" class="complete-checkbox" />
+            <span>Keep escaping death in the most Tony Stark way possible</span>
+            <div class="todo-status">created: 11.04.2019</div>
+            <input hidden="" name="todoList[37].id" value="00000000-0000-0000-0000-000000000008" />
+            <input hidden="" name="todoList[37].completedOrig" value="false" />
+          </li>
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000007">
+            <input type="checkbox" name="todoList[38].completed" class="complete-checkbox" />
+            <span>Make Stark Industries a massive success</span>
+            <div class="todo-status">created: 16.04.2018</div>
+            <input hidden="" name="todoList[38].id" value="00000000-0000-0000-0000-000000000007" />
+            <input hidden="" name="todoList[38].completedOrig" value="false" />
+          </li>
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000006">
+            <input type="checkbox" name="todoList[39].completed" class="complete-checkbox" />
+            <span>Put Hawkeye on the right path</span>
+            <div class="todo-status">created: 22.03.2017</div>
+            <input hidden="" name="todoList[39].id" value="00000000-0000-0000-0000-000000000006" />
+            <input hidden="" name="todoList[39].completedOrig" value="false" />
+          </li>
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000005">
+            <input type="checkbox" name="todoList[40].completed" class="complete-checkbox" />
+            <span>Form the Avengers</span>
+            <div class="todo-status">created: 23.02.2015</div>
+            <input hidden="" name="todoList[40].id" value="00000000-0000-0000-0000-000000000005" />
+            <input hidden="" name="todoList[40].completedOrig" value="false" />
+          </li>
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000004">
+            <input type="checkbox" name="todoList[41].completed" class="complete-checkbox" />
+            <span>Help build S.H.I.E.L.D.</span>
+            <div class="todo-status">created: 03.12.2013</div>
+            <input hidden="" name="todoList[41].id" value="00000000-0000-0000-0000-000000000004" />
+            <input hidden="" name="todoList[41].completedOrig" value="false" />
+          </li>
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000003">
+            <input type="checkbox" name="todoList[42].completed" class="complete-checkbox" />
+            <span>Become a Hero</span>
+            <div class="todo-status">created: 08.01.2013</div>
+            <input hidden="" name="todoList[42].id" value="00000000-0000-0000-0000-000000000003" />
+            <input hidden="" name="todoList[42].completedOrig" value="false" />
+          </li>
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000002">
+            <input type="checkbox" name="todoList[43].completed" class="complete-checkbox" />
+            <span>Invent the first Iron Man Suit</span>
+            <div class="todo-status">created: 08.03.2012</div>
+            <input hidden="" name="todoList[43].id" value="00000000-0000-0000-0000-000000000002" />
+            <input hidden="" name="todoList[43].completedOrig" value="false" />
+          </li>
+          <li class="todo-item" key="00000000-0000-0000-0000-000000000001">
+            <input type="checkbox" name="todoList[44].completed" class="complete-checkbox" />
+            <span>Create Stark Enterprises</span>
+            <div class="todo-status">created: 30.12.2011</div>
+            <input hidden="" name="todoList[44].id" value="00000000-0000-0000-0000-000000000001" />
+            <input hidden="" name="todoList[44].completedOrig" value="false" />
+          </li>
+        </ul>
+      </section>
+    </form>
   </body>
 </html>

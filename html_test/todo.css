@@ -16,7 +16,7 @@ body {
   margin: 3rem auto;
 }
 
-#todo-new-todo-form {
+#todo-create-form {
   width: 30rem;
   max-width: 90%;
   margin: 3rem auto;
@@ -163,7 +163,7 @@ body {
   height: 20px;
 }
 
-.new-todo-progress-bar {
+.progress-bar {
   width: 100%;
   margin: 0px 0px 10px 0px;
 }
