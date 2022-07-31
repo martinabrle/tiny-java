@@ -1,4 +1,4 @@
-package app.demo.todo.model.UI;
+package app.demo.todo.dto;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,11 +41,11 @@ public class Todo {
 
     }
 
-    public Todo(app.demo.todo.model.DB.Todo todo) {
+    public Todo(app.demo.todo.entity.Todo todo) {
         initFromTodo(todo);
     }
     
-    public void initFromTodo(app.demo.todo.model.DB.Todo todo) {
+    public void initFromTodo(app.demo.todo.entity.Todo todo) {
         this.id = todo.getId();
         this.createdDateTime = todo.getCreatedDateTime();
         this.completedDateTime = todo.getCompletedDateTime();
@@ -151,11 +151,11 @@ public class Todo {
         // This is just for the impossible case where the ObjectMapper throws an
         // exception
         return "{" +
-                "id=" + id +
-                ", todoText='" + Utils.toJsonValueContent(todoText) + '\'' +
-                ", createdDateTime='" + Utils.toJsonValueContent(createdDateTime) + '\'' +
-                ", completedDateTime='" + Utils.toJsonValueContent(completedDateTime) + '\'' +
-                ", completed='" + completed + '\'' +
-                '}';
+                "'id':" + id +
+                ", 'todoText':'" + Utils.toJsonValueContent(todoText) + "'" +
+                ", 'createdDateTime':'" + Utils.toJsonValueContent(createdDateTime) + "'" +
+                ", 'completedDateTime':'" + Utils.toJsonValueContent(completedDateTime) + "'" +
+                ", 'completed':" + completed + "" +
+                "}";
     }
 }

@@ -1,15 +1,19 @@
 "use-strict";
 
 function saveTodo() {
-  let todoCreateFormTextInput = document.getElementById("todo-create-form-text-input");
-  let newTodoText = todoCreateFormTextInput.value;
+  let newTodoInputTextElement = document.getElementById("new-todo-input-text");
+  let newTodoText = newTodoInputTextElement.value;
   if (newTodoText == undefined || newTodoText.trim() == "") {
-    showTodoCreateFormMessage("error", "New Todo text should not be empty.", 10000);
+    showAddTaskFormMessage(
+      "error",
+      "New Todo text should not be empty.",
+      10000
+    );
     return;
   }
   //debug only addTodoToList({ id: 1, todoText: newTodoText, status: 'created on 21.2.3004'});
 
-  showTodoCreateFormMessage("saving", "Saving the new Todo...");
+  showAddTaskFormMessage("saving", "Saving the new Todo...", 2000);
 
   fetch(`/todos/`, {
     method: "POST",
@@ -24,25 +28,43 @@ function saveTodo() {
         response
           .text()
           .then((text) => {
-            console.log(`Received '${response.status}', task has been saved, contining with parsing.`);
+            console.log(
+              `Received '${response.status}', task has been saved, contining with parsing.`
+            );
             try {
               let jsonTodo = JSON.parse(text);
-              if (jsonTodo == null || jsonTodo.todoText === undefined || jsonTodo.todoText == null || jsonTodo.todoText === "") {
+              if (
+                jsonTodo == null ||
+                jsonTodo.todoText === undefined ||
+                jsonTodo.todoText == null ||
+                jsonTodo.todoText === ""
+              ) {
                 throw "Empty task received from the server as a confirmation";
               }
 
               addTodoToList(jsonTodo);
 
               let todoMsgText = jsonTodo.todoText;
-              if (todoMsgText.length > 5) todoMsgText = todoMsgText.substring(todoMsgText, 5) + "...";
+              if (todoMsgText.length > 5)
+                todoMsgText = todoMsgText.substring(todoMsgText, 5) + "...";
 
-              hideTodoCreateSection();
+              showAddTaskFormMessage(
+                "saved",
+                "Task '" + todoMsgText + "' has beed saved.",
+                2000
+              );
+              hideAddTodoForm();
               showCommandBar();
-              showTodosFormMessage("saved", "Task '" + todoMsgText + "' has beed saved.", 2000);
             } catch (ex) {
               //Unable to parse, but the task has been saved
-              console.log(`An exception '${ex}' ocurred, but the task was most likely saved.`);
-              showTodoCreateFormMessage("error", "Task has beed saved, but the server response is malformated. Try to refresh the page.", 20000);
+              console.log(
+                `An exception '${ex}' ocurred, but the task was most likely saved.`
+              );
+              showAddTaskFormMessage(
+                "error",
+                "Task has beed saved, but the server response is malformated. Try to refresh the page.",
+                20000
+              );
             }
           })
           .catch((reason) => {
@@ -52,7 +74,11 @@ function saveTodo() {
               scheduleCheckTodoAsyncSaved(trackingId, repeats - 4, 500);
             } else {
               console.log(`An exception '${reason}' ocurred, giving up.`);
-              showTodoCreateFormMessage("error", "An error has occured while retrieving the task status. Please try saving the task again later.", 20000);
+              showAddTaskFormMessage(
+                "error",
+                "An error has occured while retrieving the task status. Please try again later.",
+                20000
+              );
             }
           });
       } else {
@@ -68,48 +94,59 @@ function saveTodo() {
           timedOut = false;
         }
         if (timedOut) {
-          console.log(`Received '${response.status}' and tried too many times already, giving up.`);
-          showTodoCreateFormMessage("error", "An error has occured while saving the task. Please try again later.", 20000);
+          console.log(
+            `Received '${response.status}' and tried too many times already, giving up.`
+          );
+          showAddTaskFormMessage(
+            "error",
+            "An error has occured while saving the task. Please try again later.",
+            20000
+          );
         }
       }
     })
     .catch((reason) => {
       console.log(`Exception '${reason}', occured, giving up.`);
-      showTodoCreateFormMessage("error", "An error has occured while saving the task. Please try again later.", 20000);
+      showAddTaskFormMessage(
+        "error",
+        "An error has occured while saving the task. Please try again later.",
+        20000
+      );
     });
 }
 
-function hideTodoCreateFormMessage() {
-  let messageBox = document.getElementById("todo-create-form-message-box");
+function hideAddTaskFormMessage() {
+  let messageBox = document.getElementById("new-todo-form-message-box");
   if (messageBox == undefined) {
     return;
   }
   messageBox.parentElement.removeChild(messageBox);
 }
 
-function onCloseTodoCreateFormMessageClicked(e) {
+function onCloseAddTaskFormMessageCloseClicked(e) {
   e.preventDefault();
-  hideTodoCreateFormMessage();
+  hideAddTaskFormMessage();
 }
+let messageHidingTimer = 0;
 
-function showTodoCreateFormMessage(status, msgText, hideAfterMs) {
-  if (todoCreateFormMessageTimer) {
-    clearTimeout(todoCreateFormMessageTimer);
-    todoCreateFormMessageTimer = 0;
+function showAddTaskFormMessage(status, msgText, hideAfterMs) {
+  if (messageHidingTimer) {
+    clearTimeout(messageHidingTimer);
+    messageHidingTimer = 0;
   }
 
-  let messageBox = document.getElementById("todo-create-form-message-box");
+  let messageBox = document.getElementById("new-todo-form-message-box");
   if (messageBox == undefined) {
-    let todoForm = document.getElementById("todo-create-form");
+    let newTodoForm = document.getElementById("todo-new-todo-form");
     let todoSaveButton = document.getElementById("todo-save-button");
 
     let messageBox = document.createElement("div");
-    messageBox.setAttribute("id", "todo-create-form-message-box");
+    messageBox.setAttribute("id", "new-todo-form-message-box");
     messageBox.classList.add("message-box");
     messageBox.classList.add(status);
 
     let messageText = document.createElement("div");
-    messageText.setAttribute("id", "todo-create-form-message-box-text");
+    messageText.setAttribute("id", "new-todo-form-message-text");
     messageText.classList.add("message-text");
 
     messageText.appendChild(document.createTextNode(msgText));
@@ -126,34 +163,47 @@ function showTodoCreateFormMessage(status, msgText, hideAfterMs) {
     closeImg.setAttribute("alt", "Clear message");
     closeImg.classList.add("close-img");
     closeButton.appendChild(closeImg);
-    closeButton.addEventListener("click", onCloseTodoCreateFormMessageClicked);
+    closeButton.addEventListener(
+      "click",
+      onCloseAddTaskFormMessageCloseClicked
+    );
     messageBox.appendChild(closeButton);
 
-    todoForm.insertBefore(messageBox, todoSaveButton);
+    newTodoForm.insertBefore(messageBox, todoSaveButton);
 
     if (status === "saving") {
       let progressBar = document.createElement("progress");
-      progressBar.setAttribute("id", "todo-create-form-message-box-progress-bar");
-      progressBar.classList.add("progress-bar");
-      todoForm.insertBefore(progressBar, todoSaveButton);
+      progressBar.setAttribute("id", "new-todo-form-message-box-progress-bar");
+      progressBar.classList.add("new-todo-progress-bar");
+      newTodoForm.insertBefore(progressBar, todoSaveButton);
     }
   } else {
-    document.getElementById("todo-create-form-message-box-text").innerText = msgText;
+    document.getElementById("new-todo-form-message-text").innerText = msgText;
 
     if (messageBox.classList.contains(status)) return;
 
-    if (messageBox.classList.contains("saving")) messageBox.classList.remove("saving");
-    if (messageBox.classList.contains("saved")) messageBox.classList.remove("saved");
-    if (messageBox.classList.contains("info")) messageBox.classList.remove("info");
-    if (messageBox.classList.contains("none")) messageBox.classList.remove("none");
-    if (messageBox.classList.contains("error")) messageBox.classList.remove("error");
+    if (messageBox.classList.contains("saving"))
+      messageBox.classList.remove("saving");
+    if (messageBox.classList.contains("saved"))
+      messageBox.classList.remove("saved");
+    if (messageBox.classList.contains("info"))
+      messageBox.classList.remove("info");
+    if (messageBox.classList.contains("none"))
+      messageBox.classList.remove("none");
+    if (messageBox.classList.contains("error"))
+      messageBox.classList.remove("error");
 
-    let progressBar = document.getElementById("todo-create-form-message-box-progress-bar");
+    let progressBar = document.getElementById(
+      "new-todo-form-message-box-progress-bar"
+    );
     if (status === "saving") {
       if (progressBar == undefined) {
         let progressBar = document.createElement("progress");
-        progressBar.setAttribute("id", "todo-create-form-message-box-progress-bar");
-        progressBar.classList.add("progress-bar");
+        progressBar.setAttribute(
+          "id",
+          "new-todo-form-message-box-progress-bar"
+        );
+        progressBar.classList.add("new-todo-progress-bar");
         let todoSaveButton = document.getElementById("todo-save-button");
         todoSaveButton.parentElement.insertBefore(progressBar, todoSaveButton);
       }
@@ -165,124 +215,7 @@ function showTodoCreateFormMessage(status, msgText, hideAfterMs) {
   }
 
   if (hideAfterMs != undefined) {
-    todoCreateFormMessageTimer = setTimeout(hideTodoCreateFormMessage, hideAfterMs);
-  }
-}
-
-let todoCreateFormMessageTimer = undefined;
-
-let hideMessageBoxTimers=[];
-
-function showMessage(textElementId, messageBoxElementId, parentElementId, insertBeforeElementId, progressBarElementId, status, msgText, hideAfterMs) {
-  if (hideMessageBoxTimers[messageBoxElementId] != undefined) {
-    clearTimeout(hideMessageBoxTimers[messageBoxElementId]);
-    hideMessageBoxTimers[messageBoxElementId] = undefined;
-  }
-
-  let messageBox = document.getElementById(messageBoxElementId);
-  if (messageBox == undefined) {
-    let parentElement = document.getElementById(parentElementId);
-    let insertBeforeElement = undefined;
-    if (insertBeforeElementId != undefined && insertBeforeElementId !== "") {
-      insertBeforeElement = document.getElementById(insertBeforeElementId);
-    }
-
-    let messageBox = document.createElement("div");
-    messageBox.setAttribute("id", messageBoxElementId);
-    messageBox.classList.add("message-box");
-    messageBox.classList.add(status);
-
-    let messageText = document.createElement("div");
-    messageText.setAttribute("id", textElementId);
-    messageText.classList.add("message-text");
-
-    messageText.appendChild(document.createTextNode(msgText));
-
-    messageBox.appendChild(messageText);
-
-    let closeButton = document.createElement("a");
-    closeButton.setAttribute("href", "#");
-    closeButton.classList.add("close-icon");
-
-    let closeImg = document.createElement("img");
-    closeImg.setAttribute("src", "cancel.svg");
-    closeImg.setAttribute("title", "Clear");
-    closeImg.setAttribute("alt", "Clear message");
-    closeImg.classList.add("close-img");
-    closeButton.appendChild(closeImg);
-    closeButton.addEventListener("click", onCloseMessageBoxClicked);
-    messageBox.appendChild(closeButton);
-
-    if (insertBeforeElementId != undefined) {
-      parentElement.insertBefore(messageBox, insertBeforeElement);
-    } else {
-      parentElement.append(messageBox);
-    }
-    if (progressBarElementId != undefined && status === "saving") {
-      let progressBar = document.createElement("progress");
-      progressBar.setAttribute("id", progressBarElementId);
-      progressBar.classList.add("progress-bar");
-      parentElement.insertBefore(progressBar, insertBeforeElement);
-    }
-  } else {
-    let messageText = document.getElementById(textElementId)
-    if (messageText == undefined) {
-      messageText = document.createElement("div");
-      messageText.setAttribute("id", textElementId);
-      messageText.classList.add("message-text");
-      messageText.appendChild(document.createTextNode(msgText));
-    } else {
-      messageText.innerText = msgText;
-    }
-    
-    if (!messageText.classList.contains(status)) {
-      if (messageBox.classList.contains("saving")) messageBox.classList.remove("saving");
-      if (messageBox.classList.contains("saved")) messageBox.classList.remove("saved");
-      if (messageBox.classList.contains("info")) messageBox.classList.remove("info");
-      if (messageBox.classList.contains("none")) messageBox.classList.remove("none");
-      if (messageBox.classList.contains("error")) messageBox.classList.remove("error");
-      messageBox.classList.add(status);
-    }
-  
-    let progressBar = document.getElementById(progressBarElementId);
-    if (progressBar != undefined) {
-      //Progress bar needs to be below the text
-      if (progressBar.previousElementSibling == undefined || progressBar.previousElementSibling.id !== messageBox.id) {
-        progressBar.parentElement.removeChild(progressBar);
-        progressBar = undefined;
-      }
-    }
-
-    if (status === "saving") {
-      if (progressBar == undefined) {
-        let progressBar = document.createElement("progress");
-        progressBar.setAttribute("id", progressBarElementId);
-        progressBar.classList.add("progress-bar");
-
-        if (messageText.nextElementSibling != undefined) {
-          messageText.parentElement.insertBefore(progressBar, messageText.nextElementSibling);
-        } else {
-          messageText.parentElement.appendChild(progressBar);
-        }
-      }
-    } else if (progressBar != undefined) {
-      progressBar.parentElement.removeChild(progressBar);
-    }
-  }
-  if (hideMessageBoxTimers[messageBoxElementId] != undefined) {
-    hideMessageBoxTimers[messageBoxElementId] = setTimeout(hideMessageBox, hideAfterMs, messageBoxElementId);
-  }
-}
-
-function hideMessageBox(messageBoxElementId) {
-  if (hideMessageBoxTimers[messageBoxElementId] != undefined) {
-    clearTimeout(hideMessageBoxTimers[messageBoxElementId]);
-    hideMessageBoxTimers[messageBoxElementId] = undefined;
-  }
-
-  let messageBox = document.getElementById(messageBoxElementId);
-  if (messageBox != undefined) {
-    messageBox.parentElement.removeChild(messageBox);
+    messageHidingTimer = setTimeout(hideAddTaskFormMessage, hideAfterMs);
   }
 }
 
@@ -304,7 +237,9 @@ function addTodoToList(todo) {
 
   let newTodoStatusTextDivElement = document.createElement("div");
   newTodoStatusTextDivElement.classList.add("todo-status");
-  newTodoStatusTextDivElement.appendChild(document.createTextNode(" - " + todo.status));
+  newTodoStatusTextDivElement.appendChild(
+    document.createTextNode(" - " + todo.status)
+  );
   newTodoElement.appendChild(newTodoStatusTextDivElement);
 
   let todoListElement = document.getElementById("todo-list");
@@ -319,37 +254,39 @@ function addTodoToList(todo) {
     console.log(`Removing the 'All todos finished' message.`);
     todoListElement.removeChild(allTodosFinishedElement);
   }
-  console.log(`New Todo '${todo.id}' added successfully to the UL list of HTML LI elements.`);
+  console.log(
+    `New Todo '${todo.id}' added successfully to the UL list of HTML LI elements.`
+  );
 }
 
-function showTodoCreateSection() {
-  let todoCreateSection = document.getElementById("todo-form");
-  if (todoCreateSection != undefined) {
+function showAddTodoForm() {
+  let localTodoForm = document.getElementById("todo-form");
+  if (localTodoForm != undefined) {
     return;
   }
 
-  todoCreateSection = document.createElement("section");
-  todoCreateSection.setAttribute("id", "todo-create");
+  let addTodoSectionElememt = document.createElement("section");
+  addTodoSectionElememt.setAttribute("id", "todo-form");
 
-  let todoCreateForm = document.createElement("div");
-  todoCreateForm.setAttribute("id", "todo-create-form");
-  todoCreateSection.appendChild(todoCreateForm);
+  let formElememt = document.createElement("div");
+  formElememt.setAttribute("id", "todo-new-todo-form");
+  addTodoSectionElememt.appendChild(formElememt);
 
-  let todoCreateFormEntryArea = document.createElement("div");
-  todoCreateFormEntryArea.setAttribute("class", "form-control");
-  todoCreateForm.appendChild(todoCreateFormEntryArea);
+  let formControlDivElement = document.createElement("div");
+  formControlDivElement.setAttribute("class", "form-control");
+  formElememt.appendChild(formControlDivElement);
 
-  let todoCreateFormTextLabel = document.createElement("label");
-  todoCreateFormTextLabel.setAttribute("id", "todo-create-form-text-label");
-  todoCreateFormTextLabel.setAttribute("for", "todo-create-form-text-input");
-  todoCreateFormTextLabel.appendChild(document.createTextNode("New task"));
+  let labelElememt = document.createElement("label");
+  labelElememt.setAttribute("id", "todo-label");
+  labelElememt.setAttribute("for", "new-todo-input-text");
+  labelElememt.appendChild(document.createTextNode("New task"));
 
-  let todoCreateFormTextInput = document.createElement("input");
-  todoCreateFormTextInput.setAttribute("type", "text");
-  todoCreateFormTextInput.setAttribute("id", "todo-create-form-text-input");
+  let inputTextElememt = document.createElement("input");
+  inputTextElememt.setAttribute("type", "text");
+  inputTextElememt.setAttribute("id", "new-todo-input-text");
 
-  todoCreateFormEntryArea.appendChild(todoCreateFormTextInput);
-  todoCreateFormEntryArea.insertBefore(todoCreateFormTextLabel, todoCreateFormTextInput);
+  formControlDivElement.appendChild(inputTextElememt);
+  formControlDivElement.insertBefore(labelElememt, inputTextElememt);
 
   let submitButtonElememt = document.createElement("button");
   submitButtonElememt.setAttribute("type", "submit");
@@ -358,9 +295,9 @@ function showTodoCreateSection() {
   submitButtonElememt.setAttribute("id", "todo-save-button");
   submitButtonElememt.appendChild(document.createTextNode("Save"));
   submitButtonElememt.addEventListener("click", onSaveConfirmButtonClick);
-  todoCreateForm.appendChild(submitButtonElememt);
+  formElememt.appendChild(submitButtonElememt);
 
-  todoCreateForm.appendChild(document.createTextNode(" "));
+  formElememt.appendChild(document.createTextNode(" "));
 
   let cancelButtonElememt = document.createElement("button");
   cancelButtonElememt.setAttribute("type", "submit");
@@ -369,18 +306,21 @@ function showTodoCreateSection() {
   cancelButtonElememt.setAttribute("id", "todo-cancel-button");
   cancelButtonElememt.appendChild(document.createTextNode("Cancel"));
   cancelButtonElememt.addEventListener("click", onSaveCancelButtonClick);
-  todoCreateForm.appendChild(cancelButtonElememt);
+  formElememt.appendChild(cancelButtonElememt);
 
-  let todosSection = document.getElementById("todos");
-  todosSection.parentElement.insertBefore(todoCreateSection, todosSection);
+  let todosSectionElement = document.getElementById("todos");
+  todosSectionElement.parentElement.insertBefore(
+    addTodoSectionElememt,
+    todosSectionElement
+  );
 }
 
-function hideTodoCreateSection() {
-  let todoCreateSection = document.getElementById("todo-create");
-  if (todoCreateSection == undefined) {
+function hideAddTodoForm() {
+  let addTodoSectionElememt = document.getElementById("todo-form");
+  if (addTodoSectionElememt == undefined) {
     return;
   }
-  todoCreateSection.parentElement.removeChild(todoCreateSection);
+  addTodoSectionElememt.parentElement.removeChild(addTodoSectionElememt);
 }
 
 function showCommandBar() {
@@ -399,7 +339,7 @@ function hideCommandBar() {
 
 function onAddTodoButtonClick(e) {
   e.preventDefault();
-  showTodoCreateSection();
+  showAddTodoForm();
   hideCommandBar();
 }
 
@@ -410,7 +350,7 @@ function onSaveConfirmButtonClick(e) {
 
 function onSaveCancelButtonClick(e) {
   e.preventDefault();
-  hideTodoCreateSection();
+  hideAddTodoForm();
   showCommandBar();
 }
 
@@ -420,11 +360,13 @@ function onRefreshUpdateButtonClick(e) {
 }
 
 function onDocumentLoad() {
-  let addButton = document.getElementById("todos-create-button");
+  let addButton = document.getElementById("todo-show-form-button");
   if (addButton != undefined) {
     addButton.addEventListener("click", onAddTodoButtonClick);
   }
-  let refreshUpdateButton = document.getElementById("todos-update-refresh-button");
+  let refreshUpdateButton = document.getElementById(
+    "todo-update-refresh-todos-button"
+  );
   if (refreshUpdateButton != undefined) {
     refreshUpdateButton.addEventListener("click", onRefreshUpdateButtonClick);
   }

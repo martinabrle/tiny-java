@@ -148,12 +148,19 @@ body {
   top: 0px;
   margin-top: -15px;
   margin-right: -11px;
+  margin-left: 0px;
+  margin-bottom: 0px;
+  padding: 0px;
   cursor: pointer;
   width: 20px;
   height: 20px;
+  border-width: 0px;
+  border-style: none;
+  appearance: none;
+  background-color: unset;
 }
 
-.progress-bar {
+.new-todo-progress-bar {
   width: 100%;
   margin: 0px 0px 10px 0px;
 }

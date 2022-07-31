@@ -1,4 +1,4 @@
-package app.demo.todo.model.UI;
+package app.demo.todo.dto;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -8,16 +8,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import app.demo.todo.utils.Utils;
 
-public class TodoPage {
+public class NewTodo {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(TodoPage.class);
+    public static final Logger LOGGER = LoggerFactory.getLogger(NewTodo.class);
 
     private String todoText;
 
-    private TodoList todoList;
+    public NewTodo(String todoText) {
+        this.todoText = todoText;
+    }
 
-    public TodoPage() {
-        todoList = new TodoList();
+    public NewTodo() {
     }
 
     public String getTodoText() {
@@ -26,14 +27,6 @@ public class TodoPage {
 
     public void setTodoText(String text) {
         todoText = text;
-    }
-
-    public TodoList getTodoList() {
-        return todoList;
-    }
-
-    public void setTodoList(TodoList todoList) {
-        this.todoList = todoList;
     }
 
     @Override
@@ -46,8 +39,7 @@ public class TodoPage {
         // This is just for the impossible case where the ObjectMapper throws an
         // exception
         return "{" +
-                " todoText: '" + Utils.toJsonValueContent(todoText) + "\', " +
-                " todoList: " + todoList.toString() +
-                '}';
+                " 'todoText':'" + Utils.toJsonValueContent(todoText) + "' " +
+                "}";
     }
 }

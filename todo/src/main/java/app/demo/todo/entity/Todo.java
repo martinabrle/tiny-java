@@ -1,8 +1,9 @@
-package app.demo.todo.model.DB;
+package app.demo.todo.entity;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
@@ -19,7 +20,7 @@ import java.util.UUID;
 public class Todo {
     public static final Logger LOGGER = LoggerFactory.getLogger(Todo.class);
 
-    private @Id UUID id;
+    private @Id @Column(columnDefinition = "uuid") UUID id; //Column definition needed due to https://github.com/quarkusio/quarkus/discussions/25535
 
     private String todoText;
 
@@ -37,7 +38,7 @@ public class Todo {
         this.todoText = todoText;
     }
 
-    public Todo(app.demo.todo.model.UI.Todo todo) {
+    public Todo(app.demo.todo.dto.Todo todo) {
         this.id = todo.getId();
         this.createdDateTime = todo.getCreatedDateTime();
         this.completedDateTime = todo.getCompletedDateTime();
