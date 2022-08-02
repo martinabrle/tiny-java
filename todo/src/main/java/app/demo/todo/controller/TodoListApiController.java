@@ -24,6 +24,7 @@ import app.demo.todo.dto.Todo;
 import app.demo.todo.exception.NewTodoIsEmptyException;
 import app.demo.todo.exception.TodoCreationFailedException;
 import app.demo.todo.exception.TodoDeleteFailedException;
+import app.demo.todo.exception.TodoIsEmptyException;
 import app.demo.todo.exception.TodoNotFoundException;
 import app.demo.todo.exception.TodosRetrievalFailedException;
 import app.demo.todo.service.TodoService;
@@ -99,9 +100,9 @@ public class TodoListApiController {
 		return new ResponseEntity<Todo>(retVal, HttpStatus.OK);
 	}
 
-	@PatchMapping(value = "todos/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@PatchMapping(value = "todos/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
-	public ResponseEntity<Todo> updateTodo(@RequestBody Todo todo) {
+	public ResponseEntity<Todo> updateTodo(@PathVariable(name = "id", required = true) String id, @RequestBody Todo todo) {
 
 		LOGGER.debug("TODO update called");
 
@@ -119,6 +120,25 @@ public class TodoListApiController {
 			return new ResponseEntity<Todo>(HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return new ResponseEntity<Todo>(retVal, HttpStatus.OK);
+	}
+
+	@PatchMapping(value = "todos/", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+	@ResponseBody
+	public ResponseEntity<List<Todo>> updateTodos(@RequestBody List<Todo> modifiedTodos) {
+
+		LOGGER.debug("TODO LIST update called with the following payload: {}", modifiedTodos);
+
+		List<Todo> retVal = null;
+		try {
+			retVal = todoService.updateTodos(modifiedTodos);
+		} catch (TodoIsEmptyException ex) {
+			return new ResponseEntity<List<Todo>>(HttpStatus.BAD_REQUEST);
+		} catch (TodoCreationFailedException ex) {
+			return new ResponseEntity<List<Todo>>(HttpStatus.BAD_GATEWAY);
+		} catch (Exception ex) {
+			return new ResponseEntity<List<Todo>>(HttpStatus.INTERNAL_SERVER_ERROR);
+		}
+		return new ResponseEntity<List<Todo>>(retVal, HttpStatus.OK);
 	}
 
 	@DeleteMapping(value = "todos/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)

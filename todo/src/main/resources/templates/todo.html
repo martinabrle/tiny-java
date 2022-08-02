@@ -38,11 +38,11 @@
           </div>
           <ul id="todo-list" class="todo-list">
             <li class="todo-item" th:if="*{todoList != null}" th:each="todo, itemStat : *{todoList}" th:key="${todo.id}" >
-              <input type="checkbox" th:name="|todoList[${itemStat.index}].completed|" th:checked="${todo.completed}" class="complete-checkbox"/>
+              <input type="checkbox" th:name="|todoList[${itemStat.index}].completed|" th:checked="${todo.completed}" class="complete-checkbox" th:id="completed-+${todo.id}" />
               <span th:text="${todo.todoText}">todo text</span>
               <div class="todo-status" th:text="${todo.statusText}">status text</div>
               <input hidden th:name="|todoList[${itemStat.index}].id|" th:value="${todo.getId()}"/>
-              <input hidden th:name="|todoList[${itemStat.index}].completedOrig|" th:value="${todo.completedOrig}"/>
+              <input hidden th:name="|todoList[${itemStat.index}].completedOrig|" th:value="${todo.completedOrig}" th:id="orig-completed-+${todo.id}" />
             </li>
           </ul>
         </section>

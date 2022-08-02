@@ -160,7 +160,7 @@ body {
   background-color: unset;
 }
 
-.new-todo-progress-bar {
+.progress-bar {
   width: 100%;
   margin: 0px 0px 10px 0px;
 }

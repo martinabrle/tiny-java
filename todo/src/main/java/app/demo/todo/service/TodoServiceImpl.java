@@ -17,6 +17,7 @@ import app.demo.todo.exception.NewTodoIsEmptyException;
 import app.demo.todo.exception.TodoCreationFailedException;
 import app.demo.todo.exception.TodoDeleteFailedException;
 import app.demo.todo.exception.TodoIdCannotBeEmptyException;
+import app.demo.todo.exception.TodoIsEmptyException;
 import app.demo.todo.exception.TodoNotFoundException;
 import app.demo.todo.exception.TodoUpdateFailedException;
 import app.demo.todo.exception.TodosRetrievalFailedException;
@@ -116,11 +117,11 @@ public class TodoServiceImpl implements TodoService {
     }
 
     public Todo updateTodo(Todo todo)
-            throws NewTodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException {
+            throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException {
         
         Todo retVal = null;
         if (todo == null || todo.getTodoText().isBlank())
-            throw new NewTodoIsEmptyException();
+            throw new TodoIsEmptyException(todo.getId(), null);
 
         try {
             LOGGER.debug("Updating an existing Todo synchronously using updateTodo({})", todo);
@@ -143,7 +144,7 @@ public class TodoServiceImpl implements TodoService {
         catch (NoSuchElementException ex) {
             throw new TodoNotFoundException(String.format("Todo '%s' does not exist.", todo.getId()));
         } 
-        catch (NewTodoIsEmptyException ex) {
+        catch (TodoIsEmptyException ex) {
             throw ex;
         } catch (TodoNotFoundException ex) {
             throw ex;
@@ -179,5 +180,12 @@ public class TodoServiceImpl implements TodoService {
             LOGGER.error("Retrieving the TODO {} failed: {}\n{}", id, ex.getMessage(), ex);
             throw new TodosRetrievalFailedException(ex.getMessage());
         }
+    }
+
+    @Override
+    public List<Todo> updateTodos(List<Todo> todo)
+            throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException {
+        //TODO: Auto-generated method stub
+        return new ArrayList<Todo>();
     }
 }

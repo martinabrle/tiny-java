@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    username: ${SPRING_DATASOURCE_USERNAME}
+    url: ${SPRING_DATASOURCE_URL}?sslmode=verify-full&sslrootcert=`./DigiCertGlobalRootCA.crt.pem`
+    password: ${SPRING_DATASOURCE_PASSWORD}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: ${SPRING_DATASOURCE_SHOW_SQL}
+    hibernate:
+      ddl-auto: validate
+app.demo.todo.load-demo-data: false
+logging.level: warning
+logging.level.app.demo.todo: warning
