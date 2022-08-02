@@ -2,6 +2,7 @@ package app.demo.todo.service;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -27,7 +28,7 @@ import app.demo.todo.repository.TodoRepository;
 public class TodoServiceImpl implements TodoService {
 
     @Autowired
-	private TodoRepository repository;
+    private TodoRepository repository;
 
     public static final Logger LOGGER = LoggerFactory.getLogger(TodoServiceImpl.class);
 
@@ -39,12 +40,13 @@ public class TodoServiceImpl implements TodoService {
 
         try {
             var todoEntityList = repository.findAll(Sort.by(Sort.Direction.DESC, "createdDateTime"));
-            
+
             LOGGER.debug("Received back a list of TODOs as a response: {}", todoEntityList);
-            
+
             retVal = new ArrayList<Todo>();
             for (var e : todoEntityList) {
-                retVal.add(new Todo(e.getId(), e.getTodoText(), e.getCreatedDateTime(), e.getCompletedDateTime(), e.getCompletedDateTime() != null));
+                retVal.add(new Todo(e.getId(), e.getTodoText(), e.getCreatedDateTime(), e.getCompletedDateTime(),
+                        e.getCompletedDateTime() != null));
             }
         } catch (Exception ex) {
             LOGGER.error("Retrieving all TODOs failed: {}\n{}", ex.getMessage(), ex);
@@ -65,7 +67,8 @@ public class TodoServiceImpl implements TodoService {
             var retrievedOptionalTodoEntity = repository.findById(id);
 
             if (!retrievedOptionalTodoEntity.isPresent()) {
-                throw new TodoNotFoundException(String.format("Unable to retrieve Todo '%s'; Todo does not exist (1).", id));
+                throw new TodoNotFoundException(
+                        String.format("Unable to retrieve Todo '%s'; Todo does not exist (1).", id));
             }
 
             var retrievedTodoEntity = retrievedOptionalTodoEntity.get();
@@ -74,8 +77,10 @@ public class TodoServiceImpl implements TodoService {
                 throw new TodoNotFoundException(String.format("Unable to retrieve Todo '%s' (2).", id));
             }
 
-            retVal = new Todo(retrievedTodoEntity.getId(), retrievedTodoEntity.getTodoText(), retrievedTodoEntity.getCreatedDateTime(), retrievedTodoEntity.getCompletedDateTime(), retrievedTodoEntity.getCompletedDateTime() != null);
-            
+            retVal = new Todo(retrievedTodoEntity.getId(), retrievedTodoEntity.getTodoText(),
+                    retrievedTodoEntity.getCreatedDateTime(), retrievedTodoEntity.getCompletedDateTime(),
+                    retrievedTodoEntity.getCompletedDateTime() != null);
+
             LOGGER.debug("Received back this TODO structure as a response: {}", retVal);
         } catch (TodoNotFoundException ex) {
             throw ex;
@@ -89,7 +94,7 @@ public class TodoServiceImpl implements TodoService {
 
     public Todo createTodo(String todoText)
             throws TodoCreationFailedException, NewTodoIsEmptyException {
-        
+
         Todo todo = null;
 
         if (todoText == null || todoText.trim() == "") {
@@ -104,8 +109,10 @@ public class TodoServiceImpl implements TodoService {
             var todoEntitySaved = repository.save(todoEntity);
 
             LOGGER.debug("Saved a new TODO: {}", todoEntitySaved);
-            
-            todo = new Todo(todoEntitySaved.getId(), todoEntitySaved.getTodoText(), todoEntitySaved.getCreatedDateTime(), todoEntitySaved.getCompletedDateTime(), todoEntitySaved.getCompletedDateTime() != null);
+
+            todo = new Todo(todoEntitySaved.getId(), todoEntitySaved.getTodoText(),
+                    todoEntitySaved.getCreatedDateTime(), todoEntitySaved.getCompletedDateTime(),
+                    todoEntitySaved.getCompletedDateTime() != null);
 
         } catch (NewTodoIsEmptyException ex) {
             throw ex;
@@ -118,7 +125,7 @@ public class TodoServiceImpl implements TodoService {
 
     public Todo updateTodo(Todo todo)
             throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException {
-        
+
         Todo retVal = null;
         if (todo == null || todo.getTodoText().isBlank())
             throw new TodoIsEmptyException(todo.getId(), null);
@@ -129,7 +136,7 @@ public class TodoServiceImpl implements TodoService {
             var existingTodoEntityLookup = repository.findById(todo.getId());
 
             if (!existingTodoEntityLookup.isPresent())
-              throw new TodoNotFoundException(String.format("Todo '%s' does not exist.", todo.getId()));
+                throw new TodoNotFoundException(String.format("Todo '%s' does not exist.", todo.getId()));
 
             var existingTodoEntity = existingTodoEntityLookup.get();
             existingTodoEntity.setTodoText(todo.getTodoText());
@@ -139,12 +146,12 @@ public class TodoServiceImpl implements TodoService {
 
             LOGGER.debug("Updated an existing TODO: {}", savedTodoEntity);
 
-            retVal = new Todo(savedTodoEntity.getId(), savedTodoEntity.getTodoText(), savedTodoEntity.getCreatedDateTime(), savedTodoEntity.getCompletedDateTime(), savedTodoEntity.getCompletedDateTime() != null);
-        }
-        catch (NoSuchElementException ex) {
+            retVal = new Todo(savedTodoEntity.getId(), savedTodoEntity.getTodoText(),
+                    savedTodoEntity.getCreatedDateTime(), savedTodoEntity.getCompletedDateTime(),
+                    savedTodoEntity.getCompletedDateTime() != null);
+        } catch (NoSuchElementException ex) {
             throw new TodoNotFoundException(String.format("Todo '%s' does not exist.", todo.getId()));
-        } 
-        catch (TodoIsEmptyException ex) {
+        } catch (TodoIsEmptyException ex) {
             throw ex;
         } catch (TodoNotFoundException ex) {
             throw ex;
@@ -156,10 +163,10 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    public void deleteTodo(UUID id) throws TodoNotFoundException, TodoDeleteFailedException, TodoIdCannotBeEmptyException {
-        
-        LOGGER.debug("Deleting a TODO synchronously using deleteTodo({})", id);
+    public void deleteTodo(UUID id)
+            throws TodoNotFoundException, TodoDeleteFailedException, TodoIdCannotBeEmptyException {
 
+        LOGGER.debug("Deleting a TODO synchronously using deleteTodo({})", id);
 
         try {
             if (!repository.existsById(id)) {
@@ -169,12 +176,10 @@ public class TodoServiceImpl implements TodoService {
             repository.deleteById(id);
 
             LOGGER.debug("Deleted Todo {}", id);
-        }
-        catch (IllegalArgumentException ex) {
+        } catch (IllegalArgumentException ex) {
             LOGGER.error("Retrieving the TODO {} failed: {}\n{}", id, ex.getMessage(), ex);
             throw new TodoIdCannotBeEmptyException(ex.getMessage());
-        }
-        catch (TodoNotFoundException ex) {
+        } catch (TodoNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
             LOGGER.error("Retrieving the TODO {} failed: {}\n{}", id, ex.getMessage(), ex);
@@ -183,9 +188,54 @@ public class TodoServiceImpl implements TodoService {
     }
 
     @Override
-    public List<Todo> updateTodos(List<Todo> todo)
+    public List<Todo> updateTodos(List<Todo> todos)
             throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException {
-        //TODO: Auto-generated method stub
-        return new ArrayList<Todo>();
+
+        var todoListHashMap = new HashMap<UUID, Todo>();
+        var todoEntities = new ArrayList<app.demo.todo.entity.Todo>();
+
+        for (var todo : todos) {
+            todoListHashMap.put(todo.getId(), todo);
+        }
+
+        var retrievedTodoEntities = repository.findAllById(todoListHashMap.keySet());
+        for (var retrievedTodoEntity : retrievedTodoEntities) {
+            var updatedTodo = todoListHashMap.get(retrievedTodoEntity.getId());
+            boolean valuesModified = false;
+            if (updatedTodo.getCompleted() && retrievedTodoEntity.getCompletedDateTime() == null) {
+                retrievedTodoEntity.setCompletedDateTime(new Date());
+                valuesModified = true;
+            } else if (!updatedTodo.getCompleted() && retrievedTodoEntity.getCompletedDateTime() != null) {
+                retrievedTodoEntity.setCompletedDateTime(null);
+                valuesModified = true;
+            } else if (retrievedTodoEntity.getCompletedDateTime() != updatedTodo.getCompletedDateTime()) {
+                retrievedTodoEntity.setCompletedDateTime(updatedTodo.getCompletedDateTime());
+                valuesModified = true;
+            }
+            if (updatedTodo.getTodoText() != null) {
+                if (updatedTodo.getTodoText().isBlank()) {
+                    throw new TodoIsEmptyException(updatedTodo.getId(), null);
+                }
+                if (!retrievedTodoEntity.getTodoText().equals(updatedTodo.getTodoText())) {
+                    retrievedTodoEntity.setTodoText(updatedTodo.getTodoText());
+                    valuesModified = true;
+                }
+            }
+            if (valuesModified) {
+                todoEntities.add(retrievedTodoEntity);
+            }
+        }
+
+        var resultingTodoEntities = repository.saveAll(todoEntities);
+
+        var retVal = new ArrayList<Todo>();
+        for (var resultingTodoEntity : resultingTodoEntities) {
+            retVal.add(new Todo(resultingTodoEntity.getId(), resultingTodoEntity.getTodoText(),
+                    resultingTodoEntity.getCreatedDateTime(), resultingTodoEntity.getCompletedDateTime(),
+                    resultingTodoEntity.getCompletedDateTime() != null));
+        }
+
+        return retVal;
     }
+
 }

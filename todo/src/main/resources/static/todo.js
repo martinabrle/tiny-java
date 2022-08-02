@@ -4,11 +4,7 @@ function saveTodo(repeats) {
   let newTodoInputTextElement = document.getElementById("new-todo-input-text");
   let newTodoText = newTodoInputTextElement.value;
   if (newTodoText == undefined || newTodoText.trim() == "") {
-    displayTaskCreateFormMessage(
-      "error",
-      "New Todo text should not be empty.",
-      10000
-    );
+    displayTaskCreateFormMessage("error", "New Todo text should not be empty.", 10000);
     return;
   }
   //debug only addTodoToList({ id: 1, todoText: newTodoText, status: 'created on 21.2.3004'});
@@ -28,47 +24,27 @@ function saveTodo(repeats) {
         response
           .text()
           .then((text) => {
-            console.log(
-              `Received '${response.status}', task has been saved, contining with parsing.`
-            );
+            console.log(`Received '${response.status}', task has been saved, contining with parsing.`);
             try {
               let jsonTodo = JSON.parse(text);
-              if (
-                jsonTodo == null ||
-                jsonTodo.todoText === undefined ||
-                jsonTodo.todoText == null ||
-                jsonTodo.todoText === ""
-              ) {
+              if (jsonTodo == null || jsonTodo.todoText === undefined || jsonTodo.todoText == null || jsonTodo.todoText === "") {
                 throw "Empty task received from the server as a confirmation";
               }
 
               addTodoToList(jsonTodo);
 
               let todoMsgText = jsonTodo.todoText;
-              if (todoMsgText.length > 5)
-                todoMsgText = todoMsgText.substring(todoMsgText, 5) + "...";
+              if (todoMsgText.length > 5) todoMsgText = todoMsgText.substring(todoMsgText, 5) + "...";
 
-                displayTodoListMessage(
-                "saved",
-                "Task '" + todoMsgText + "' has beed saved.",
-                0,
-                2000
-              );
+              displayTodoListMessage("saved", "Task '" + todoMsgText + "' has beed saved.", 0, 2000);
               hideAddTodoForm();
               showCommandBar();
             } catch (ex) {
               //Unable to parse, but the task has been saved
-              console.log(
-                `An exception '${ex}' ocurred, but the task was most likely saved.`
-              );
+              console.log(`An exception '${ex}' ocurred, but the task was most likely saved.`);
               hideAddTodoForm();
               showCommandBar();
-              displayTodoListMessage(
-                "error",
-                "Task has beed saved, but the server response is malformated. Try to refresh the page.",
-                0,
-                null
-              );
+              displayTodoListMessage("error", "Task has beed saved, but the server response is malformated. Try to refresh the page.", 0, null);
             }
           })
           .catch((reason) => {
@@ -78,11 +54,7 @@ function saveTodo(repeats) {
               scheduleCheckTodoAsyncSaved(trackingId, repeats - 4, 500);
             } else {
               console.log(`An exception '${reason}' ocurred, giving up.`);
-              displayTaskCreateFormMessage(
-                "error",
-                "An error has occured while retrieving the task status. Please try again later.",
-                20000
-              );
+              displayTaskCreateFormMessage("error", "An error has occured while retrieving the task status. Please try again later.", 20000);
             }
           });
       } else {
@@ -98,24 +70,14 @@ function saveTodo(repeats) {
           timedOut = false;
         }
         if (timedOut) {
-          console.log(
-            `Received '${response.status}' and tried too many times already, giving up.`
-          );
-          displayTaskCreateFormMessage(
-            "error",
-            "An error has occured while saving the task. Please try again later.",
-            20000
-          );
+          console.log(`Received '${response.status}' and tried too many times already, giving up.`);
+          displayTaskCreateFormMessage("error", "An error has occured while saving the task. Please try again later.", 20000);
         }
       }
     })
     .catch((reason) => {
       console.log(`Exception '${reason}', occured, giving up.`);
-      displayTaskCreateFormMessage(
-        "error",
-        "An error has occured while saving the task. Please try again later.",
-        20000
-      );
+      displayTaskCreateFormMessage("error", "An error has occured while saving the task. Please try again later.", 20000);
     });
 }
 
@@ -126,7 +88,8 @@ function closeTodoListMessageBoxText(elementId) {
   }
   parentElement = messageText.parentElement;
 
-  if (parentElement.children.length > 2) {  // min size = 1 + close-button
+  if (parentElement.children.length > 2) {
+    // min size = 1 + close-button
     messageText.parentElement.removeChild(messageText);
   } else {
     let progressBar = document.getElementById(parentElement.id + "-progress-bar");
@@ -134,13 +97,12 @@ function closeTodoListMessageBoxText(elementId) {
       let parentId = parentElement.parentElement.id;
       progressBar = document.getElementById(parentId + "-progress-bar");
     }
-  
+
     if (progressBar !== null) {
       progressBar.parentElement.removeChild(progressBar);
     }
-    
-    messageText.parentElement.parentElement.removeChild(messageText.parentElement);
 
+    messageText.parentElement.parentElement.removeChild(messageText.parentElement);
   }
 }
 
@@ -181,12 +143,12 @@ function setStatusClass(element, status) {
 
   const statusList = ["saving", "saved", "none", "info", "warning", "error"];
 
-  for (let i=0; i< statusList.length; i++) {
+  for (let i = 0; i < statusList.length; i++) {
     const currentStatus = statusList[i];
     if (element.classList.contains(currentStatus)) {
       element.classList.remove(currentStatus);
     }
-  };
+  }
 
   element.classList.add(status);
 }
@@ -221,12 +183,9 @@ function createMessageBox(boxElementId, textElementId, status, text) {
   closeImg.setAttribute("alt", "Clear message");
   closeImg.classList.add("close-img");
   closeButton.appendChild(closeImg);
-  closeButton.addEventListener(
-    "click",
-    onMessageBoxCloseClicked
-  );
+  closeButton.addEventListener("click", onMessageBoxCloseClicked);
   messageBox.appendChild(closeButton);
-  
+
   return messageBox;
 }
 
@@ -237,7 +196,7 @@ function displayTaskCreateFormMessage(status, msgText, hideAfterMs) {
     clearTimeout(taskCreateFormMessageHidingTimer);
     taskCreateFormMessageHidingTimer = 0;
   }
-  
+
   let todoCreateForm = document.getElementById("todo-create-form");
   let todoSaveButton = document.getElementById("todo-save-button");
 
@@ -273,7 +232,7 @@ function displayTodoListMessage(status, msgText, msgIdx, hideAfterMs) {
     clearTimeout(todoListMessageHidingTimer[msgIdx]);
     todoListMessageHidingTimer[msgIdx] = 0;
   }
-  
+
   let todoSection = document.getElementById("todos");
   let todoList = document.getElementById("todo-list");
 
@@ -321,23 +280,26 @@ function addTodoToList(todo) {
 
   let newTodoCompleteCheckboxElement = document.createElement("input");
   newTodoCompleteCheckboxElement.setAttribute("type", "checkbox");
-  newTodoCompleteCheckboxElement.setAttribute("class", "complete-checkbox");
   newTodoCompleteCheckboxElement.setAttribute("id", `completed-${todo.id}`);
+  newTodoCompleteCheckboxElement.setAttribute("class", "complete-checkbox");
+
   newTodoElement.appendChild(newTodoCompleteCheckboxElement);
 
   let newTodoTextSpan = document.createElement("span");
+  newTodoTextSpan.setAttribute("id", `todo-text-${todo.id}`);
   newTodoTextSpan.appendChild(document.createTextNode(todo.todoText));
   newTodoElement.appendChild(newTodoTextSpan);
 
   let newTodoStatusTextDivElement = document.createElement("div");
+  newTodoStatusTextDivElement.setAttribute("id", `status-text-${todo.id}`);
   newTodoStatusTextDivElement.classList.add("todo-status");
   newTodoStatusTextDivElement.appendChild(document.createTextNode(" " + todo.statusText));
   newTodoElement.appendChild(newTodoStatusTextDivElement);
 
   let origTodoCompleteCheckboxElement = document.createElement("input");
   origTodoCompleteCheckboxElement.setAttribute("type", "hidden");
-  origTodoCompleteCheckboxElement.setAttribute("value", `${todo.completedOrig}`);
   origTodoCompleteCheckboxElement.setAttribute("id", `orig-completed-${todo.id}`);
+  origTodoCompleteCheckboxElement.setAttribute("value", `${todo.completedOrig}`);
   newTodoElement.appendChild(origTodoCompleteCheckboxElement);
 
   let todoListElement = document.getElementById("todo-list");
@@ -352,9 +314,7 @@ function addTodoToList(todo) {
     console.log(`Removing the 'All todos finished' message.`);
     todoListElement.removeChild(allTodosFinishedElement);
   }
-  console.log(
-    `New Todo '${todo.id}' added successfully to the UL list of HTML LI elements.`
-  );
+  console.log(`New Todo '${todo.id}' added successfully to the UL list of HTML LI elements.`);
 }
 
 function showAddTodoForm() {
@@ -407,10 +367,7 @@ function showAddTodoForm() {
   formElememt.appendChild(cancelButtonElememt);
 
   let todosSectionElement = document.getElementById("todos");
-  todosSectionElement.parentElement.insertBefore(
-    addTodoSectionElememt,
-    todosSectionElement
-  );
+  todosSectionElement.parentElement.insertBefore(addTodoSectionElememt, todosSectionElement);
 }
 
 function hideAddTodoForm() {
@@ -471,7 +428,7 @@ function refreshUpdate(repeats) {
         let updatedTodo = {
           id: key,
           completed: completedCheckbox.checked,
-          completedOrig: (completedCheckboxOrig.value === "true")
+          completedOrig: completedCheckboxOrig.value === "true",
         };
         modifiedTodos.push(updatedTodo);
       }
@@ -480,7 +437,7 @@ function refreshUpdate(repeats) {
   if (modifiedTodos.length < 1) {
     return;
   }
-  
+
   displayTodoListMessage("saving", "Saving updated Todo(s)...", 1, 2000);
 
   fetch(`/api/todos/`, {
@@ -489,38 +446,48 @@ function refreshUpdate(repeats) {
       Accept: "application/json",
       "Content-Type": "application/json",
     },
-    body: JSON.stringify( modifiedTodos ),
+    body: JSON.stringify(modifiedTodos),
   })
-  .then((response) => {
+    .then((response) => {
       if (response.ok) {
         response
           .text()
           .then((text) => {
-            console.log(
-              `Received '${response.status}', Todo(s) have been saved, continuing with parsing.`
-            );
+            console.log(`Received '${response.status}', Todo(s) have been saved, continuing with parsing.`);
             try {
               let jsonTodoList = JSON.parse(text);
-              if (jsonTodoList == null || jsonTodoList.length < 1) {
+              if (jsonTodoList === null || jsonTodoList.length < 1) {
                 throw "Empty Todo list received from the server as a confirmation";
               }
-              //TODO: updateTodoList(jsonTodo);
-              alert("TODO: Update received TODOs not implemented yet.")
 
-              displayTodoListMessage(
-                "saved",
-                ` ${jsonTodoList.length} Todo(s) have beed updated.`,
-                1,
-                2000);
+              for (let i = 0; i < jsonTodoList.length; i++) {
+                let jsonTodo = jsonTodoList[i];
+                if (jsonTodo.id !== null) {
+                  let completedElement = document.getElementById(`completed-${jsonTodo.id}`);
+                  let origCompletedElement = document.getElementById(`orig-completed-${jsonTodo.id}`);
+                  let todoTextElement = document.getElementById(`todo-text-${jsonTodo.id}`);
+                  let statusTextElement = document.getElementById(`status-text-${jsonTodo.id}`);
+                  if (jsonTodo.completed !== null && completedElement !== null) {
+                    completedElement.checked = jsonTodo.completed;
+                  }
+                  if (jsonTodo.origCompleted !== null && origCompletedElement !== null) {
+                    origCompletedElement.value = jsonTodo.origCompleted ? "true" : "false";
+                  }
+                  if (jsonTodo.todoText !== null && todoTextElement !== null) {
+                    todoTextElement.innerText = jsonTodo.todoText;
+                  }
+                  if (jsonTodo.statusText !== null && statusTextElement !== null) {
+                    statusTextElement.innerText = jsonTodo.statusText;
+                  }
+                }
+              }
+              //TODO: review corner cases
+              displayTodoListMessage("saved", ` ${jsonTodoList.length} Todo(s) have beed updated.`, 1, 2000);
             } catch (ex) {
               //Unable to parse, but the task has been saved
               console.log(`An exception '${ex}' ocurred, but Todo(s) were most likely saved.`);
               //alert(text);
-              displayTodoListMessage(
-                "error",
-                "Todo(s) have been updated, but the server response is malformated. Try to refresh the page.",
-                1,
-                20000);
+              displayTodoListMessage("error", "Todo(s) have been updated, but the server response is malformated. Try to refresh the page.", 1, 20000);
             }
           })
           .catch((reason) => {
@@ -530,11 +497,7 @@ function refreshUpdate(repeats) {
               scheduleCheckTodoAsyncSaved(trackingId, repeats - 4, 500);
             } else {
               console.log(`An exception '${reason}' ocurred, giving up.`);
-              displayTodoListMessage(
-                "error",
-                "An error has occured while retrieving the update status. Please try again later.",
-                1,
-                20000);
+              displayTodoListMessage("error", "An error has occured while retrieving the update status. Please try again later.", 1, 20000);
             }
           });
       } else {
@@ -550,27 +513,15 @@ function refreshUpdate(repeats) {
           timedOut = false;
         }
         if (timedOut) {
-          console.log(
-            `Received '${response.status}' and tried too many times already, giving up.`
-          );
-          displayTodoListMessage(
-            "error",
-            "An error has occured while updating Todo(s). Please try again later.",
-            1,
-            20000
-          );
+          console.log(`Received '${response.status}' and tried too many times already, giving up.`);
+          displayTodoListMessage("error", "An error has occured while updating Todo(s). Please try again later.", 1, 20000);
         }
       }
     })
     .catch((reason) => {
       console.log(reason);
       console.log(`Exception '${reason}', occured, giving up.`);
-      displayTodoListMessage(
-        "error",
-        "An error has occured while updating Todo(s). Please try again later.",
-        1,
-        20000
-      );
+      displayTodoListMessage("error", "An error has occured while updating Todo(s). Please try again later.", 1, 20000);
     });
 }
 
@@ -606,7 +557,6 @@ function onDocumentLoad() {
   // displayTodoListMessage("warning", "index-1 warning", 0, 15000);
   // displayTodoListMessage("error", "index-2 error", 1, 20000);
   // displayTodoListMessage("saving", "index-0 saving", 2, 25000);
-  
 }
 
 window.onload = onDocumentLoad;

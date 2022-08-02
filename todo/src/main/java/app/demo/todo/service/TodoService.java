@@ -21,6 +21,6 @@ public interface TodoService {
     public Todo getTodo(UUID id) throws TodoNotFoundException, TodosRetrievalFailedException;
     public Todo createTodo(String todoText) throws TodoCreationFailedException, NewTodoIsEmptyException;
     public Todo updateTodo(Todo todo) throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException;
-    public List<Todo> updateTodos(List<Todo> todo) throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException;
+    public List<Todo> updateTodos(List<Todo> todos) throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException;
     public void deleteTodo(UUID fromString) throws TodoNotFoundException, TodoDeleteFailedException;
 }
