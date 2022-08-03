@@ -297,7 +297,7 @@ function addTodoToList(todo) {
   newTodoElement.appendChild(newTodoStatusTextDivElement);
 
   let origTodoCompleteCheckboxElement = document.createElement("input");
-  origTodoCompleteCheckboxElement.setAttribute("type", "hidden");
+  origTodoCompleteCheckboxElement.setAttribute("hidden", "");
   origTodoCompleteCheckboxElement.setAttribute("id", `orig-completed-${todo.id}`);
   origTodoCompleteCheckboxElement.setAttribute("value", `${todo.completedOrig}`);
   newTodoElement.appendChild(origTodoCompleteCheckboxElement);
@@ -421,8 +421,8 @@ function refreshUpdate(repeats) {
     if (key === null) {
       continue;
     }
-    const completedCheckbox = document.getElementById("completed-" + key);
-    const completedCheckboxOrig = document.getElementById("orig-completed-" + key);
+    const completedCheckbox = document.getElementById(`completed-${key}`);
+    const completedCheckboxOrig = document.getElementById(`orig-completed-${key}`);
     if (completedCheckbox !== null && completedCheckboxOrig !== null) {
       if (completedCheckbox.checked !== (completedCheckboxOrig.value === "true")) {
         let updatedTodo = {
@@ -435,6 +435,7 @@ function refreshUpdate(repeats) {
     }
   }
   if (modifiedTodos.length < 1) {
+    displayTodoListMessage("info", "No updated Todo(s) found, skipping the save...", 1, 2000);
     return;
   }
 
@@ -471,7 +472,7 @@ function refreshUpdate(repeats) {
                     completedElement.checked = jsonTodo.completed;
                   }
                   if (jsonTodo.origCompleted !== null && origCompletedElement !== null) {
-                    origCompletedElement.value = jsonTodo.origCompleted ? "true" : "false";
+                    origCompletedElement.value = `${jsonTodo.completedOrig}`;
                   }
                   if (jsonTodo.todoText !== null && todoTextElement !== null) {
                     todoTextElement.innerText = jsonTodo.todoText;
