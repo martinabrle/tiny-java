@@ -1,15 +1,18 @@
 "use-strict";
 
+const TIMEOUT_INFO=10000;
+const TIMEOUT_ERROR=20000;
+const TIMEOUT_PROGRESS=100000;
+
 function saveTodo(repeats) {
   let newTodoInputTextElement = document.getElementById("new-todo-input-text");
   let newTodoText = newTodoInputTextElement.value;
   if (newTodoText == undefined || newTodoText.trim() == "") {
-    displayTaskCreateFormMessage("error", "New Todo text should not be empty.", 10000);
+    displayTaskCreateFormMessage("error", "New Todo text should not be empty.");
     return;
   }
-  //debug only addTodoToList({ id: 1, todoText: newTodoText, status: 'created on 21.2.3004'});
 
-  displayTaskCreateFormMessage("saving", "Saving the new Todo...", 2000);
+  displayTaskCreateFormMessage("saving", "Saving the new Todo...");
 
   fetch(`/api/todos/`, {
     method: "POST",
@@ -34,9 +37,11 @@ function saveTodo(repeats) {
               addTodoToList(jsonTodo);
 
               let todoMsgText = jsonTodo.todoText;
-              if (todoMsgText.length > 5) todoMsgText = todoMsgText.substring(todoMsgText, 5) + "...";
+              if (todoMsgText.length > 5) {
+                todoMsgText = `${todoMsgText.substring(todoMsgText, 5)}...`;
+              }
 
-              displayTodoListMessage("saved", "Task '" + todoMsgText + "' has beed saved.", 0, 2000);
+              displayTodoListMessage("saved", `Task '${todoMsgText}' has beed saved.`, 0);
               hideAddTodoForm();
               showCommandBar();
             } catch (ex) {
@@ -44,40 +49,32 @@ function saveTodo(repeats) {
               console.log(`An exception '${ex}' ocurred, but the task was most likely saved.`);
               hideAddTodoForm();
               showCommandBar();
-              displayTodoListMessage("error", "Task has beed saved, but the server response is malformated. Try to refresh the page.", 0, null);
+              displayTodoListMessage("error", "Task has beed saved, but the server response is malformated. Try to refresh the page.", 0);
             }
           })
           .catch((reason) => {
             //Server returned another error, reduce number of requests and wait longer
-            if (repeats > 4) {
-              console.log(`An exception '${reason}' ocurred will try again.`);
-              scheduleCheckTodoAsyncSaved(trackingId, repeats - 4, 500);
+            if (repeats > 1) {
+              console.log(`An exception '${reason}' ocurred, will try again.`);
+              setTimeout(saveTodo, 100 + parseInt(Math.random() * 500), repeats - 1);
             } else {
               console.log(`An exception '${reason}' ocurred, giving up.`);
-              displayTaskCreateFormMessage("error", "An error has occured while retrieving the task status. Please try again later.", 20000);
+              displayTaskCreateFormMessage("error", "An error has occured while retrieving the task status. Please try again later.");
             }
           });
       } else {
-        let timedOut = true;
-        //404 = Not in the database yet, everything else is server returned an error => reduce number of requests and wait longer
-        if (response.status === 404 && repeats > 1) {
+        if (repeats > 1) {
           console.log(`Received '${response.status}', will try again.`);
-          scheduleCheckTodoAsyncSaved(trackingId, repeats - 1, 300);
-          timedOut = false;
-        } else if (response.status !== 404 && repeats > 4) {
-          console.log(`Received '${response.status}', will try again.`);
-          scheduleCheckTodoAsyncSaved(trackingId, repeats - 4, 300);
-          timedOut = false;
-        }
-        if (timedOut) {
+          setTimeout(saveTodo, 100 + parseInt(Math.random() * 500), repeats - 1);
+        } else {
           console.log(`Received '${response.status}' and tried too many times already, giving up.`);
-          displayTaskCreateFormMessage("error", "An error has occured while saving the task. Please try again later.", 20000);
+          displayTaskCreateFormMessage("error", "An error has occured while saving the task. Please try again later.");
         }
       }
     })
     .catch((reason) => {
       console.log(`Exception '${reason}', occured, giving up.`);
-      displayTaskCreateFormMessage("error", "An error has occured while saving the task. Please try again later.", 20000);
+      displayTaskCreateFormMessage("error", "An error has occured while saving the task. Please try again later.");
     });
 }
 
@@ -92,10 +89,10 @@ function closeTodoListMessageBoxText(elementId) {
     // min size = 1 + close-button
     messageText.parentElement.removeChild(messageText);
   } else {
-    let progressBar = document.getElementById(parentElement.id + "-progress-bar");
+    let progressBar = document.getElementById(`${parentElement.id}-progress-bar`);
     if (progressBar === null) {
       let parentId = parentElement.parentElement.id;
-      progressBar = document.getElementById(parentId + "-progress-bar");
+      progressBar = document.getElementById(`${parentId}-progress-bar`);
     }
 
     if (progressBar !== null) {
@@ -112,7 +109,7 @@ function closeMessageBox(elementId) {
     return;
   }
 
-  let progressBar = document.getElementById(elementId + "-progress-bar");
+  let progressBar = document.getElementById(`${elementId}-progress-bar`);
   if (progressBar !== null) {
     progressBar.parentElement.removeChild(progressBar);
   }
@@ -175,7 +172,7 @@ function createMessageBox(boxElementId, textElementId, status, text) {
   let closeButton = document.createElement("button");
   closeButton.setAttribute("type", "submit");
   closeButton.setAttribute("action", "/close-msg-box");
-  closeButton.setAttribute("id", boxElementId + "-close-button");
+  closeButton.setAttribute("id", `${boxElementId}-close-button`);
   closeButton.classList.add("close-icon");
   let closeImg = document.createElement("img");
   closeImg.setAttribute("src", "cancel.svg");
@@ -189,9 +186,30 @@ function createMessageBox(boxElementId, textElementId, status, text) {
   return messageBox;
 }
 
+function getMessageTimeout(status) {
+  let messageTimeout = null;
+  
+  switch(status) {
+    case "error":
+      messageTimeout = TIMEOUT_ERROR;
+      break;
+    case "info":
+      messageTimeout = TIMEOUT_INFO;
+      break;
+    case "saved":
+      messageTimeout = TIMEOUT_INFO;
+      break;
+    case "saving":
+      messageTimeout = TIMEOUT_PROGRESS;
+      break;
+  }
+  
+  return messageTimeout;
+}
+
 let taskCreateFormMessageHidingTimer = 0;
 
-function displayTaskCreateFormMessage(status, msgText, hideAfterMs) {
+function displayTaskCreateFormMessage(status, msgText) {
   if (taskCreateFormMessageHidingTimer) {
     clearTimeout(taskCreateFormMessageHidingTimer);
     taskCreateFormMessageHidingTimer = 0;
@@ -220,6 +238,7 @@ function displayTaskCreateFormMessage(status, msgText, hideAfterMs) {
     progressBar.parentElement.removeChild(progressBar);
   }
 
+  let hideAfterMs = getMessageTimeout(status);
   if (hideAfterMs !== null) {
     taskCreateFormMessageHidingTimer = setTimeout(closeMessageBox, hideAfterMs, "todo-create-form-message-box");
   }
@@ -227,7 +246,7 @@ function displayTaskCreateFormMessage(status, msgText, hideAfterMs) {
 
 let todoListMessageHidingTimer = [];
 
-function displayTodoListMessage(status, msgText, msgIdx, hideAfterMs) {
+function displayTodoListMessage(status, msgText, msgIdx) {
   if (todoListMessageHidingTimer.includes(msgIdx) && todoListMessageHidingTimer[msgIdx]) {
     clearTimeout(todoListMessageHidingTimer[msgIdx]);
     todoListMessageHidingTimer[msgIdx] = 0;
@@ -238,12 +257,12 @@ function displayTodoListMessage(status, msgText, msgIdx, hideAfterMs) {
 
   let messageBox = document.getElementById("todo-list-message-box");
   if (messageBox === null) {
-    let messageBox = createMessageBox("todo-list-message-box", "todo-list-message-box-text-" + msgIdx, status, msgText);
+    let messageBox = createMessageBox("todo-list-message-box", `todo-list-message-box-text-${msgIdx}`, status, msgText);
     todoSection.insertBefore(messageBox, todoList);
   } else {
-    let textDiv = document.getElementById("todo-list-message-box-text-" + msgIdx);
+    let textDiv = document.getElementById(`todo-list-message-box-text-${msgIdx}`);
     if (textDiv === null) {
-      textDiv = createMessageBoxText("todo-list-message-box-text-" + msgIdx, status, msgText);
+      textDiv = createMessageBoxText(`todo-list-message-box-text-${msgIdx}`, status, msgText);
       if (messageBox.children[0].length > 0) {
         messageBox.insertBefore(textDiv, messageBox.children[0]);
       } else {
@@ -264,9 +283,10 @@ function displayTodoListMessage(status, msgText, msgIdx, hideAfterMs) {
   } else if (progressBar !== null) {
     progressBar.parentElement.removeChild(progressBar);
   }
-
+  
+  let hideAfterMs = getMessageTimeout(status);
   if (hideAfterMs !== null) {
-    todoListMessageHidingTimer[msgIdx] = setTimeout(closeTodoListMessageBoxText, hideAfterMs, "todo-list-message-box-text-" + msgIdx);
+    todoListMessageHidingTimer[msgIdx] = setTimeout(closeTodoListMessageBoxText, hideAfterMs, `todo-list-message-box-text-${msgIdx}`);
   }
 }
 
@@ -293,7 +313,7 @@ function addTodoToList(todo) {
   let newTodoStatusTextDivElement = document.createElement("div");
   newTodoStatusTextDivElement.setAttribute("id", `status-text-${todo.id}`);
   newTodoStatusTextDivElement.classList.add("todo-status");
-  newTodoStatusTextDivElement.appendChild(document.createTextNode(" " + todo.statusText));
+  newTodoStatusTextDivElement.appendChild(document.createTextNode(todo.statusText));
   newTodoElement.appendChild(newTodoStatusTextDivElement);
 
   let origTodoCompleteCheckboxElement = document.createElement("input");
@@ -434,12 +454,13 @@ function refreshUpdate(repeats) {
       }
     }
   }
+
   if (modifiedTodos.length < 1) {
-    displayTodoListMessage("info", "No updated Todo(s) found, skipping the save...", 1, 2000);
+    displayTodoListMessage("info", "No updated Todo(s) found, skipping the save...", 1);
     return;
   }
 
-  displayTodoListMessage("saving", "Saving updated Todo(s)...", 1, 2000);
+  displayTodoListMessage("saving", "Saving updated Todo(s)...", 1);
 
   fetch(`/api/todos/`, {
     method: "PATCH",
@@ -460,7 +481,6 @@ function refreshUpdate(repeats) {
               if (jsonTodoList === null || jsonTodoList.length < 1) {
                 throw "Empty Todo list received from the server as a confirmation";
               }
-
               for (let i = 0; i < jsonTodoList.length; i++) {
                 let jsonTodo = jsonTodoList[i];
                 if (jsonTodo.id !== null) {
@@ -482,58 +502,50 @@ function refreshUpdate(repeats) {
                   }
                 }
               }
-              //TODO: review corner cases
-              displayTodoListMessage("saved", ` ${jsonTodoList.length} Todo(s) have beed updated.`, 1, 2000);
+              displayTodoListMessage("saved", ` ${jsonTodoList.length} Todo(s) have beed updated.`, 1);
             } catch (ex) {
               //Unable to parse, but the task has been saved
               console.log(`An exception '${ex}' ocurred, but Todo(s) were most likely saved.`);
-              //alert(text);
-              displayTodoListMessage("error", "Todo(s) have been updated, but the server response is malformated. Try to refresh the page.", 1, 20000);
+              displayTodoListMessage("error", "Todo(s) have been updated, but the server response is malformated. Try to refresh the page.", 1);
             }
           })
           .catch((reason) => {
             //Server returned another error, reduce number of requests and wait longer
-            if (repeats > 4) {
+            if (repeats > 1) {
               console.log(`An exception '${reason}' ocurred will try again.`);
-              scheduleCheckTodoAsyncSaved(trackingId, repeats - 4, 500);
+              setTimeout(refreshUpdate, 100 + parseInt(Math.random() * 500), repeats - 1);
             } else {
               console.log(`An exception '${reason}' ocurred, giving up.`);
-              displayTodoListMessage("error", "An error has occured while retrieving the update status. Please try again later.", 1, 20000);
+              displayTodoListMessage("error", "An error has occured while retrieving the update status. Please try again later.", 1);
             }
           });
       } else {
-        let timedOut = true;
-        //404 = Not in the database yet, everything else is server returned an error => reduce number of requests and wait longer
-        if (response.status === 404 && repeats > 1) {
+        if (repeats > 1) {
           console.log(`Received '${response.status}', will try again.`);
-          scheduleCheckTodoAsyncSaved(trackingId, repeats - 1, 300);
-          timedOut = false;
-        } else if (response.status !== 404 && repeats > 4) {
-          console.log(`Received '${response.status}', will try again.`);
-          scheduleCheckTodoAsyncSaved(trackingId, repeats - 4, 300);
-          timedOut = false;
-        }
-        if (timedOut) {
+          setTimeout(refreshUpdate, 100 + parseInt(Math.random() * 500), repeats - 1);
+        } else {
           console.log(`Received '${response.status}' and tried too many times already, giving up.`);
-          displayTodoListMessage("error", "An error has occured while updating Todo(s). Please try again later.", 1, 20000);
+          displayTodoListMessage("error", "An error has occured while updating Todo(s). Please try again later.", 1);
         }
       }
     })
     .catch((reason) => {
-      console.log(reason);
-      console.log(`Exception '${reason}', occured, giving up.`);
-      displayTodoListMessage("error", "An error has occured while updating Todo(s). Please try again later.", 1, 20000);
+      if (repeats > 1) {
+        console.log(`Exception '${reason}', will try again.`);
+        setTimeout(refreshUpdate, 100 + parseInt(Math.random() * 500), repeats - 1);
+      } else {
+        console.log(`Exception '${reason}', occured, giving up.`);
+        displayTodoListMessage("error", "An error has occured while updating Todo(s). Please try again later (2).", 1);
+      }
     });
 }
 
 function onTodosRefreshUpdateButtonClick(e) {
   e.preventDefault();
-
-  refreshUpdate(5);
+  refreshUpdate(4);
 }
 
 function onDocumentLoad() {
-  // alert("onDocumentLoad");
   let addButton = document.getElementById("todos-create-button");
   if (addButton !== null) {
     addButton.addEventListener("click", onTodosCreateButtonClick);
@@ -551,13 +563,6 @@ function onDocumentLoad() {
   if (saveConfirmButton != undefined) {
     saveConfirmButton.addEventListener("click", onSaveConfirmButtonClick);
   }
-
-  // showAddTodoForm();
-
-  // displayTaskCreateFormMessage("saving", "Form error message", 10000);
-  // displayTodoListMessage("warning", "index-1 warning", 0, 15000);
-  // displayTodoListMessage("error", "index-2 error", 1, 20000);
-  // displayTodoListMessage("saving", "index-0 saving", 2, 25000);
 }
 
 window.onload = onDocumentLoad;
