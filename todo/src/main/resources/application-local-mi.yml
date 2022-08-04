@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    username: meonly@there.onmicrosoft.com
+    url: jdbc:postgresql://placeholder.postgres.database.azure.com:5432/tododb
+    password: placeholder
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+app.demo.todo.load-demo-data: false
+logging.level: warn
+logging.level.app.demo.todo: warn
