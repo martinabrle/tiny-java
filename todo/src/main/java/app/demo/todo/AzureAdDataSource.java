@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 //https://www.azureblue.io/how-to-authenicated-aad-identity-against-postgres-using-spring-boot/
 @Component
-@ConfigurationProperties(prefix = "spring.datasource.hikari")
+@ConfigurationProperties(prefix = "spring.datasource")
 public class AzureAdDataSource extends HikariDataSource {
 
     private final SimpleTokenCache cache;

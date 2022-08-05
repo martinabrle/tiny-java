@@ -1,13 +1,10 @@
 spring:
   datasource:
-    username: meonly@there.onmicrosoft.com
-    url: jdbc:postgresql://placeholder.postgres.database.azure.com:5432/tododb
-    password: placeholder
+    username: myuser@springtest2
+    jdbc-url: jdbc:postgresql://mydatabase.postgres.database.azure.com:5432/tododb
 
   jpa:
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: true
     hibernate:
       ddl-auto: validate
