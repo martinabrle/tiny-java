@@ -299,7 +299,7 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
       }
       {
         name: 'SPRING_PROFILE'
-        value: 'test-mi'
+        value: 'test'
       }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

@@ -14,15 +14,10 @@ param dbAdminPassword string
 
 @secure()
 param dbUserName string
-@secure()
-param dbUserPassword string
 
 param clientIPAddress string
-
-param springAppsServiceName string
-
-param appName string
-param appPort string
+param appServiceName string
+param appServicePort string
 
 param location string = resourceGroup().location
 
@@ -35,6 +30,9 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsightsName
+  dependsOn: [
+    logAnalyticsWorkspace
+  ]
   location: location
   kind: 'java'
   tags: tagsArray
@@ -71,14 +69,6 @@ resource keyVaultSecretSpringDatasourceUserName 'Microsoft.KeyVault/vaults/secre
     contentType: 'string'
   }
 }
-resource keyVaultSecretSpringDatasourceUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-  parent: keyVault
-  name: 'SPRING-DATASOURCE-PASSWORD'
-  properties: {
-    value: dbUserPassword
-    contentType: 'string'
-  }
-}
 
 resource keyVaultSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
@@ -103,6 +93,15 @@ resource keyVaultSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/
   name: 'APP-INSIGHTS-INSTRUMENTATION-KEY'
   properties: {
     value: appInsights.properties.InstrumentationKey
+    contentType: 'string'
+  }
+}
+
+resource keyVaultSecretApiURI 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'API-URI'
+  properties: {
+    value: 'https://${appServiceName}.azurewebsites.net/todos/'
     contentType: 'string'
   }
 }
@@ -208,33 +207,94 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
   }
 }
 
-resource springApps 'Microsoft.AppPlatform/Spring@2022-05-01-preview' = {
-  name: springAppsServiceName
+resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
+  name: '${appServiceName}-plan'
   location: location
   tags: tagsArray
+  properties: {
+    reserved: true
+  }
   sku: {
-    capacity: 1
-    name: 'S0'
-    tier: 'Standard'
+    name: 'S1'
+  }
+  kind: 'linux'
+}
+
+resource appService 'Microsoft.Web/sites@2021-03-01' = {
+  name: appServiceName
+  location: location
+  tags: tagsArray
+  identity: {
+    type: 'SystemAssigned'
   }
   properties: {
-    zoneRedundant: false
-    networkProfile: {
+    serverFarmId: appServicePlan.id
+    siteConfig: {
+      linuxFxVersion: 'JAVA|11-java11'
+      scmType: 'None'
     }
   }
 }
 
-resource springAppsDiagnosticsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
-  name: '${springAppsServiceName}-logs'
-  scope: springApps
+resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
+  name: 'web'
+  parent: appService
+  dependsOn: [
+    rbacKVSecretApiSpringDataSourceURL
+    rbacKVSecretApiSpringDatasourceUserName
+    rbacKVSecretApiAppInsightsKey
+    rbacKVSecretApiAppInsightsInstrKey
+  ]
+  kind: 'string'
+  properties: {
+    appSettings: [
+      {
+        name: 'PORT'
+        value: appServicePort
+      }
+      {
+        name: 'SPRING_DATASOURCE_URL'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-URL)'
+      }
+      {
+        name: 'SPRING_DATASOURCE_USERNAME'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-USERNAME)'
+      }
+      {
+        name: 'SPRING_DATASOURCE_SHOW_SQL'
+        value: 'false'
+      }
+      {
+        name: 'SPRING_PROFILE'
+        value: 'test-mi'
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATION-INSIGHTS-CONNECTION-STRING)'
+      }
+      {
+        name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APP-INSIGHTS-INSTRUMENTATION-KEY)'
+      }
+      {
+        name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
+        value: 'false'
+      }
+    ]
+  }
+}
+
+resource appServiceDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  name: '${appServiceName}-app-logs'
+  scope: appService
   properties: {
     logs: [
       {
-        category: 'ApplicationConsole'
+        categoryGroup: 'allLogs'
         enabled: true
       }
       {
-        category: 'SystemLogs'
+        categoryGroup: 'audit'
         enabled: true
       }
     ]
@@ -248,133 +308,51 @@ resource springAppsDiagnosticsLogs 'Microsoft.Insights/diagnosticSettings@2021-0
   }
 }
 
-resource springAppsApp 'Microsoft.AppPlatform/Spring/apps@2022-05-01-preview' = {
-  name: appName
-  location: location
-  parent: springApps
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    httpsOnly: false
-    public: true
-    fqdn: '${springAppsServiceName}-${appName}.azuremicroservices.io'
-    temporaryDisk: {
-      sizeInGB: 5
-      mountPath: '/tmp'
-    }
-    persistentDisk: {
-      sizeInGB: 0
-      mountPath: '/persistent'
-    }
-    enableEndToEndTLS: false
-  }
-}
-
-resource springAppsAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@2022-05-01-preview' = {
-  name: 'default'
-  parent: springAppsApp
-  dependsOn: [
-    rbacKVAppSpringDatasourceURL
-    rbacKVAppSpringDatasourceUserName
-    rbacKVAppSpringDatasourceUserPassword
-    rbacKVAppAppInsightsKey
-    rbacKVAppAppInsightsInstrumentationKey
-  ]
-  sku: {
-    name: 'S0'
-    tier: 'Standard'
-    capacity: 1
-  }
-  properties: {
-    deploymentSettings: {
-      resourceRequests: {
-        cpu: '1'
-        memory: '1Gi'
-      }
-      environmentVariables: {
-        PORT: appPort
-        // SPRING_DATASOURCE_URL: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName={keyVaultSecretSpringDataSourceURL.name})'
-        // SPRING_DATASOURCE_USERNAME: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretSpringDatasourceUserName.name})'
-        // SPRING_DATASOURCE_PASSWORD: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretSpringDatasourceUserPassword.name})'
-        // APPLICATIONINSIGHTS_CONNECTION_STRING: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretAppInsightsKey.name})'
-        // APPINSIGHTS_INSTRUMENTATIONKEY: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretAppInsightsInstrumentationKey.name})'
-        SPRING_DATASOURCE_URL: 'jdbc:postgresql://${dbServerName}.postgres.database.azure.com:5432/${dbName}'
-        SPRING_DATASOURCE_USERNAME: '${dbUserName}@${dbServerName}'
-        SPRING_DATASOURCE_PASSWORD: dbUserPassword
-        APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
-        APPINSIGHTS_INSTRUMENTATIONKEY: appInsights.properties.InstrumentationKey
-        SPRING_PROFILE: 'test'
-        SPRING_DATASOURCE_SHOW_SQL: 'true'
-        SCM_DO_BUILD_DURING_DEPLOYMENT: 'false'
-      }
-    }
-    source: any({
-      type: 'Jar'
-      relativePath: '<default>'
-      runtimeVersion: 'Java_11'
-      version: 'Java_11'
-    })
-    active: true
-  }
-}
-
 @description('This is the built-in Key Vault Secrets User role. See https://docs.microsoft.com/en-gb/azure/role-based-access-control/built-in-roles#key-vault-secrets-user')
 resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
   scope: keyVault
   name: '4633458b-17de-408a-b874-0445c86b69e6'
 }
 
-module rbacKVAppSpringDatasourceUserName './components/role-assignment-kv-secret.bicep' = {
-  name: 'rbac-kv-app-apring-datasource-user-name'
+module rbacKVSecretApiSpringDatasourceUserName './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-app-spring-datasource-user-name'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
-    principalId: springAppsApp.identity.principalId
-    roleAssignmentNameGuid: guid(springAppsApp.id, keyVaultSecretSpringDatasourceUserName.id, keyVaultSecretsUser.id)
+    principalId: appService.identity.principalId
+    roleAssignmentNameGuid: guid(appService.id, keyVaultSecretSpringDatasourceUserName.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: keyVaultSecretSpringDatasourceUserName.name
   }
 }
 
-module rbacKVAppSpringDatasourceUserPassword './components/role-assignment-kv-secret.bicep' = {
-  name: 'rbac-kv-app-apring-datasource-user-password'
+module rbacKVSecretApiSpringDataSourceURL './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-app-spring-datasource-url'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
-    principalId: springAppsApp.identity.principalId
-    roleAssignmentNameGuid: guid(springAppsApp.id, keyVaultSecretSpringDatasourceUserPassword.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: keyVaultSecretSpringDatasourceUserPassword.name
-  }
-}
-
-module rbacKVAppSpringDatasourceURL './components/role-assignment-kv-secret.bicep' = {
-  name: 'rbac-kv-app-apring-datasource-url'
-  params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: springAppsApp.identity.principalId
-    roleAssignmentNameGuid: guid(springAppsApp.id, keyVaultSecretSpringDataSourceURL.id, keyVaultSecretsUser.id)
+    principalId: appService.identity.principalId
+    roleAssignmentNameGuid: guid(appService.id, keyVaultSecretSpringDataSourceURL.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: keyVaultSecretSpringDataSourceURL.name
   }
 }
 
-module rbacKVAppAppInsightsKey './components/role-assignment-kv-secret.bicep' = {
-  name: 'rbac-kv-app-app-insights-key'
+module rbacKVSecretApiAppInsightsKey './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-app-app-insights'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
-    principalId: springAppsApp.identity.principalId
-    roleAssignmentNameGuid: guid(springAppsApp.id, keyVaultSecretAppInsightsKey.id, keyVaultSecretsUser.id)
+    principalId: appService.identity.principalId
+    roleAssignmentNameGuid: guid(appService.id, keyVaultSecretAppInsightsKey.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: keyVaultSecretAppInsightsKey.name
   }
 }
 
-module rbacKVAppAppInsightsInstrumentationKey './components/role-assignment-kv-secret.bicep' = {
-  name: 'rbac-kv-app-app-insights-instrumentation-key'
+module rbacKVSecretApiAppInsightsInstrKey './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-app-app-insights-instr'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
-    principalId: springAppsApp.identity.principalId
-    roleAssignmentNameGuid: guid(springAppsApp.id, keyVaultSecretAppInsightsInstrumentationKey.id, keyVaultSecretsUser.id)
+    principalId: appService.identity.principalId
+    roleAssignmentNameGuid: guid(appService.id, keyVaultSecretAppInsightsInstrumentationKey.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: keyVaultSecretAppInsightsInstrumentationKey.name
   }

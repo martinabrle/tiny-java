@@ -129,6 +129,7 @@ jobs:
             createDB=false
           fi
           
+          dbUserName=`echo "${{ secrets.AZURE_APP_NAME }}" | tr '-' '_'`;
           az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/app-service-complete.bicep \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
                                      logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
@@ -140,18 +141,20 @@ jobs:
                                      dbAdminName=${dbAdminName} \
                                      dbAdminPassword="${dbAdminPassword}" \
                                      dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }} \
-                                     dbUserPassword=${{ secrets.AZURE_DB_APP_USER_PASSWORD }} \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=$clientIP \
                                      createDB=$createDB
           
-          dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }};
+          
           dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }}"
 
           if [[ createDB = true ]]; then
             azUserGroupId=`az ad group show -g "${AZURE_DBA_GROUP_NAME}" --query "[id]" --output tsv`
             az postgres server ad-admin create -s $AZURE_DB_SERVER_NAME -g $AZURE_RESOURCE_GROUP --object-id $azUserGroupId --display-name $AZURE_DBA_GROUP_NAME
+            export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
+            echo $PGPASSWORD
+            dbConnectionStringPostgresDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminFullName} sslmode=require"
             az ad signed-in-user
           fi
       #Debug: - name: Setup tmate session
