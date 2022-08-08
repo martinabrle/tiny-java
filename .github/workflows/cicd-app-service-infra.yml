@@ -151,7 +151,7 @@ jobs:
           #dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }}"
 
           if [[ "$createDB" = true ]]; then
-            az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ secrets.$AZURE_DBA_GROUP_NAME }} --display-name ${{ secrets.$AZURE_DBA_GROUP_ID }}
+            az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ secrets.AZURE_DBA_GROUP_NAME }} --display-name ${{ secrets.$AZURE_DBA_GROUP_ID }}
           fi
           az ad signed-in-user
       #Debug: - name: Setup tmate session
