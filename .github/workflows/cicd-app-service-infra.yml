@@ -154,5 +154,6 @@ jobs:
             az postgres server ad-admin create -s $AZURE_DB_SERVER_NAME -g $AZURE_RESOURCE_GROUP --object-id $azUserGroupId --display-name $AZURE_DBA_GROUP_NAME
             az ad signed-in-user
           fi
+          az ad signed-in-user
       #Debug: - name: Setup tmate session
       #         uses: mxschmitt/action-tmate@v3.11
