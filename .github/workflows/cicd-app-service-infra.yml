@@ -110,6 +110,13 @@ jobs:
           ## .... user name is still needed as a description of the external user.
           ## .... for that however, I use the appservice name
           ##################################################################################################
+          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
+          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
+          if [[ ! -z "$kvDeletedExists" ]]; then
+            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
+            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
+            sleep 10m
+          fi
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
           dbAdminPassword="`openssl rand -hex 25`#@"
           echo "::add-mask::$dbAdminPassword"
