@@ -183,6 +183,10 @@ resource apiServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
         value: 'true'
       }
       {
+        name: 'SPRING_PROFILE'
+        value: 'test-mi'
+      }
+      {
         name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
         value: 'false'
       }

@@ -298,6 +298,10 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
         value: 'false'
       }
       {
+        name: 'SPRING_PROFILE'
+        value: 'test-mi'
+      }
+      {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATION-INSIGHTS-CONNECTION-STRING)'
       }
