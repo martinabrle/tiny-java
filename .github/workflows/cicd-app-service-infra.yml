@@ -104,12 +104,6 @@ jobs:
 
       - name: Deploy Azure resources
         run: |
-          ##################################################################################################
-          ## This deployment is using managed identities and the admin name/password is only temporary....
-          ## .... as it is a requirement for the pgsql deployment
-          ## .... user name is still needed as a description of the external user.
-          ## .... for that however, I use the appservice name
-          ##################################################################################################
           kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
           kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
           if [[ ! -z "$kvDeletedExists" ]]; then
@@ -153,13 +147,11 @@ jobs:
                                      clientIPAddress=$clientIP \
                                      createDB=$createDB
           
-          dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }};
-          dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }}"
+          #dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }};
+          #dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }}"
 
           if [[ "$createDB" = true ]]; then
-            azUserGroupId=`az ad group show -g "${AZURE_DBA_GROUP_NAME}" --query "[id]" --output tsv`
-            az postgres server ad-admin create -s $AZURE_DB_SERVER_NAME -g $AZURE_RESOURCE_GROUP --object-id $azUserGroupId --display-name $AZURE_DBA_GROUP_NAME
-            az ad signed-in-user
+            az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ secrets.$AZURE_DBA_GROUP_NAME }} --display-name ${{ secrets.$AZURE_DBA_GROUP_ID }}
           fi
           az ad signed-in-user
       #Debug: - name: Setup tmate session
