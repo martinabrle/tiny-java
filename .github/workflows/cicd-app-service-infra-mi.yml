@@ -1,4 +1,4 @@
-name: cicd-app-service-infra
+name: cicd-app-service-infra-mi
 
 on:
   #push:
@@ -130,7 +130,7 @@ jobs:
           fi
           
           dbUserName=`echo "${{ secrets.AZURE_APP_NAME }}" | tr '-' '_'`;
-          az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/app-service-complete.bicep \
+          az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/app-service-complete-mi.bicep \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
                                      logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
                                      logAnalyticsWorkspaceRG=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }}  \
@@ -140,12 +140,11 @@ jobs:
                                      dbName=${{ secrets.AZURE_DB_NAME }} \
                                      dbAdminName=${dbAdminName} \
                                      dbAdminPassword="${dbAdminPassword}" \
-                                     dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }} \
+                                     dbUserName=${dbUserName} \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=$clientIP \
                                      createDB=$createDB
-          
           
           dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }}"
 
