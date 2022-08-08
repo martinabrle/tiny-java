@@ -19,8 +19,8 @@ public class DatabaseLoader implements CommandLineRunner {
 
         private final TodoRepository todoRepository;
 
-        @Value("${app.demo.todo.load-demo-data}")
-        private String loadDemoData;
+        @Autowired
+        private AppConfig appConfig;
 
         @Autowired 
         public DatabaseLoader(TodoRepository repository) {
@@ -62,6 +62,6 @@ public class DatabaseLoader implements CommandLineRunner {
         }
 
         private boolean loadDemoData() {
-                return this.loadDemoData != null && this.loadDemoData.equalsIgnoreCase("true");
+                return appConfig != null && appConfig.getLoadDemoData();
         }
 }
