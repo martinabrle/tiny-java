@@ -152,10 +152,11 @@ jobs:
           #dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }};
           #dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }}"
 
+          echo "Setting AAD DB Admin Group"
           if [[ "$createDB" = true ]]; then
-            az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ secrets.AZURE_DBA_GROUP_NAME }} --display-name ${{ secrets.AZURE_DBA_GROUP_ID }}
+             echo "Set it here"
+             az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ secrets.AZURE_DBA_GROUP_ID }} --display-name ${{ secrets.AZURE_DBA_GROUP_NAME }}
           fi
-          az ad signed-in-user
 
           # if [[ "$createDB" = true ]]; then
           #   azUserGroupId=`az ad group show -g "${AZURE_DBA_GROUP_NAME}" --query "[id]" --output tsv`
