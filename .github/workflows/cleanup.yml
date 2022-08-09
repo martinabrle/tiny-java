@@ -40,6 +40,14 @@ jobs:
              echo "Deleting the Log Analytics Workspace resource group"
              az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
+      
+      - name: Purge deleted KV if found
+          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
+          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
+          if [[ ! -z "$kvDeletedExists" ]]; then
+            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
+            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
+          fi
   
   cleanup_spring_apps:
     runs-on: ubuntu-latest
@@ -70,5 +78,12 @@ jobs:
           if [[LOG_RG_EXISTS -eq true]]; then
              echo "Deleting the Log Analytics Workspace resource group"
              az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
-          fi      
-      
+          fi
+
+      - name: Purge deleted KV if found
+          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
+          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
+          if [[ ! -z "$kvDeletedExists" ]]; then
+            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
+            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
+          fi

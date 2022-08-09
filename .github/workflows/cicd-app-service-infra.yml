@@ -27,6 +27,9 @@ jobs:
         if: github.event.inputs.run_cleanup == 'true'
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Display current principal info
+        run: az ad signed-in-user show
+      
       - name: Remove the resource group
         if: github.event.inputs.run_cleanup == 'true'
         run: |
@@ -95,6 +98,14 @@ jobs:
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Purge deleted KV if found
+          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
+          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
+          if [[ ! -z "$kvDeletedExists" ]]; then
+            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
+            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
+          fi
+      
       - name: Create Azure resource group
         run: |
           az deployment sub create \
@@ -104,13 +115,6 @@ jobs:
 
       - name: Deploy Azure resources
         run: |
-          kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
-          kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
-          if [[ ! -z "$kvDeletedExists" ]]; then
-            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
-            az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
-            sleep 10m
-          fi
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
           dbAdminPassword="`openssl rand -hex 25`#@"
           echo "::add-mask::$dbAdminPassword"
@@ -130,6 +134,9 @@ jobs:
             createDB=false
           fi
           
+          dbUserName=`echo "${{ secrets.AZURE_APP_NAME }}" | tr '-' '_'`;
+          echo "appUserName: $dbUserName"
+
           az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/app-service-complete.bicep \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
                                      logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
