@@ -167,7 +167,7 @@ jobs:
                                      dbUserPassword=${{ steps.vars.outputs.DB_APP_USER_PASSWORD }} \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
-                                     clientIPAddress={{ secrets.CLIENT_IP }} \
+                                     clientIPAddress=${{ secrets.CLIENT_IP }} \
                                      createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
           
           dbAppUserId=`az webapp show -g ${{ secrets.AZURE_RESOURCE_GROUP }} -n ${dbAppUserName} --query "[identity.principalId]" -o tsv`
