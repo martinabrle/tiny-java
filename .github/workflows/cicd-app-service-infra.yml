@@ -27,9 +27,6 @@ jobs:
         if: github.event.inputs.run_cleanup == 'true'
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Display current principal info
-        run: az ad signed-in-user show
-      
       - name: Remove the resource group
         if: github.event.inputs.run_cleanup == 'true'
         run: |
@@ -59,6 +56,9 @@ jobs:
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: Display current principal info
+        run: az ad signed-in-user show
+      
       - name: Check the resource group exists
         id: logs_rg_exists
         run: |
