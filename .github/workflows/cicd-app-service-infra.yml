@@ -99,6 +99,7 @@ jobs:
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Purge deleted KV if found
+        run: |
           kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
           kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
           if [[ ! -z "$kvDeletedExists" ]]; then
@@ -154,9 +155,8 @@ jobs:
                                      clientIPAddress=$clientIP \
                                      createDB=$createDB
           
-          echo "Setting AAD DB Admin Group"
-          if [[ "$createDB" = true ]]; then
-             echo "Set it here"
+          if [[ "$createDB" = true ]] && [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
+             echo "Setting AAD DB Admin Group"
              az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ secrets.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
           fi
       # 
