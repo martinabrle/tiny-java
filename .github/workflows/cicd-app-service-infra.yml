@@ -95,9 +95,6 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Purge deleted KV if found
         run: |
           kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
@@ -114,16 +111,24 @@ jobs:
            --template-file ./templates/components/rg.bicep \
            --parameters name=${{ secrets.AZURE_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
 
-      - name: Deploy Azure resources
+      - name: Generate DB Variables
+        id: vars
+        run: |
+          echo "::set-output name=RG_EXISTS::${RG_EXISTS}"
+
+      - name: Initialize variables
+        id: vars
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
+          echo "::add-mask::$clientIP"
+          echo "::set-output name=CLIENT_IP::${clientIP}"
+
           dbAdminPassword="`openssl rand -hex 25`#@"
           echo "::add-mask::$dbAdminPassword"
-          dbAdminName=""
-          dbServerName="${{secrets.AZURE_DB_SERVER_NAME}}"
-          pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${dbServerName}.postgres.database.azure.com'].administratorLogin"
-          dbAdminName=`az postgres server list --query "$pgsqlServerAdminQuery" -o tsv`
+          echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
+
           createDB=true
+          dbAdminName=`az postgres server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
@@ -134,10 +139,28 @@ jobs:
             az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
             createDB=false
           fi
-          
-          dbUserName=`echo "${{ secrets.AZURE_APP_NAME }}" | tr '-' '_'`;
-          echo "appUserName: $dbUserName"
+          echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
+          echo "::set-output name=DB_NOT_INITIALIZED::${createDB}"
 
+          dbAppUserName=`echo "${{ secrets.AZURE_APP_NAME }}" | tr '-' '_'`;
+          echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
+
+          dbAppUserPassword=""
+          if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
+            dbAppUserPassword="`openssl rand -hex 25`#@"
+            echo "::add-mask::$dbAppUserPassword"
+            echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
+          fi
+          
+          if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
+             echo "::set-output name=DB_AAD_INTEGRATION::true"
+          else
+            echo "::set-output name=DB_AAD_INTEGRATION::false"
+          fi
+      
+      - name: Deploy Azure resources
+        id: deployment
+        run: |
           az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/app-service-complete.bicep \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
                                      logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
@@ -146,19 +169,67 @@ jobs:
                                      appInsightsName=${{ secrets.AZURE_APP_INSIGHTS_NAME }}  \
                                      dbServerName=${{ secrets.AZURE_DB_SERVER_NAME }} \
                                      dbName=${{ secrets.AZURE_DB_NAME }} \
-                                     dbAdminName=${dbAdminName} \
-                                     dbAdminPassword="${dbAdminPassword}" \
-                                     dbUserName=${{ secrets.AZURE_DB_APP_USER_NAME }} \
-                                     dbUserPassword=${{ secrets.AZURE_DB_APP_USER_PASSWORD }} \
+                                     dbAdminName=${{ steps.vars.outputs.DB_ADMIN_NAME }} \
+                                     dbAdminPassword=${{ steps.vars.outputs.DB_ADMIN_PASSWORD }} \
+                                     dbUserName=${{ steps.vars.outputs.DB_APP_USER_NAME }} \
+                                     dbUserPassword=${{ steps.vars.outputs.DB_APP_USER_PASSWORD }} \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=$clientIP \
-                                     createDB=$createDB
+                                     createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
           
-          if [[ "$createDB" = true ]] && [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
-             echo "Setting AAD DB Admin Group"
-             az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ secrets.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
+          dbAppUserId=`az webapp show -g ${{ secrets.AZURE_RESOURCE_GROUP }} -n ${dbAppUserName} --query "[identity.principalId]" -o tsv`
+          echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
+
+      - name: Set-up DB AAD Integration
+        if: (steps.vars.outputs.DB_NOT_INITIALIZED == 'true' && steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
+        run: |
+          echo "Setting AAD DB Admin Group"
+          az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ secrets.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
+  
+      - name: Synchronize DB Schema
+        run: |
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          psql "${dbConnectionString}" --file=./db.sql
+        
+      - name: If not AAD, set-up traditional DB User(s) and their permissions
+        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
+        run: |
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$dbUserName';"`
+
+          if [[ $dbUserExists -ne '1' ]]; then
+            echo "...creating the user"
+            psql "${dbConnectionString}" -tAc "CREATE USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';"
+          else
+            echo "...re-setting the password"
+            psql "${dbConnectionString}" -tAc "ALTER USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';"
           fi
+      
+      -name: If AAD, set-up AAD integrated DB User(s) and their permissions
+        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
+        run: |
+          dbAdminGroup=`echo "${{secrets.AZURE_DBA_GROUP_NAME}}" | awk '{gsub(" ", "\\ "); print}'`;
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
+          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
+
+          createUserCommand=SET aad_validate_oids_in_tenant = off; CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;
+          psql "${dbConnectionStringPostgresDB}" -tAc "${createUserCommand}"
+      
+      - name: Set-up user permissions
+        run: |      
+          echo "Granting user access"
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          psql "${dbConnectionString}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO $dbUserName;"
+          psql "${dbConnectionString}" -tAc "GRANT USAGE ON SCHEMA public TO $dbUserName;"
+          psql "${dbConnectionString}" -tAc "GRANT SELECT ON todo TO $dbUserName;"
+          psql "${dbConnectionString}" -tAc "GRANT INSERT ON todo TO $dbUserName;" 
+
       # 
       #Debug: - name: Setup tmate session
       #         uses: mxschmitt/action-tmate@v3.11
+
+
+##az postgres server ad-admin create -s maabrle-tiny-java-app-pg -g maabrle-tiny-java-app_rg --object-id 20de3c04-d6a6-483d-a88e-edf44e6c437d --display-name "All TEST PGSQL Admins"
+
+##az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv

@@ -10,68 +10,68 @@ on:
     inputs:
     
 jobs:  
-  init_db:    
-    runs-on: ubuntu-latest
-    environment: APP-SERVICE
-    defaults:
-      run:
-        working-directory: ./scripts
-    steps:
-      - uses: actions/checkout@v3
+  # init_db:    
+  #   runs-on: ubuntu-latest
+  #   environment: APP-SERVICE
+  #   defaults:
+  #     run:
+  #       working-directory: ./scripts
+  #   steps:
+  #     - uses: actions/checkout@v3
 
-      - name: Azure login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-        #see https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-cli%2Clinux
-        #    az account list-locations -o table
+  #     - name: Azure login
+  #       uses: azure/login@v1
+  #       with:
+  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
+  #       #see https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-cli%2Clinux
+  #       #    az account list-locations -o table
 
-      - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  #     - name: Set default Azure subscription
+  #       run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       #Debug: - name: Setup tmate session
       #         uses: mxschmitt/action-tmate@v3.11
 
       # Review: instead of running the --file=./db.sql db init script,
       #         run mvwm and init it from java spring-boot on the admin connection (?)
-      - name: Initialize database
-        run: |
-          dbAdminPassword="`openssl rand -hex 25`#@"
-          echo "::add-mask::$dbAdminPassword"
-          dbAdminName=""
-          dbServerName="${{secrets.AZURE_DB_SERVER_NAME}}"
-          pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${dbServerName}.postgres.database.azure.com'].administratorLogin"
-          dbAdminName=`az postgres server list --query "$pgsqlServerAdminQuery" -o tsv`
-          echo "::add-mask::$dbAdminName"
-          if [[ -z $dbAdminName ]]; then
-            error "Unable to retrieve admin name"
-            exit 1;
-          fi
-          az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
+      # - name: Initialize database
+      #   run: |
+      #     dbAdminPassword="`openssl rand -hex 25`#@"
+      #     echo "::add-mask::$dbAdminPassword"
+      #     dbAdminName=""
+      #     dbServerName="${{secrets.AZURE_DB_SERVER_NAME}}"
+      #     pgsqlServerAdminQuery="[?fullyQualifiedDomainName == '${dbServerName}.postgres.database.azure.com'].administratorLogin"
+      #     dbAdminName=`az postgres server list --query "$pgsqlServerAdminQuery" -o tsv`
+      #     echo "::add-mask::$dbAdminName"
+      #     if [[ -z $dbAdminName ]]; then
+      #       error "Unable to retrieve admin name"
+      #       exit 1;
+      #     fi
+      #     az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
           
-          dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }}"
-          dbConnectionStringTodoDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=${{ secrets.AZURE_DB_NAME }} user=${dbAdminFullName} password=${dbAdminPassword} sslmode=require"
-          dbConnectionStringPostgresDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminFullName} password=${dbAdminPassword} sslmode=require"
+      #     dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }}"
+      #     dbConnectionStringTodoDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=${{ secrets.AZURE_DB_NAME }} user=${dbAdminFullName} password=${dbAdminPassword} sslmode=require"
+      #     dbConnectionStringPostgresDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminFullName} password=${dbAdminPassword} sslmode=require"
           
-          psql "${dbConnectionStringTodoDB}" --file=./db.sql
+      #     psql "${dbConnectionStringTodoDB}" --file=./db.sql
               
-          dbUserName="${{secrets.AZURE_DB_APP_USER_NAME}}"
-          dbUserPassword="${{secrets.AZURE_DB_APP_USER_PASSWORD}}"
+      #     dbUserName="${{secrets.AZURE_DB_APP_USER_NAME}}"
+      #     dbUserPassword="${{secrets.AZURE_DB_APP_USER_PASSWORD}}"
 
-          dbUserExists=`psql "${dbConnectionStringPostgresDB}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$dbUserName';"`
+      #     dbUserExists=`psql "${dbConnectionStringPostgresDB}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$dbUserName';"`
 
-          if [[ $dbUserExists -ne '1' ]]; then
-            echo "...creating the user"
-            psql "${dbConnectionStringPostgresDB}" -tAc "CREATE USER $dbUserName WITH PASSWORD '$dbUserPassword';"
-          else
-            echo "...re-setting the password"
-            psql "${dbConnectionStringPostgresDB}" -tAc "ALTER USER $dbUserName WITH PASSWORD '$dbUserPassword';"
-          fi
-          echo "Granting user access"
-          psql "${dbConnectionStringPostgresDB}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO $dbUserName;"
-          psql "${dbConnectionStringTodoDB}" -tAc "GRANT USAGE ON SCHEMA public TO $dbUserName;"
-          psql "${dbConnectionStringTodoDB}" -tAc "GRANT SELECT ON todo TO $dbUserName;"
-          psql "${dbConnectionStringTodoDB}" -tAc "GRANT INSERT ON todo TO $dbUserName;"              
+      #     if [[ $dbUserExists -ne '1' ]]; then
+      #       echo "...creating the user"
+      #       psql "${dbConnectionStringPostgresDB}" -tAc "CREATE USER $dbUserName WITH PASSWORD '$dbUserPassword';"
+      #     else
+      #       echo "...re-setting the password"
+      #       psql "${dbConnectionStringPostgresDB}" -tAc "ALTER USER $dbUserName WITH PASSWORD '$dbUserPassword';"
+      #     fi
+      #     echo "Granting user access"
+      #     psql "${dbConnectionStringPostgresDB}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO $dbUserName;"
+      #     psql "${dbConnectionStringTodoDB}" -tAc "GRANT USAGE ON SCHEMA public TO $dbUserName;"
+      #     psql "${dbConnectionStringTodoDB}" -tAc "GRANT SELECT ON todo TO $dbUserName;"
+      #     psql "${dbConnectionStringTodoDB}" -tAc "GRANT INSERT ON todo TO $dbUserName;"              
 
   build_app:
     runs-on: ubuntu-latest
@@ -125,7 +125,7 @@ jobs:
           retention-days: 1
   
   deploy_app:
-    needs: [build_app, init_db]
+    needs: [build_app]
     runs-on: ubuntu-latest
     environment: APP-SERVICE
     steps:
@@ -143,8 +143,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-        #see https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-cli%2Clinux
-        #    az account list-locations -o table
 
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}

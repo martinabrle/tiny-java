@@ -168,3 +168,59 @@ jobs:
           # fi
       #Debug: - name: Setup tmate session
       #         uses: mxschmitt/action-tmate@v3.11
+
+
+
+      - name: Set-up DB Users
+        run: |
+          dbConnectionStringPostgresDB=""
+          dbConnectionStringTodoDB=""
+          dbUserName=`echo "${{ secrets.AZURE_APP_NAME }}" | tr '-' '_'`;
+          PGPASSWORD=''
+
+          if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
+            echo "Setting up managed identities"
+            
+            dbAdminGroup=`echo "${{secrets.AZURE_DBA_GROUP_NAME}}" | awk '{gsub(" ", "\\ "); print}'`;
+
+            dbConnectionStringPostgresDB="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminFullName} password=${dbAdminPassword} sslmode=require"
+            
+            dbUserExists=`psql "${dbConnectionStringPostgresDB}" -tAc "CREATE ROLE "${{secrets.AZURE_DBA_GROUP_NAME}}" WITH LOGIN IN ROLE azure_ad_user;"`
+
+            dbConnectionStringPostgresDB="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
+            export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
+            
+            dbUserExists=`psql "${dbConnectionStringPostgresDB}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$dbUserName';"`
+            if [[ $dbUserExists -ne '1' ]]; then
+              echo "...creating the user"
+              applicationId=`az webapp show -g maabrle-tiny-java-app_rg -n maabrle-tiny-java-app --query "[identity.principalId]" -o tsv`
+              createUserCommand=SET aad_validate_oids_in_tenant = off; CREATE ROLE ${dbUserName} WITH LOGIN PASSWORD '${applicationId}' IN ROLE azure_ad_user;
+              psql "${dbConnectionStringPostgresDB}" -tAc "${createUserCommand}"
+            fi
+          else
+            dbAdminFullName="${dbAdminName}@${{ secrets.AZURE_DB_SERVER_NAME }}"
+            dbConnectionStringTodoDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=${{ secrets.AZURE_DB_NAME }} user=${dbAdminFullName} password=${dbAdminPassword} sslmode=require"
+            dbConnectionStringPostgresDB="host=${{ secrets.AZURE_DB_SERVER_NAME }}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminFullName} password=${dbAdminPassword} sslmode=require"
+          
+            dbUserName="${{secrets.AZURE_DB_APP_USER_NAME}}"
+            dbUserPassword="${{secrets.AZURE_DB_APP_USER_PASSWORD}}"
+
+            dbUserExists=`psql "${dbConnectionStringPostgresDB}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$dbUserName';"`
+
+            if [[ $dbUserExists -ne '1' ]]; then
+              echo "...creating the user"
+              psql "${dbConnectionStringPostgresDB}" -tAc "CREATE USER $dbUserName WITH PASSWORD '$dbUserPassword';"
+            else
+              echo "...re-setting the password"
+              psql "${dbConnectionStringPostgresDB}" -tAc "ALTER USER $dbUserName WITH PASSWORD '$dbUserPassword';"
+            fi
+          fi
+
+          echo "Creating DB schema"
+          psql "${dbConnectionStringTodoDB}" --file=./db.sql
+
+          echo "Granting user access"
+          psql "${dbConnectionStringPostgresDB}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO $dbUserName;"
+          psql "${dbConnectionStringTodoDB}" -tAc "GRANT USAGE ON SCHEMA public TO $dbUserName;"
+          psql "${dbConnectionStringTodoDB}" -tAc "GRANT SELECT ON todo TO $dbUserName;"
+          psql "${dbConnectionStringTodoDB}" -tAc "GRANT INSERT ON todo TO $dbUserName;" 
