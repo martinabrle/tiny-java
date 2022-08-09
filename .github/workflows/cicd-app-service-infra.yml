@@ -206,7 +206,7 @@ jobs:
             psql "${dbConnectionString}" -tAc "ALTER USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';"
           fi
       
-      -name: If AAD, set-up AAD integrated DB User(s) and their permissions
+      - name: If AAD, set-up AAD DB User(s) and their permissions
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
           dbAdminGroup=`echo "${{secrets.AZURE_DBA_GROUP_NAME}}" | awk '{gsub(" ", "\\ "); print}'`;
