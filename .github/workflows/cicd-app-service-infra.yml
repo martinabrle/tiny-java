@@ -218,10 +218,12 @@ jobs:
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
           echo "Connection string: ${dbConnectionString}"
-          echo "SET aad_validate_oids_in_tenant = off;" > create_user.sql
-          echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" > create_user.sql
-
-          psql "${dbConnectionString}" --file=./db.sql
+          echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
+          echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" > ./create_user.sql
+          
+          cat ./create_user.sql
+          
+          psql "${dbConnectionString}" --file=./create_user.sql
 
           #createUserCommand=SET aad_validate_oids_in_tenant = off; CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;
           
