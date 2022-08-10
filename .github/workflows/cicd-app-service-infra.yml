@@ -112,7 +112,7 @@ jobs:
         id: vars
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
-          echo "::set-output name=CLIENT_IP::${clientIP}"
+          echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
           echo "Client IP: $clientIP"
 
           dbAdminPassword="`openssl rand -hex 25`#@"
@@ -159,11 +159,11 @@ jobs:
         run: |
           echo "Deploying with the following parameters:"
           echo "Admin name: '${{ steps.vars.outputs.DB_ADMIN_NAME }}'"
-          echo "Admin password: '{{ steps.vars.outputs.DB_ADMIN_PASSWORD }}'"
+          echo "Admin password: '${{ steps.vars.outputs.DB_ADMIN_PASSWORD }}'"
           echo "App user name: '${{ steps.vars.outputs.DB_APP_USER_NAME }}'"
           echo "App user password: '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}'"
-          echo "Client IP: '${{ steps.vars.outputs.secrets.CLIENT_IP }}'"
-          
+          echo "Client IP: ${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }}"
+
           az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/app-service-complete.bicep \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
                                      logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
@@ -178,7 +178,7 @@ jobs:
                                      dbUserPassword="_${{steps.vars.outputs.DB_APP_USER_PASSWORD}}" \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
-                                     clientIPAddress=${{ steps.vars.outputs.secrets.CLIENT_IP }} \
+                                     clientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
                                      createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
           
           dbAppUserId=`az webapp show -g ${{ secrets.AZURE_RESOURCE_GROUP }} -n ${dbAppUserName} --query "[identity.principalId]" -o tsv`
