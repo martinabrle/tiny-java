@@ -122,6 +122,7 @@ jobs:
           createDB=true
           dbAdminName=`az postgres server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           echo "Admin name: $dbAdminName"
+          echo "Admin password: $dbAdminPassword"
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
@@ -145,6 +146,7 @@ jobs:
             echo "::add-mask::$dbAppUserPassword"
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
           fi
+          echo "App user password: $dbAppUserPassword"
           
           if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
              echo "::set-output name=DB_AAD_INTEGRATION::true"
@@ -169,7 +171,7 @@ jobs:
                                      dbUserPassword="${{steps.vars.outputs.DB_APP_USER_PASSWORD}}" \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
-                                     clientIPAddress=${{ secrets.CLIENT_IP }} \
+                                     clientIPAddress=${{ steps.vars.outputs.secrets.CLIENT_IP }} \
                                      createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
           
           dbAppUserId=`az webapp show -g ${{ secrets.AZURE_RESOURCE_GROUP }} -n ${dbAppUserName} --query "[identity.principalId]" -o tsv`
