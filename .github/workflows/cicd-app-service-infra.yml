@@ -212,27 +212,26 @@ jobs:
       - name: If AAD, set-up AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
-          dbAdminGroup="${{secrets.AZURE_DBA_GROUP_NAME}}"
-          dbAdminGroup=${dbAdminGroup// /\\ }
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
-          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
-          echo "Connection string: ${dbConnectionString}"
           echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
           echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" > ./create_user.sql
           
+          echo "Running AAD user creation script:"
           cat ./create_user.sql
+
+          dbAdminGroup="${{secrets.AZURE_DBA_GROUP_NAME}}"
+          dbAdminGroup=${dbAdminGroup// /\\ }
+          
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
+          
+          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           
           psql "${dbConnectionString}" --file=./create_user.sql
-
-          #createUserCommand=SET aad_validate_oids_in_tenant = off; CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;
-          
-          #psql "${dbConnectionString}" -tAc "${createUserCommand}"
       
       - name: Set-up user permissions
         run: |      
           echo "Granting user access"
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           psql "${dbConnectionString}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO $dbUserName;"
           psql "${dbConnectionString}" -tAc "GRANT USAGE ON SCHEMA public TO $dbUserName;"
           psql "${dbConnectionString}" -tAc "GRANT SELECT ON todo TO $dbUserName;"
