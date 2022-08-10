@@ -218,7 +218,8 @@ jobs:
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
           createUserCommand=SET aad_validate_oids_in_tenant = off; CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;
-          psql "${dbConnectionStringPostgresDB}" -tAc "${createUserCommand}"
+          
+          psql "${dbConnectionString}" -tAc "${createUserCommand}"
       
       - name: Set-up user permissions
         run: |      
