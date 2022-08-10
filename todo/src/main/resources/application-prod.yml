@@ -1,7 +1,7 @@
 spring:
   datasource:
     username: ${SPRING_DATASOURCE_USERNAME}
-    url: ${SPRING_DATASOURCE_URL}?sslmode=verify-full&sslrootcert=`./DigiCertGlobalRootCA.crt.pem`
+    url: ${SPRING_DATASOURCE_URL}?sslmode=verify-full&sslrootcert=DigiCertGlobalRootCA.crt.pem
     password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     properties:
