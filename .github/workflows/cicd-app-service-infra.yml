@@ -113,6 +113,7 @@ jobs:
         run: |
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
           echo "::set-output name=CLIENT_IP::${clientIP}"
+          echo "Client IP: $clientIP"
 
           dbAdminPassword="`openssl rand -hex 25`#@"
           echo "::add-mask::$dbAdminPassword"
@@ -125,18 +126,21 @@ jobs:
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
           else
-            echo "Re-setting password for an existing admin user"
-            az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
+            #echo "Re-setting password for an existing admin user"
+            #az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
             createDB=false
           fi
           echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
           echo "::set-output name=DB_NOT_INITIALIZED::${createDB}"
+          echo "Create DB: $createDB"
 
           dbAppUserName=`echo "${{ secrets.AZURE_APP_NAME }}" | tr '-' '_'`;
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
+          echo "App user name: $dbAppUserName"
 
           dbAppUserPassword=""
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
+            echo "New app user name generated"
             dbAppUserPassword="`openssl rand -hex 25`#@"
             echo "::add-mask::$dbAppUserPassword"
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
@@ -162,7 +166,7 @@ jobs:
                                      dbAdminName=${{ steps.vars.outputs.DB_ADMIN_NAME }} \
                                      dbAdminPassword=${{ steps.vars.outputs.DB_ADMIN_PASSWORD }} \
                                      dbUserName=${{ steps.vars.outputs.DB_APP_USER_NAME }} \
-                                     dbUserPassword=${{ steps.vars.outputs.DB_APP_USER_PASSWORD }} \
+                                     dbUserPassword="${{steps.vars.outputs.DB_APP_USER_PASSWORD}}"" \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=${{ secrets.CLIENT_IP }} \
