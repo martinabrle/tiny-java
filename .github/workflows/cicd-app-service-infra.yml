@@ -192,7 +192,7 @@ jobs:
   
       - name: Synchronize DB Schema
         run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           psql "${dbConnectionString}" --file=./db.sql
         
       - name: If not AAD, set-up traditional DB User(s)
