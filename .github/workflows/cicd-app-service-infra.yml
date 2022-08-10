@@ -231,7 +231,10 @@ jobs:
       - name: Set-up user permissions
         run: |      
           echo "Granting user access"
+
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          
+          psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
           psql "${dbConnectionString}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
           psql "${dbConnectionString}" -tAc "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
           psql "${dbConnectionString}" -tAc "GRANT SELECT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
