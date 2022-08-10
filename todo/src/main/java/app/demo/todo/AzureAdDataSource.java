@@ -1,5 +1,8 @@
 package app.demo.todo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.azure.core.credential.SimpleTokenCache;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
@@ -22,6 +25,8 @@ import org.springframework.stereotype.Component;
 @Profile({"local-mi","test-mi", "prod-mi"})
 public class AzureAdDataSource extends HikariDataSource {
 
+    public static final Logger LOGGER = LoggerFactory.getLogger(AzureAdDataSource.class);
+
     public static final String BALTIMORE_CYBER_TRUST_ROOT = new FileCache().cacheEmbededFile("BaltimoreCyberTrustRoot.crt.pem");
     public static final String DIGICERT_GLOBAL_ROOT = new FileCache().cacheEmbededFile("DigiCertGlobalRootCA.crt.pem");
     
@@ -39,7 +44,10 @@ public class AzureAdDataSource extends HikariDataSource {
                 .blockOptional()
                 .orElseThrow(() -> new RuntimeException("Attempt to retrieve AAD token failed"));
 
-        return accessToken.getToken();
+        var token = accessToken.getToken();
+        LOGGER.debug(token);
+        
+        return token;
     }
 
     private static TokenRequestContext createRequestContext() {
