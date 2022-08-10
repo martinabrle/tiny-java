@@ -141,12 +141,18 @@ jobs:
 
           dbAppUserPassword=""
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
-            echo "New app user name generated"
+            echo "New app user password generated"
             dbAppUserPassword="`openssl rand -hex 25`#@"
             echo "::add-mask::$dbAppUserPassword"
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
+            appSpringProfile="test"
+          else
+            appSpringProfile="test-mi"
           fi
           echo "App user password: $dbAppUserPassword"
+
+          echo "::set-output name=APP_SPRING_PROFILE::$appSpringProfile"
+          echo "App Spring profile: $appSpringProfile"
           
           if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
              echo "::set-output name=DB_AAD_INTEGRATION::true"
@@ -162,6 +168,7 @@ jobs:
           echo "Admin password: '${{ steps.vars.outputs.DB_ADMIN_PASSWORD }}'"
           echo "App user name: '${{ steps.vars.outputs.DB_APP_USER_NAME }}'"
           echo "App user password: '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}'"
+          echo "App spring profile: '${{steps.vars.outputs.APP_SPRING_PROFILE}}'"
           echo "Client IP: ${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }}"
 
           az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/app-service-complete.bicep \
@@ -178,6 +185,7 @@ jobs:
                                      dbUserPassword="${{steps.vars.outputs.DB_APP_USER_PASSWORD}}" \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
+                                     appSpringProfile=${{ steps.vars.outputs.APP_SPRING_PROFILE }} \
                                      clientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
                                      createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
           
@@ -227,8 +235,6 @@ jobs:
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           
           psql "${dbConnectionString}" --file=./create_user.sql
-
-          psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
       
       - name: Set-up user permissions
         run: |      
@@ -236,7 +242,6 @@ jobs:
 
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           
-          psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
           psql "${dbConnectionString}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
           psql "${dbConnectionString}" -tAc "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
           psql "${dbConnectionString}" -tAc "GRANT SELECT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"

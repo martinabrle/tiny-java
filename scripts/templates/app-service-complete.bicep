@@ -20,6 +20,7 @@ param dbUserPassword string
 param clientIPAddress string
 param appServiceName string
 param appServicePort string
+param appSpringProfile string
 
 param location string = resourceGroup().location
 
@@ -299,7 +300,7 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
       }
       {
         name: 'SPRING_PROFILE'
-        value: 'test'
+        value: appSpringProfile
       }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
