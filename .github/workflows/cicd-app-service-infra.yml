@@ -237,6 +237,9 @@ jobs:
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           
           psql "${dbConnectionString}" --file=./create_user.sql
+
+          echo "List of existing users:"
+          psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
       
       - name: Set-up user permissions
         run: |      
