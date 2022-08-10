@@ -1,5 +1,8 @@
 package app.demo.todo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.azure.core.credential.SimpleTokenCache;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
@@ -21,6 +24,8 @@ import org.springframework.stereotype.Component;
 @ConfigurationProperties(prefix = "spring.datasource")
 @Profile({"local-mi","test-mi", "prod-mi"})
 public class AzureAdDataSource extends HikariDataSource {
+
+    public static final Logger LOGGER = LoggerFactory.getLogger(AzureAdDataSource.class);
 
     private final SimpleTokenCache cache;
 
@@ -52,9 +57,9 @@ public class AzureAdDataSource extends HikariDataSource {
 		try {
 			currentPath = new java.io.File(".").getCanonicalPath();
 		} catch (IOException ignoreException) {
-			System.out.println("ERROR: IO Exception ocurred while querying user's current directory.");
+			LOGGER.error("ERROR: IO Exception ocurred while querying user's current directory.");
 		}
-		System.out.println("Current dir:" + currentPath);
+		LOGGER.warn("Current dir:" + currentPath);
 
 		return currentPath;
 	}
@@ -62,7 +67,7 @@ public class AzureAdDataSource extends HikariDataSource {
 	public static String GetSystemCurrentDirectory() {
 
 		String currentDir = System.getProperty("user.dir");
-		System.out.println("Current dir using System:" + currentDir);
+        LOGGER.warn("Current dir using System:" + currentDir);
 
 		return currentDir;
 	}
