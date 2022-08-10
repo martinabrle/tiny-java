@@ -18,7 +18,7 @@ public class FileCache {
 
         File file = new File(fileName);
 
-        LOGGER.info("Retrieving resource " + fileName + "and saving it into a local file " + file.getAbsolutePath());
+        LOGGER.info("Retrieving resource " + fileName + " and saving it into a local file " + file.getAbsolutePath());
 
         if (Files.notExists(Paths.get(fileName))) {
             try {
@@ -39,10 +39,10 @@ public class FileCache {
                 LOGGER.error("ERROR: IO Exception ocurred while querying user's current directory: {}", ex);
             }
         } else {
-            LOGGER.info("Resource file " + fileName + " fis already cached as " + Paths.get(fileName).getFileName().toAbsolutePath().toString() + ".");
+            LOGGER.info("Resource file " + fileName + " is already cached as " + Paths.get(fileName).getFileName().toAbsolutePath().toString() + ".");
         }
 
-        LOGGER.info("Finishin 'cacheEmbededFile' with a return value " + file.getAbsolutePath() + "....");
+        LOGGER.info("Exiting 'cacheEmbededFile' with a return value " + file.getAbsolutePath() + "....");
         return file.getAbsolutePath();
     }
 }

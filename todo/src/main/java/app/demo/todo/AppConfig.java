@@ -1,5 +1,9 @@
 package app.demo.todo;
 
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +23,7 @@ import com.azure.identity.ManagedIdentityCredentialBuilder;
 @Configuration
 @ConfigurationProperties(prefix = "app.demo.todo")
 public class AppConfig {
+    public static final Logger LOGGER = LoggerFactory.getLogger(AppConfig.class);
 
     private String applicationClientId;
     private String loadDemoData;
@@ -45,10 +50,12 @@ public class AppConfig {
     }
 
     public void setApplicationClientId(String applicationClientId) {
+        LOGGER.info("Setting applicationClientId to: " + applicationClientId);
         this.applicationClientId = applicationClientId;
     }
 
     public void setLoadDemoData(String loadDemoData) {
+        LOGGER.info("Setting loadDemoData to: " + loadDemoData);
         this.loadDemoData = loadDemoData;
     }
 
