@@ -175,13 +175,13 @@ jobs:
                                      dbAdminName=${{ steps.vars.outputs.DB_ADMIN_NAME }} \
                                      dbAdminPassword=${{ steps.vars.outputs.DB_ADMIN_PASSWORD }} \
                                      dbUserName=${{ steps.vars.outputs.DB_APP_USER_NAME }} \
-                                     dbUserPassword="_${{steps.vars.outputs.DB_APP_USER_PASSWORD}}" \
+                                     dbUserPassword="${{steps.vars.outputs.DB_APP_USER_PASSWORD}}" \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
                                      createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
           
-          dbAppUserId=`az webapp show -g ${{ secrets.AZURE_RESOURCE_GROUP }} -n ${dbAppUserName} --query "[identity.principalId]" -o tsv`
+          dbAppUserId=`az webapp show -g ${{ secrets.AZURE_RESOURCE_GROUP }} -n ${{ secrets.AZURE_APP_NAME }} --query "[identity.principalId]" -o tsv`
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
 
       - name: Set-up DB AAD Integration
@@ -195,7 +195,7 @@ jobs:
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           psql "${dbConnectionString}" --file=./db.sql
         
-      - name: If not AAD, set-up traditional DB User(s) and their permissions
+      - name: If not AAD, set-up traditional DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
         run: |
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
@@ -209,7 +209,7 @@ jobs:
             psql "${dbConnectionString}" -tAc "ALTER USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';"
           fi
       
-      - name: If AAD, set-up AAD DB User(s) and their permissions
+      - name: If AAD, set-up AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
           dbAdminGroup=`echo "${{secrets.AZURE_DBA_GROUP_NAME}}" | awk '{gsub(" ", "\\ "); print}'`;
