@@ -1,7 +1,5 @@
 package app.demo.todo;
 
-import app.demo.todo.utils.FileCache;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,25 +17,22 @@ import com.azure.identity.ManagedIdentityCredentialBuilder;
 //  3) Use ManagedIdentityCredentialBuilder for UAT, PROD,...
 //  4) But also be able to use the old username/password for backward compatibility 
 @Configuration
-@ConfigurationProperties(prefix="app.demo.todo")
+@ConfigurationProperties(prefix = "app.demo.todo")
 public class AppConfig {
-
-    public static final String BALTIMORE_CYBER_TRUST_ROOT= new FileCache().cacheEmbededFile("BaltimoreCyberTrustRoot.crt.pem");
-    public static final String DIGICERT_GLOBAL_ROOT= new FileCache().cacheEmbededFile("DigiCertGlobalRootCA.crt.pem");
 
     private String applicationClientId;
     private String loadDemoData;
 
-    //Token identity for AAD integration while running on local machine
+    // Token identity for AAD integration while running on local machine
     @Bean
     @Profile("local-mi")
     public AzureCliCredential azureCliCredential() {
         return new AzureCliCredentialBuilder().build();
     }
 
-    //Token identity for AAD integration while running in Azure
+    // Token identity for AAD integration while running in Azure
     @Bean
-    @Profile({"test-mi", "prod-mi"})
+    @Profile({ "test-mi", "prod-mi" })
     public ManagedIdentityCredential managedIdentityCredentialTest() {
 
         return new ManagedIdentityCredentialBuilder()

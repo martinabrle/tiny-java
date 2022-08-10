@@ -5,6 +5,8 @@ import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
 import com.zaxxer.hikari.HikariDataSource;
 
+import app.demo.todo.utils.FileCache;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -20,6 +22,9 @@ import org.springframework.stereotype.Component;
 @Profile({"local-mi","test-mi", "prod-mi"})
 public class AzureAdDataSource extends HikariDataSource {
 
+    public static final String BALTIMORE_CYBER_TRUST_ROOT = new FileCache().cacheEmbededFile("BaltimoreCyberTrustRoot.crt.pem");
+    public static final String DIGICERT_GLOBAL_ROOT = new FileCache().cacheEmbededFile("DigiCertGlobalRootCA.crt.pem");
+    
     private final SimpleTokenCache cache;
 
     public AzureAdDataSource(TokenCredential credential) {
