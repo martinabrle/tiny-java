@@ -1,13 +1,13 @@
 spring:
   datasource:
     username: ${SPRING_DATASOURCE_USER_NAME}
-    jdbc-url: ${SPRING_DATASOURCE_URL}?sslmode=verify-full&sslrootcert=BaltimoreCyberTrustRoot.crt.pem
+    jdbc-url: ${SPRING_DATASOURCE_URL}?sslmode=verify-full&sslrootcert=`BaltimoreCyberTrustRoot.crt.pem`
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     show-sql: ${SPRING_DATASOURCE_SHOW_SQL}
     hibernate:
       ddl-auto: validate
-app.demo.todo.load-demo-data: false
+app.demo.todo.load-demo-data: true
 app.demo.todo.app-client-id: ${SPRING_DATASOURCE_APP_CLIENT_ID}
 logging.level: warn
 logging.level.app.demo.todo: debug
