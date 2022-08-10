@@ -157,6 +157,12 @@ jobs:
       - name: Deploy Azure resources
         id: deployment
         run: |
+          echo "Deploying with the following parameters:"
+          echo "Admin name: '${{ steps.vars.outputs.DB_ADMIN_NAME }}'"
+          echo "Admin password: '{{ steps.vars.outputs.DB_ADMIN_PASSWORD }}'"
+          echo "App user name: '${{ steps.vars.outputs.DB_APP_USER_NAME }}'"
+          echo "App user password: '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}'"
+          echo "Client IP: '${{ steps.vars.outputs.secrets.CLIENT_IP }}'"
           az deployment group create --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --template-file ./templates/app-service-complete.bicep \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
                                      logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
@@ -168,7 +174,7 @@ jobs:
                                      dbAdminName=${{ steps.vars.outputs.DB_ADMIN_NAME }} \
                                      dbAdminPassword=${{ steps.vars.outputs.DB_ADMIN_PASSWORD }} \
                                      dbUserName=${{ steps.vars.outputs.DB_APP_USER_NAME }} \
-                                     dbUserPassword="${{steps.vars.outputs.DB_APP_USER_PASSWORD}}" \
+                                     dbUserPassword="_${{steps.vars.outputs.DB_APP_USER_PASSWORD}}" \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
                                      clientIPAddress=${{ steps.vars.outputs.secrets.CLIENT_IP }} \
