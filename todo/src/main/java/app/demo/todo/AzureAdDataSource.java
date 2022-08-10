@@ -1,18 +1,9 @@
 package app.demo.todo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.azure.core.credential.SimpleTokenCache;
 import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
 import com.zaxxer.hikari.HikariDataSource;
-
-import app.demo.todo.utils.FileCache;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
@@ -29,12 +20,7 @@ import org.springframework.stereotype.Component;
 @Profile({"local-mi","test-mi", "prod-mi"})
 public class AzureAdDataSource extends HikariDataSource {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(AzureAdDataSource.class);
-
     private final SimpleTokenCache cache;
-
-    public static final String BALTIMORE_CYBER_TRUST_ROOT= new FileCache().cacheEmbededFile("BaltimoreCyberTrustRoot.crt.pem");
-    public static final String DIGICERT_GLOBAL_ROOT= new FileCache().cacheEmbededFile("DigiCertGlobalRootCA.crt.pem");
 
     public AzureAdDataSource(TokenCredential credential) {
         this.cache = new SimpleTokenCache(() -> credential.getToken(createRequestContext()));

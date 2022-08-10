@@ -1,5 +1,7 @@
 package app.demo.todo;
 
+import app.demo.todo.utils.FileCache;
+
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +21,10 @@ import com.azure.identity.ManagedIdentityCredentialBuilder;
 @Configuration
 @ConfigurationProperties(prefix="app.demo.todo")
 public class AppConfig {
+
+    public static final String BALTIMORE_CYBER_TRUST_ROOT= new FileCache().cacheEmbededFile("BaltimoreCyberTrustRoot.crt.pem");
+    public static final String DIGICERT_GLOBAL_ROOT= new FileCache().cacheEmbededFile("DigiCertGlobalRootCA.crt.pem");
+
     private String applicationClientId;
     private String loadDemoData;
 

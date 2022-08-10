@@ -12,11 +12,18 @@ public class FileCache {
 
     public String cacheEmbededFile(String fileName) {
         
-        File file = new File(fileName);
+        File file = new File("./" + fileName);
+
         if (!file.exists()) {
             try {
-                InputStream link = (this.getClass().getResourceAsStream(fileName));
+                LOGGER.error("Trying to retrieve a file " + fileName + " from resources.");
+                InputStream link = (this.getClass().getClassLoader().getResourceAsStream(fileName));
+                if (link==null) {
+                    LOGGER.error("Resource file not found");
+                }
+
                 byte[] buffer = link.readAllBytes();
+                
     
                 File targetFile = new File(fileName);
                 var outStream = new FileOutputStream(targetFile);
