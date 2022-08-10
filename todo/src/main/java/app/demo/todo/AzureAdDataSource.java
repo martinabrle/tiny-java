@@ -8,7 +8,11 @@ import com.azure.core.credential.TokenCredential;
 import com.azure.core.credential.TokenRequestContext;
 import com.zaxxer.hikari.HikariDataSource;
 
+import app.demo.todo.utils.FileCache;
+
+import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
@@ -29,8 +33,8 @@ public class AzureAdDataSource extends HikariDataSource {
 
     private final SimpleTokenCache cache;
 
-	public static final String CURRENT_DIR = GetCurrentDirectory();
-	public static final String CURRENT_SYSTEM_DIR = GetSystemCurrentDirectory();
+    public static final String BALTIMORE_CYBER_TRUST_ROOT= new FileCache().cacheEmbededFile("BaltimoreCyberTrustRoot.crt.pem");
+    public static final String DIGICERT_GLOBAL_ROOT= new FileCache().cacheEmbededFile("DigiCertGlobalRootCA.crt.pem");
 
     public AzureAdDataSource(TokenCredential credential) {
         this.cache = new SimpleTokenCache(() -> credential.getToken(createRequestContext()));
@@ -50,25 +54,4 @@ public class AzureAdDataSource extends HikariDataSource {
     private static TokenRequestContext createRequestContext() {
         return new TokenRequestContext().addScopes("https://ossrdbms-aad.database.windows.net/.default");
     }
-
-    public static String GetCurrentDirectory() {
-		String currentPath = "";
-
-		try {
-			currentPath = new java.io.File(".").getCanonicalPath();
-		} catch (IOException ignoreException) {
-			LOGGER.error("ERROR: IO Exception ocurred while querying user's current directory.");
-		}
-		LOGGER.warn("Current dir:" + currentPath);
-
-		return currentPath;
-	}
-
-	public static String GetSystemCurrentDirectory() {
-
-		String currentDir = System.getProperty("user.dir");
-        LOGGER.warn("Current dir using System:" + currentDir);
-
-		return currentDir;
-	}
 }
