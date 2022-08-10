@@ -212,7 +212,8 @@ jobs:
       - name: If AAD, set-up AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
-          dbAdminGroup=`echo "${{secrets.AZURE_DBA_GROUP_NAME}}" | awk '{gsub(" ", "\\ "); print}'`;
+          dbAdminGroup="${{secrets.AZURE_DBA_GROUP_NAME}}"
+          dbAdminGroup=${dbAdminGroup// /\\ }
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
