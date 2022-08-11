@@ -246,7 +246,6 @@ jobs:
       - name: If AAD, set-up AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
-
           echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
           echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
           
@@ -266,6 +265,7 @@ jobs:
         uses: mxschmitt/action-tmate@v3.11
 
       - name: If AAD, set-up AAD DB User(s)
+        run: |
           psql "${dbConnectionString}" --file=./create_user.sql
 
           echo "List of existing users:"
