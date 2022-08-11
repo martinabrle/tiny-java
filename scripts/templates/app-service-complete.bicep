@@ -49,6 +49,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   name: keyVaultName
   dependsOn: [
     appInsights
+    appService
   ]
   location: location
   tags: tagsArray
@@ -90,6 +91,7 @@ resource keyVaultSecretSpringDatasourceUserName 'Microsoft.KeyVault/vaults/secre
     contentType: 'string'
   }
 }
+
 resource keyVaultSecretSpringDatasourceUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-PASSWORD'
@@ -98,6 +100,20 @@ resource keyVaultSecretSpringDatasourceUserPassword 'Microsoft.KeyVault/vaults/s
     contentType: 'string'
   }
 }
+
+resource apiServiceAuthsettings 'Microsoft.Web/sites/config@2020-12-01' existing = {
+  name: '${appService.name}/authsettingsV2'
+}
+
+resource keyVaultSecretSpringDataSourceAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
+  properties: {
+    value: apiServiceAuthsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
+    contentType: 'string'
+  }
+}
+
 
 resource keyVaultSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
@@ -270,6 +286,7 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
   parent: appService
   dependsOn: [
     rbacKVSecretApiSpringDataSourceURL
+    rbacKVSecretApiSpringDataSourceAppClientId
     rbacKVSecretApiSpringDatasourceUserName
     rbacKVSecretApiSpringDatasourceUserPassword
     rbacKVSecretApiAppInsightsKey
@@ -294,6 +311,10 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
         name: 'SPRING_DATASOURCE_PASSWORD'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-PASSWORD)'
       }
+      {
+        name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-APP-CLIENT-ID)'
+      }      
       {
         name: 'SPRING_DATASOURCE_SHOW_SQL'
         value: 'false'
@@ -400,5 +421,16 @@ module rbacKVSecretApiAppInsightsInstrKey './components/role-assignment-kv-secre
     roleAssignmentNameGuid: guid(appService.id, keyVaultSecretAppInsightsInstrumentationKey.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: keyVaultSecretAppInsightsInstrumentationKey.name
+  }
+}
+
+module rbacKVSecretApiSpringDataSourceAppClientId './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-api-spring-datasource-client-id'
+  params: {
+    roleDefinitionId: keyVaultSecretsUser.id
+    principalId: apiService.identity.principalId
+    roleAssignmentNameGuid: guid(apiService.id, keyVaultSecretSpringDataSourceAppClientId.id, keyVaultSecretsUser.id)
+    kvName: keyVault.name
+    kvSecretName: keyVaultSecretSpringDataSourceAppClientId.name
   }
 }

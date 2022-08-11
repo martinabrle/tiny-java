@@ -43,6 +43,7 @@ resource keyVaultSecretSpringDatasourceUserName 'Microsoft.KeyVault/vaults/secre
     contentType: 'string'
   }
 }
+
 resource keyVaultSecretSpringDatasourceUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-PASSWORD'
@@ -166,17 +167,14 @@ resource apiServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
       {
         name: 'SPRING_DATASOURCE_URL'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-URL)'
-        //value: 'jdbc:postgresql://${dbServerName}.postgres.database.azure.com:5432/${dbName}'
       }
       {
         name: 'SPRING_DATASOURCE_USERNAME'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-USERNAME)'
-        //value: dbUserName
       }
       {
         name: 'SPRING_DATASOURCE_PASSWORD'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-PASSWORD)'
-        //value: dbUserPassword
       }
       {
         name: 'SPRING_DATASOURCE_SHOW_SQL'
