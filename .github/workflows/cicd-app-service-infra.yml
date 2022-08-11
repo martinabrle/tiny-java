@@ -149,6 +149,9 @@ jobs:
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
             appSpringProfile="test"
           else
+            dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
+            echo "DBA Group Id: $dbaGroupId"
+            echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
             appSpringProfile="test-mi"
           fi
           echo "App user password: $dbAppUserPassword"
@@ -189,7 +192,6 @@ jobs:
                                      clientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
                                      createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
 
-          #dbAppUserId=`az webapp show -g ${{ secrets.AZURE_RESOURCE_GROUP }} -n ${{ secrets.AZURE_APP_NAME }} --query "[identity.principalId]" -o tsv`
           dbAppUserId=`az ad sp list --display-name ${{ secrets.AZURE_APP_NAME }} --query "[*].appId" --out tsv`
 
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
@@ -256,6 +258,7 @@ jobs:
 
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
           
+          az account get-access-token --resource-type oss-rdbms --query "[accessToken]"
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           echo "Token $PGPASSWORD"
 
