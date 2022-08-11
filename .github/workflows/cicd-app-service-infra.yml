@@ -227,17 +227,17 @@ jobs:
           echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
           echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
           
-          echo "Running AAD user creation script:"
-          cat ./create_user.sql
-
           dbAdminGroup="${{secrets.AZURE_DBA_GROUP_NAME}}"
           dbAdminGroup=${dbAdminGroup// /\\ }
           
+          echo "User group $dbAdminGroup is running AAD user creation script:"
+          cat ./create_user.sql
+
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
           
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-          echo $PGPASSWORD
-          
+          echo "Token $PGPASSWORD"
+
           psql "${dbConnectionString}" --file=./create_user.sql
 
           echo "List of existing users:"
