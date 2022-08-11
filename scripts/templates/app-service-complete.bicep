@@ -101,7 +101,7 @@ resource keyVaultSecretSpringDatasourceUserPassword 'Microsoft.KeyVault/vaults/s
   }
 }
 
-resource apiServiceAuthsettings 'Microsoft.Web/sites/config@2020-12-01' existing = {
+resource appServiceAuthsettings 'Microsoft.Web/sites/config@2020-12-01' existing = {
   name: '${appService.name}/authsettingsV2'
 }
 
@@ -109,7 +109,7 @@ resource keyVaultSecretSpringDataSourceAppClientId 'Microsoft.KeyVault/vaults/se
   parent: keyVault
   name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
   properties: {
-    value: apiServiceAuthsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
+    value: appServiceAuthsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
     contentType: 'string'
   }
 }
@@ -428,8 +428,8 @@ module rbacKVSecretApiSpringDataSourceAppClientId './components/role-assignment-
   name: 'deployment-rbac-kv-secret-api-spring-datasource-client-id'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
-    principalId: apiService.identity.principalId
-    roleAssignmentNameGuid: guid(apiService.id, keyVaultSecretSpringDataSourceAppClientId.id, keyVaultSecretsUser.id)
+    principalId: appService.identity.principalId
+    roleAssignmentNameGuid: guid(appService.id, keyVaultSecretSpringDataSourceAppClientId.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: keyVaultSecretSpringDataSourceAppClientId.name
   }
