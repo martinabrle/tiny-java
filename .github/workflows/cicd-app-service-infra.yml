@@ -258,10 +258,14 @@ jobs:
 
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
           
-          az account get-access-token --resource-type oss-rdbms --query "[accessToken]"
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-          echo "Token $PGPASSWORD"
+          echo "$PGPASSWORD" > pwd.txt
+          echo "${dbConnectionString}" > pwd.txt
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3.11
+
+      - name: If AAD, set-up AAD DB User(s)
           psql "${dbConnectionString}" --file=./create_user.sql
 
           echo "List of existing users:"
