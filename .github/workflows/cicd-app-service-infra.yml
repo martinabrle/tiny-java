@@ -252,21 +252,12 @@ jobs:
           echo "User group {{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
           cat ./create_user.sql
 
-          # dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
-          # psql "${dbConnectionString}" --file=./create_user.sql
-          
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
-          # - name: Setup tmate session
-          #   uses: mxschmitt/action-tmate@v3.11
-
-          # - name: If AAD, set-up AAD DB User(s)
-          #   run: |
-          
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d postgres -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" --file=./create_user.sql
 
           echo "List of existing users:"
-          psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d postgres -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "SELECT * FROM pg_roles;"
       
       - name: Set-up user permissions
         run: |      
