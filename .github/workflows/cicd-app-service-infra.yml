@@ -259,7 +259,7 @@ jobs:
           
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
           echo "$PGPASSWORD" > pwd.txt
-          echo "${dbConnectionString}" > pwd.txt
+          echo "${dbConnectionString}" > connection.txt
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3.11
