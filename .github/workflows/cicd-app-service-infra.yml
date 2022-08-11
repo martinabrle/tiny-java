@@ -198,7 +198,7 @@ jobs:
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
           az deployment group create \
-              --resource-group --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
               --template-file ./templates/app-service-complete-app-auth-mi.bicep \
               --parameters keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
                            appServiceName=${{ secrets.AZURE_APP_NAME }} \
@@ -209,7 +209,7 @@ jobs:
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'false')
         run: |
           az deployment group create \
-              --resource-group --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
               --template-file ./templates/app-service-complete-app-auth-classic.bicep \
               --parameters keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
                            appServiceName=${{ secrets.AZURE_APP_NAME }} \
