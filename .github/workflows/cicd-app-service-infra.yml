@@ -222,7 +222,7 @@ jobs:
         if: (steps.vars.outputs.DB_NOT_INITIALIZED == 'true' && steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
           echo "Setting AAD DB Admin Group"
-          az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ secrets.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
+          az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
   
       - name: Synchronize DB Schema
         run: |
@@ -255,7 +255,8 @@ jobs:
           echo "User group $dbAdminGroup is running AAD user creation script:"
           cat ./create_user.sql
 
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
+          # dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
+          # psql "${dbConnectionString}" --file=./create_user.sql
           
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
@@ -265,8 +266,7 @@ jobs:
           # - name: If AAD, set-up AAD DB User(s)
           #   run: |
           
-          psql -h =${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d postgres -U "${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}}" -v sslmode=require --file=./create_user.sql
-          # psql "${dbConnectionString}" --file=./create_user.sql
+          psql -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d postgres -U "${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}}" -v sslmode=require --file=./create_user.sql
 
           echo "List of existing users:"
           psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
