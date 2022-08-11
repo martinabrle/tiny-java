@@ -266,7 +266,7 @@ jobs:
           # - name: If AAD, set-up AAD DB User(s)
           #   run: |
           
-          psql -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d postgres -U "${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}}" -v sslmode=require --file=./create_user.sql
+          psql -h maabrle-tiny-java-app-pg.postgres.database.azure.com -p 5432 -d postgres -U "All TEST PGSQL Admins@maabrle-tiny-java-app-pg" -v sslmode=require --file=./create_user.sql
 
           echo "List of existing users:"
           psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
