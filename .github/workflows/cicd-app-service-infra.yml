@@ -249,10 +249,7 @@ jobs:
           echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
           echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
           
-          dbAdminGroup="${{secrets.AZURE_DBA_GROUP_NAME}}"
-          dbAdminGroup=${dbAdminGroup// /\\ }
-          
-          echo "User group $dbAdminGroup is running AAD user creation script:"
+          echo "User group {{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
           cat ./create_user.sql
 
           # dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${dbAdminGroup}@${{secrets.AZURE_DB_SERVER_NAME}} sslmode=require"
@@ -266,7 +263,7 @@ jobs:
           # - name: If AAD, set-up AAD DB User(s)
           #   run: |
           
-          psql --set=sslmode=require -h maabrle-tiny-java-app-pg.postgres.database.azure.com -p 5432 -d postgres -U "All TEST PGSQL Admins@maabrle-tiny-java-app-pg" --file=./create_user.sql
+          psql --set=sslmode=require -h {{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d postgres -U "${{secrets.AZURE_DBA_GROUP_NAME}}@{{secrets.AZURE_DB_SERVER_NAME}}" --file=./create_user.sql
 
           echo "List of existing users:"
           psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
@@ -285,8 +282,3 @@ jobs:
       # 
       #Debug: - name: Setup tmate session
       #         uses: mxschmitt/action-tmate@v3.11
-
-
-##az postgres server ad-admin create -s maabrle-tiny-java-app-pg -g maabrle-tiny-java-app_rg --object-id 20de3c04-d6a6-483d-a88e-edf44e6c437d --display-name "All TEST PGSQL Admins"
-
-##az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv
