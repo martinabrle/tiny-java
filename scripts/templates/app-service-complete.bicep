@@ -76,20 +76,22 @@ resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12
     collation: 'en_US.utf8'
   }
 }
+
 resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
-  name: 'allowClientIP'
+  name: 'AllowDeploymentClientIP'
   parent: postgreSQLServer
   properties: {
     endIpAddress: clientIPAddress
     startIpAddress: clientIPAddress
   }
 }
+
 resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
-  name: 'allowAllIps'
+  name: 'AllowAllWindowsAzureIps'
   parent: postgreSQLServer
   properties: {
     startIpAddress: '0.0.0.0'
-    endIpAddress: '255.255.255.255'
+    endIpAddress: '0.0.0.0'
   }
 }
 
@@ -161,7 +163,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   }
 }
 
-resource keyVaultSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-URL'
   properties: {
@@ -170,16 +172,16 @@ resource keyVaultSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@20
   }
 }
 
-resource keyVaultSecretAppInsightsKey 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
-  name: 'APPLICATION-INSIGHTS-CONNECTION-STRING'
+  name: 'APPLICATIONINSIGHTS-CONNECTION-STRING'
   properties: {
     value: appInsights.properties.ConnectionString
     contentType: 'string'
   }
 }
 
-resource keyVaultSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'APP-INSIGHTS-INSTRUMENTATION-KEY'
   properties: {
@@ -188,7 +190,7 @@ resource keyVaultSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/
   }
 }
 
-resource keyVaultSecretApiURI 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretApiURI 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'API-URI'
   properties: {
@@ -225,9 +227,9 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
   name: 'web'
   parent: appService
   dependsOn: [
-    rbacKVSecretApiSpringDataSourceURL
-    rbacKVSecretApiAppInsightsKey
-    rbacKVSecretApiAppInsightsInstrKey
+    rbacKVSpringDataSourceURL
+    rbacKVApplicationInsightsConnectionString
+    rbacKVAppInsightsInstrKey
   ]
   kind: 'string'
   properties: {
@@ -237,8 +239,8 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
         value: appServicePort
       }
       {
-        name: 'SPRING_DATASOURCE_URL'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=SPRING-DATASOURCE-URL)'
+        name: replace(kvSecretSpringDataSourceURL.name,'-','_')
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
       }
       {
         name: 'SPRING_DATASOURCE_SHOW_SQL'
@@ -249,12 +251,12 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
         value: appSpringProfile
       }
       {
-        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APPLICATION-INSIGHTS-CONNECTION-STRING)'
+        name: replace(kvApplicationInsightsConnectionString.name,'-','_')
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
       }
       {
-        name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=APP-INSIGHTS-INSTRUMENTATION-KEY)'
+        name: replace(kvSecretAppInsightsInstrumentationKey.name,'-','_')
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
       }
       {
         name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
@@ -294,35 +296,35 @@ resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2018-01-01
   name: '4633458b-17de-408a-b874-0445c86b69e6'
 }
 
-module rbacKVSecretApiSpringDataSourceURL './components/role-assignment-kv-secret.bicep' = {
+module rbacKVSpringDataSourceURL './components/role-assignment-kv-secret.bicep' = {
   name: 'deployment-rbac-kv-secret-app-spring-datasource-url'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
     principalId: appService.identity.principalId
-    roleAssignmentNameGuid: guid(appService.id, keyVaultSecretSpringDataSourceURL.id, keyVaultSecretsUser.id)
+    roleAssignmentNameGuid: guid(appService.id, kvSecretSpringDataSourceURL.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
-    kvSecretName: keyVaultSecretSpringDataSourceURL.name
+    kvSecretName: kvSecretSpringDataSourceURL.name
   }
 }
 
-module rbacKVSecretApiAppInsightsKey './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-app-app-insights'
+module rbacKVApplicationInsightsConnectionString './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-app-insights-con-str'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
     principalId: appService.identity.principalId
-    roleAssignmentNameGuid: guid(appService.id, keyVaultSecretAppInsightsKey.id, keyVaultSecretsUser.id)
+    roleAssignmentNameGuid: guid(appService.id, kvApplicationInsightsConnectionString.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
-    kvSecretName: keyVaultSecretAppInsightsKey.name
+    kvSecretName: kvApplicationInsightsConnectionString.name
   }
 }
 
-module rbacKVSecretApiAppInsightsInstrKey './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-app-app-insights-instr'
+module rbacKVAppInsightsInstrKey './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-app-insights-instr'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
     principalId: appService.identity.principalId
-    roleAssignmentNameGuid: guid(appService.id, keyVaultSecretAppInsightsInstrumentationKey.id, keyVaultSecretsUser.id)
+    roleAssignmentNameGuid: guid(appService.id, kvSecretAppInsightsInstrumentationKey.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
-    kvSecretName: keyVaultSecretAppInsightsInstrumentationKey.name
+    kvSecretName: kvSecretAppInsightsInstrumentationKey.name
   }
 }
