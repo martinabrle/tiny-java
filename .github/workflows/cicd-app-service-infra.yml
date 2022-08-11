@@ -162,7 +162,7 @@ jobs:
             echo "::set-output name=DB_AAD_INTEGRATION::false"
           fi
       
-      - name: Deploy Azure resources
+      - name: Deploy Azure resources (main part)
         id: deployment
         run: |
           echo "Deploying with the following parameters:"
@@ -183,17 +183,38 @@ jobs:
                                      dbName=${{ secrets.AZURE_DB_NAME }} \
                                      dbAdminName=${{ steps.vars.outputs.DB_ADMIN_NAME }} \
                                      dbAdminPassword=${{ steps.vars.outputs.DB_ADMIN_PASSWORD }} \
-                                     dbUserName=${{ steps.vars.outputs.DB_APP_USER_NAME }} \
-                                     dbUserPassword="${{steps.vars.outputs.DB_APP_USER_PASSWORD}}" \
                                      appServiceName=${{ secrets.AZURE_APP_NAME }} \
                                      appServicePort=${{ secrets.AZURE_APP_PORT }} \
                                      appSpringProfile=${{ steps.vars.outputs.APP_SPRING_PROFILE }} \
                                      clientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
                                      createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
-          
+
           #dbAppUserId=`az webapp show -g ${{ secrets.AZURE_RESOURCE_GROUP }} -n ${{ secrets.AZURE_APP_NAME }} --query "[identity.principalId]" -o tsv`
           dbAppUserId=`az ad sp list --display-name ${{ secrets.AZURE_APP_NAME }} --query "[*].appId" --out tsv`
+
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
+
+      - name: Deploy Azure resources (username/clientId) for AAD
+        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
+        run: |
+          az deployment group create \
+              --resource-group --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --template-file ./templates/app-service-complete-app-auth-mi.bicep \
+              --parameters keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
+                           appServiceName=${{ secrets.AZURE_APP_NAME }} \
+                           appClientId=${{steps.vars.outputs.DB_APP_USER_ID}} \
+                           dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}
+
+      - name: Deploy Azure resources (username/password) for non-AAD
+        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'false')
+        run: |
+          az deployment group create \
+              --resource-group --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --template-file ./templates/app-service-complete-app-auth-classic.bicep \
+              --parameters keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
+                           appServiceName=${{ secrets.AZURE_APP_NAME }} \
+                           dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                           dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}}
 
       - name: Set-up DB AAD Integration
         if: (steps.vars.outputs.DB_NOT_INITIALIZED == 'true' && steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
