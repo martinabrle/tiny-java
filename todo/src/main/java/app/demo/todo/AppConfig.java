@@ -27,6 +27,7 @@ public class AppConfig {
 
     private String applicationClientId;
     private String loadDemoData;
+    private String debugAuthToken;
 
     // Token identity for AAD integration while running on local machine
     @Bean
@@ -45,10 +46,6 @@ public class AppConfig {
                 .build();
     }
 
-    public String getApplicationClientId() {
-        return applicationClientId;
-    }
-
     public void setApplicationClientId(String applicationClientId) {
         LOGGER.info("Setting applicationClientId to: " + applicationClientId);
         this.applicationClientId = applicationClientId;
@@ -59,7 +56,20 @@ public class AppConfig {
         this.loadDemoData = loadDemoData;
     }
 
+    public void setDebugAuthToken(String debugAuthToken) {
+        LOGGER.info("Setting debugAuthToken to: " + debugAuthToken);
+        this.debugAuthToken = debugAuthToken;
+    }
+
+    public String getApplicationClientId() {
+        return applicationClientId;
+    }
+
     public boolean getLoadDemoData() {
         return loadDemoData != null && loadDemoData.toLowerCase().trim().equals("true");
+    }
+
+    public boolean getDebugAuthToken() {
+        return debugAuthToken != null && debugAuthToken.toLowerCase().trim().equals("true");
     }
 }

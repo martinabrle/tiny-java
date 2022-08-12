@@ -10,6 +10,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import app.demo.todo.utils.FileCache;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -22,14 +23,18 @@ import org.springframework.stereotype.Component;
 //  4) But also be able to use the old username/password for backward compatibility 
 @Component
 @ConfigurationProperties(prefix = "spring.datasource")
-@Profile({"local-mi","test-mi", "prod-mi"})
+@Profile({ "local-mi", "test-mi", "prod-mi" })
 public class AzureAdDataSource extends HikariDataSource {
 
     public static final Logger LOGGER = LoggerFactory.getLogger(AzureAdDataSource.class);
 
-    public static final String BALTIMORE_CYBER_TRUST_ROOT = new FileCache().cacheEmbededFile("BaltimoreCyberTrustRoot.crt.pem");
+    @Autowired
+    private AppConfig appConfig;
+
+    public static final String BALTIMORE_CYBER_TRUST_ROOT = new FileCache()
+            .cacheEmbededFile("BaltimoreCyberTrustRoot.crt.pem");
     public static final String DIGICERT_GLOBAL_ROOT = new FileCache().cacheEmbededFile("DigiCertGlobalRootCA.crt.pem");
-    
+
     private final SimpleTokenCache cache;
 
     public AzureAdDataSource(TokenCredential credential) {
@@ -45,12 +50,18 @@ public class AzureAdDataSource extends HikariDataSource {
                 .orElseThrow(() -> new RuntimeException("Attempt to retrieve AAD token failed"));
 
         var token = accessToken.getToken();
-        LOGGER.debug(token);
-        
+        if (debugAuthToken()) {
+            LOGGER.debug(token);
+        }
+
         return token;
     }
 
     private static TokenRequestContext createRequestContext() {
         return new TokenRequestContext().addScopes("https://ossrdbms-aad.database.windows.net/.default");
+    }
+
+    private boolean debugAuthToken() {
+        return appConfig != null && appConfig.getDebugAuthToken();
     }
 }
