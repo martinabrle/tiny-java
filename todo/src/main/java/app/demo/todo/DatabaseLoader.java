@@ -37,7 +37,7 @@ public class DatabaseLoader implements CommandLineRunner {
         }
 
         public static void initRepoWithDemoData(TodoRepository todoRepository) {
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000001"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000001"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000001"), 
@@ -45,7 +45,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 }
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000002"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000002"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000002"), 
@@ -53,7 +53,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 }
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000003"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000003"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000003"), 
@@ -61,7 +61,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 }               
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000004"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000004"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000004"), 
@@ -69,7 +69,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 } 
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000005"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000005"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000005"), 
@@ -77,7 +77,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 } 
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000006"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000006"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000006"), 
@@ -85,7 +85,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 } 
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000007"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000007"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000007"), 
@@ -93,7 +93,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 } 
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000008"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000008"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000008"), 
@@ -101,7 +101,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 } 
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000009"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000009"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000009"), 
@@ -109,7 +109,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 } 
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000010"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000010"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000010"), 
@@ -117,7 +117,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         null));
                 } 
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000011"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000011"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000011"), 
@@ -125,7 +125,7 @@ public class DatabaseLoader implements CommandLineRunner {
                                         new Date(), 
                                         new Date()));
                 } 
-                if (todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000012"))) {
+                if (!todoRepository.existsById(UUID.fromString("00000000-0000-0000-0000-000000000012"))) {
                         todoRepository.save(
                                 new app.demo.todo.entity.Todo(
                                         UUID.fromString("00000000-0000-0000-0000-000000000012"), 
