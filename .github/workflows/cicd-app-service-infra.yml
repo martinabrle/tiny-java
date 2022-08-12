@@ -278,7 +278,7 @@ jobs:
           echo "List of existing users:"
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d postgres -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "SELECT * FROM pg_roles;"
 
-          echo "Granting GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES to the app user"
+          echo "Granting SELECT, INSERT, UPDATE, DELETE ON ALL TABLES to the app user"
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";"
       
       # - name: Set-up user permissions
