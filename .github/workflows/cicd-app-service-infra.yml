@@ -240,22 +240,33 @@ jobs:
       - name: If not AAD, set-up traditional DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
         run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$dbUserName';"`
 
           if [[ $dbUserExists -ne '1' ]]; then
-            echo "...creating the user"
-            psql "${dbConnectionString}" -tAc "CREATE USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';"
+            echo "CREATE USER \"${{steps.vars.outputs.DB_APP_USER_NAME}}\" WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
           else
-            echo "...re-setting the password"
-            psql "${dbConnectionString}" -tAc "ALTER USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';"
+            echo "ALTER USER \"${{steps.vars.outputs.DB_APP_USER_NAME}}\" WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
           fi
+          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";">> ./create_user.sql
+          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+
+          echo "User ${{steps.vars.outputs.DB_ADMIN_NAME}} is running a user creation script:"
+          cat ./create_user.sql
+          psql "${dbConnectionString}" --file=./db.sql
+
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          
+          echo "Granting GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES to the app user"
+          psql "${dbConnectionString}" -tAc "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";"
       
       - name: If AAD, set-up AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
           echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
-          echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
+          echo "CREATE ROLE \"${{steps.vars.outputs.DB_APP_USER_NAME}}\" WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
+          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";">> ./create_user.sql
+          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           
           echo "User group {{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
           cat ./create_user.sql
@@ -266,17 +277,20 @@ jobs:
 
           echo "List of existing users:"
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d postgres -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "SELECT * FROM pg_roles;"
-      
-      - name: Set-up user permissions
-        run: |      
-          echo "Granting user access"
 
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          echo "Granting GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES to the app user"
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";"
+      
+      # - name: Set-up user permissions
+      #   run: |      
+      #     echo "Granting user access"
+
+      #     dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           
-          psql "${dbConnectionString}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
-          psql "${dbConnectionString}" -tAc "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
-          psql "${dbConnectionString}" -tAc "GRANT SELECT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
-          psql "${dbConnectionString}" -tAc "GRANT INSERT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};" 
+      #     psql "${dbConnectionString}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
+      #     psql "${dbConnectionString}" -tAc "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
+      #     psql "${dbConnectionString}" -tAc "GRANT SELECT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
+      #     psql "${dbConnectionString}" -tAc "GRANT INSERT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};" 
 
       # 
       #Debug: - name: Setup tmate session
