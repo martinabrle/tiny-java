@@ -138,6 +138,7 @@ resource appService 'Microsoft.Web/sites@2021-03-01' = {
     siteConfig: {
       linuxFxVersion: 'JAVA|11-java11'
       scmType: 'None'
+      healthCheckPath: '/health'
     }
   }
 }
