@@ -182,7 +182,7 @@ resource apiServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
         value: 'true'
       }
       {
-        name: 'SPRING_PROFILE'
+        name: 'SPRING_PROFILES_ACTIVE'
         value: 'test-mi'
       }
       {

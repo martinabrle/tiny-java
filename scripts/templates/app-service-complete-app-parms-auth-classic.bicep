@@ -116,7 +116,7 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserPassword.name})'
       }
       {
-        name: 'SPRING_PROFILE'
+        name: 'SPRING_PROFILES_ACTIVE'
         value: appSpringProfile
       }
       {
