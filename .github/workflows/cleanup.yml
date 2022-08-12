@@ -3,7 +3,7 @@ name: cleanup
 on:
   schedule:
     # * is a special character in YAML so you have to quote this string
-    - cron:  '31 20 * * *'    
+    - cron:  '31 20 * * 5'    
   workflow_dispatch:
     inputs:
       run_cleanup_log_analytics:
@@ -18,8 +18,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-        #see https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-cli%2Clinux
-        #    az account list-locations -o table
 
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -27,7 +25,7 @@ jobs:
       - name: Remove the resource group
         run: |
           RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[RG_EXISTS -eq true]]; then
+          if [[ "$RG_EXISTS" -eq true ]]; then
              echo "Deleting the Todo App app resource group"
              az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -36,7 +34,7 @@ jobs:
         if: github.event.inputs.run_cleanup_log_analytics == 'true'
         run: |
           LOG_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[LOG_RG_EXISTS -eq true]]; then
+          if [[ "$LOG_RG_EXISTS" -eq true ]]; then
              echo "Deleting the Log Analytics Workspace resource group"
              az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -58,8 +56,6 @@ jobs:
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
-        #see https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure?tabs=azure-cli%2Clinux
-        #    az account list-locations -o table
 
       - name: Set default Azure subscription
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -67,7 +63,7 @@ jobs:
       - name: Remove the resource group
         run: |
           RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[RG_EXISTS -eq true]]; then
+          if [[ "$RG_EXISTS" -eq true ]]; then
              echo "Deleting the Todo App app resource group"
              az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -76,7 +72,7 @@ jobs:
         if: github.event.inputs.run_cleanup_log_analytics == 'true'
         run: |
           LOG_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[LOG_RG_EXISTS -eq true]]; then
+          if [[ "$LOG_RG_EXISTS" -eq true ]]; then
              echo "Deleting the Log Analytics Workspace resource group"
              az group delete --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
