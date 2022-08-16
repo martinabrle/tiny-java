@@ -18,58 +18,59 @@ import app.demo.todo.service.TodoService;
 public class TodoListHealthApiController {
 
 	private TodoService todoService;
-	
-	@Autowired 
+	private static Random randomGenerator = new Random();
+
+	@Autowired
 	public TodoListHealthApiController(TodoService service) {
 		try {
 			this.todoService = service;
-		}
-		catch (Exception ignException) {
+		} catch (Exception ignException) {
 			this.todoService = null;
 		}
 	}
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(TodoListHealthApiController.class);
 
-	@GetMapping( value = {"/health"}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = { "/health" }, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public ResponseEntity<String> getHealth() {
 
 		LOGGER.debug("Healthiness probe called");
 
-		var random = new Random().nextDouble();
+		var random = randomGenerator.nextDouble();
 		if (random > 0.96) {
 			if (random > 0.98) {
+				LOGGER.debug("Healthiness returns 'RANDOM_ERROR_INTERNAL'");
 				return new ResponseEntity<String>("RANDOM_ERROR_INTERNAL", HttpStatus.INTERNAL_SERVER_ERROR);
 			}
+			LOGGER.debug("Healthiness returns 'RANDOM_ERROR_BAD_REQUEST'");
 			return new ResponseEntity<String>("RANDOM_ERROR_BAD_REQUEST", HttpStatus.BAD_REQUEST);
-	    }
+		}
+		LOGGER.debug("Healthiness returns 'OK'");
 		return new ResponseEntity<String>("OK", HttpStatus.OK);
 	}
 
-	@GetMapping( value = {"/health/live"}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = { "/health/live" }, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public ResponseEntity<String> getLive() {
 		LOGGER.debug("Liveness probe called");
 
 		try {
 			todoService.getTodos();
-		}
-		catch (Exception ignoreException) {
+		} catch (Exception ignoreException) {
 			return new ResponseEntity<String>("BACKEND_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return new ResponseEntity<String>("OK", HttpStatus.OK);
 	}
 
-	@GetMapping( value = {"/health/warmup"}, produces = MediaType.APPLICATION_JSON_VALUE)
+	@GetMapping(value = { "/health/warmup" }, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody
 	public ResponseEntity<String> warm() {
 		LOGGER.debug("Warm-Up called");
 
 		try {
 			todoService.getTodos();
-		}
-		catch (Exception ignoreException) {
+		} catch (Exception ignoreException) {
 			return new ResponseEntity<String>("BACKEND_ERROR", HttpStatus.INTERNAL_SERVER_ERROR);
 		}
 		return new ResponseEntity<String>("OK", HttpStatus.OK);
