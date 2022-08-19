@@ -1,6 +1,5 @@
 package app.demo.todo;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +27,7 @@ public class AppConfig {
     private String applicationClientId;
     private String loadDemoData;
     private String debugAuthToken;
+    private String testKeyvaultReference;
 
     // Token identity for AAD integration while running on local machine
     @Bean
@@ -41,23 +41,21 @@ public class AppConfig {
     @Profile({ "test-mi", "prod-mi" })
     public ManagedIdentityCredential managedIdentityCredentialTest() {
 
+        LOGGER.debug(String.format("Connecting to the database using Application ClientID '%s'", applicationClientId));
         return new ManagedIdentityCredentialBuilder()
                 .clientId(applicationClientId)
                 .build();
     }
 
     public void setApplicationClientId(String applicationClientId) {
-        LOGGER.info("Setting applicationClientId to: " + applicationClientId);
         this.applicationClientId = applicationClientId;
     }
 
     public void setLoadDemoData(String loadDemoData) {
-        LOGGER.info("Setting loadDemoData to: " + loadDemoData);
         this.loadDemoData = loadDemoData;
     }
 
     public void setDebugAuthToken(String debugAuthToken) {
-        LOGGER.info("Setting debugAuthToken to: " + debugAuthToken);
         this.debugAuthToken = debugAuthToken;
     }
 
@@ -72,4 +70,14 @@ public class AppConfig {
     public boolean getDebugAuthToken() {
         return debugAuthToken != null && debugAuthToken.toLowerCase().trim().equals("true");
     }
+
+    public String getTestKeyvaultReference() {
+        return testKeyvaultReference;
+    }
+
+    public void setTestKeyvaultReference(String testKeyvaultReference) {
+        LOGGER.debug(String.format("TEST_KEYVAULT_REFERENCE: '%s'", testKeyvaultReference));
+        this.testKeyvaultReference = testKeyvaultReference;
+    }
+
 }

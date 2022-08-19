@@ -249,7 +249,7 @@ jobs:
             echo "ALTER USER \"${{steps.vars.outputs.DB_APP_USER_NAME}}\" WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
           fi
           echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";">> ./create_user.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT USAGE ON SCHEMA public TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";">> ./create_user.sql
 
           echo "User ${{steps.vars.outputs.DB_ADMIN_NAME}} is running a user creation script:"
           cat ./create_user.sql
@@ -266,9 +266,9 @@ jobs:
           echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
           echo "CREATE ROLE \"${{steps.vars.outputs.DB_APP_USER_NAME}}\" WITH LOGIN PASSWORD '${{steps.deployment.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
           echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";">> ./create_user.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
+          echo "GRANT USAGE ON SCHEMA public TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";">> ./create_user.sql
           
-          echo "User group {{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
+          echo "User group ${{secrets.AZURE_DBA_GROUP_NAME}} is running AAD user creation script:"
           cat ./create_user.sql
 
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`

@@ -126,7 +126,7 @@ public class TodoListApiController {
 	@ResponseBody
 	public ResponseEntity<List<Todo>> updateTodos(@RequestBody List<Todo> modifiedTodos) {
 
-		LOGGER.debug("TODO LIST update called with the following payload: {}", modifiedTodos);
+		LOGGER.debug("TODO LIST update called using updateTodos(...)");
 
 		List<Todo> retVal = null;
 		try {

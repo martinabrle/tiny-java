@@ -14,18 +14,18 @@ public class FileCache {
 
     public String cacheEmbededFile(String fileName) {
 
-        LOGGER.info("Starting 'cacheEmbededFile'....");
+        LOGGER.debug("Starting 'cacheEmbededFile'....");
 
         File file = new File(fileName);
 
-        LOGGER.info("Retrieving resource " + fileName + " and saving it into a local file " + file.getAbsolutePath());
+        LOGGER.debug(String.format("Retrieving resource '%s' and saving it into a local file '%s'", fileName + file.getAbsolutePath()));
 
         if (Files.notExists(Paths.get(fileName))) {
             try {
-                LOGGER.info("Retrieving a file " + fileName + " from embeded resources.");
+                LOGGER.debug(String.format("Retrieving a file '%s' from embeded resources.", fileName));
                 InputStream link = (this.getClass().getClassLoader().getResourceAsStream(fileName));
                 if (link == null) {
-                    LOGGER.error("Embeded resource file not found");
+                    LOGGER.error(String.format("Embeded resource file '%s' not found", fileName));
                 }
 
                 byte[] buffer = link.readAllBytes();
@@ -36,13 +36,13 @@ public class FileCache {
                 outStream.flush();
                 outStream.close();
             } catch (Exception ex) {
-                LOGGER.error("ERROR: IO Exception ocurred while querying user's current directory: {}", ex);
+                LOGGER.error(String.format("Exception ocurred while querying user's current directory (%s)", ex.getMessage()));
             }
         } else {
-            LOGGER.info("Resource file " + fileName + " is already cached as " + Paths.get(fileName).getFileName().toAbsolutePath().toString() + ".");
+            LOGGER.debug(String.format("Resource file '%s' is already cached as '%s'.", fileName, Paths.get(fileName).getFileName().toAbsolutePath().toString()));
         }
 
-        LOGGER.info("Exiting 'cacheEmbededFile' with a return value " + file.getAbsolutePath() + "....");
+        LOGGER.debug(String.format("Exiting 'cacheEmbededFile' with a return value '%s'...", file.getAbsolutePath()));
         return file.getAbsolutePath();
     }
 }

@@ -36,12 +36,10 @@ public class TodoServiceImpl implements TodoService {
 
         List<Todo> retVal = null;
 
-        LOGGER.debug("Retrieving all TODOs synchronously using GetTodos()");
+        LOGGER.debug("Retrieving all TODOs synchronously using getTodos()");
 
         try {
             var todoEntityList = repository.findAll(Sort.by(Sort.Direction.DESC, "createdDateTime"));
-
-            LOGGER.debug("Received back a list of TODOs as a response: {}", todoEntityList);
 
             retVal = new ArrayList<Todo>();
             for (var e : todoEntityList) {
@@ -49,9 +47,11 @@ public class TodoServiceImpl implements TodoService {
                         e.getCompletedDateTime() != null));
             }
         } catch (Exception ex) {
-            LOGGER.error("Retrieving all TODOs failed: {}\n{}", ex.getMessage(), ex);
+            LOGGER.error(String.format("Retrieving all TODOs failed (%s)", ex.getMessage()));
             throw new TodosRetrievalFailedException(ex.getMessage());
         }
+
+        LOGGER.debug("Retrieved all TODOs synchronously using getTodos()");
 
         return retVal;
     }
@@ -61,7 +61,7 @@ public class TodoServiceImpl implements TodoService {
 
         Todo retVal = null;
 
-        LOGGER.debug("Retrieving a TODO synchronously using getTodo({})", id);
+        LOGGER.debug(String.format("Retrieving a TODO synchronously using getTodo('%s')", id));
 
         try {
             var retrievedOptionalTodoEntity = repository.findById(id);
@@ -80,14 +80,15 @@ public class TodoServiceImpl implements TodoService {
             retVal = new Todo(retrievedTodoEntity.getId(), retrievedTodoEntity.getTodoText(),
                     retrievedTodoEntity.getCreatedDateTime(), retrievedTodoEntity.getCompletedDateTime(),
                     retrievedTodoEntity.getCompletedDateTime() != null);
-
-            LOGGER.debug("Received back this TODO structure as a response: {}", retVal);
+            
         } catch (TodoNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            LOGGER.error("Retrieving the TODO {} failed: {}\n{}", id, ex.getMessage(), ex);
+            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()));
             throw new TodosRetrievalFailedException(ex.getMessage());
         }
+        
+        LOGGER.debug(String.format("Retrieved a TODO synchronously using getTodo('%s')", id));
 
         return retVal;
     }
@@ -102,22 +103,21 @@ public class TodoServiceImpl implements TodoService {
         }
 
         try {
-            LOGGER.debug("Create a new Todo synchronously using CreateTodo({})", todoText);
+            LOGGER.debug(String.format("Create a new Todo synchronously using createTodo('%s')", todoText));
 
             var todoEntity = new app.demo.todo.entity.Todo(UUID.randomUUID(), todoText, new Date(), null);
 
             var todoEntitySaved = repository.save(todoEntity);
 
-            LOGGER.debug("Saved a new TODO: {}", todoEntitySaved);
-
             todo = new Todo(todoEntitySaved.getId(), todoEntitySaved.getTodoText(),
                     todoEntitySaved.getCreatedDateTime(), todoEntitySaved.getCompletedDateTime(),
                     todoEntitySaved.getCompletedDateTime() != null);
 
+            LOGGER.debug(String.format("Created a new Todo with Id '%s'", todo.getId()));
         } catch (NewTodoIsEmptyException ex) {
             throw ex;
         } catch (Exception ex) {
-            LOGGER.error("Todo creation failed: {}\n{}", ex.getMessage(), ex);
+            LOGGER.error(String.format("Todo creation failed (%s)", ex.getMessage()));
             throw new TodoCreationFailedException(ex.getMessage());
         }
         return todo;
@@ -131,7 +131,7 @@ public class TodoServiceImpl implements TodoService {
             throw new TodoIsEmptyException(todo.getId(), null);
 
         try {
-            LOGGER.debug("Updating an existing Todo synchronously using updateTodo({})", todo);
+            LOGGER.debug(String.format("Updating an existing Todo '%s' synchronously using updateTodo(..)", todo.getId()));
 
             var existingTodoEntityLookup = repository.findById(todo.getId());
 
@@ -144,8 +144,6 @@ public class TodoServiceImpl implements TodoService {
 
             var savedTodoEntity = repository.save(existingTodoEntity);
 
-            LOGGER.debug("Updated an existing TODO: {}", savedTodoEntity);
-
             retVal = new Todo(savedTodoEntity.getId(), savedTodoEntity.getTodoText(),
                     savedTodoEntity.getCreatedDateTime(), savedTodoEntity.getCompletedDateTime(),
                     savedTodoEntity.getCompletedDateTime() != null);
@@ -156,9 +154,12 @@ public class TodoServiceImpl implements TodoService {
         } catch (TodoNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            LOGGER.error("Todo update failed: {}\n{}", ex.getMessage(), ex);
+            LOGGER.error(String.format("Todo update failed (%s)", ex.getMessage()));
             throw new TodoUpdateFailedException(ex.getMessage());
         }
+
+        LOGGER.debug(String.format("Updated an existing Todo '%s' synchronously using updateTodo(..)", todo.getId()));
+
         return retVal;
     }
 
@@ -166,7 +167,7 @@ public class TodoServiceImpl implements TodoService {
     public void deleteTodo(UUID id)
             throws TodoNotFoundException, TodoDeleteFailedException, TodoIdCannotBeEmptyException {
 
-        LOGGER.debug("Deleting a TODO synchronously using deleteTodo({})", id);
+        LOGGER.debug(String.format("Deleting a TODO synchronously using deleteTodo('%s')", id));
 
         try {
             if (!repository.existsById(id)) {
@@ -175,16 +176,16 @@ public class TodoServiceImpl implements TodoService {
 
             repository.deleteById(id);
 
-            LOGGER.debug("Deleted Todo {}", id);
         } catch (IllegalArgumentException ex) {
-            LOGGER.error("Retrieving the TODO {} failed: {}\n{}", id, ex.getMessage(), ex);
+            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()));
             throw new TodoIdCannotBeEmptyException(ex.getMessage());
         } catch (TodoNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            LOGGER.error("Retrieving the TODO {} failed: {}\n{}", id, ex.getMessage(), ex);
+            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()));
             throw new TodosRetrievalFailedException(ex.getMessage());
         }
+        LOGGER.debug(String.format("Deleted a TODO synchronously using deleteTodo('%s')", id));
     }
 
     @Override

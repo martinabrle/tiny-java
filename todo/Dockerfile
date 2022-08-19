@@ -10,7 +10,7 @@ ADD . .
 
 ENV SPRING_PROFILES_ACTIVE=local
 ENV JAVA_OPTS=-Dspring.profiles.active=local
-
+ENV PORT=80
 RUN ./mvnw clean package
 
 RUN mv ./target/todo-*.jar "./target/todo-app.jar"
@@ -22,12 +22,12 @@ ARG VERSION
 
 WORKDIR /
 
-COPY --from=build ../target/todo-app.jar /
+COPY --from=build ./target/todo-app.jar /
 
 # "-Dspring.profiles.active=local" , 
 
-ENV VERSION="${VERSION}"
+ARG APP_VERSION=$VERSION
 
-EXPOSE 8080
-
+EXPOSE 80
+EXPOSE 443
 ENTRYPOINT ["java", "-jar", "/todo-app.jar" ]

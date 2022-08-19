@@ -1,6 +1,6 @@
 spring:
   datasource:
-    username: ${SPRING_DATASOURCE_USER_NAME}
+    username: ${SPRING_DATASOURCE_USERNAME}
     jdbc-url: ${SPRING_DATASOURCE_URL}?sslmode=verify-full&sslrootcert=BaltimoreCyberTrustRoot.crt.pem
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
@@ -8,6 +8,8 @@ spring:
     hibernate:
       ddl-auto: validate
 app.demo.todo.load-demo-data: true
+app.demo.todo.debug-auth-token: ${DEBUG_AUTH_TOKEN}
 app.demo.todo.app-client-id: ${SPRING_DATASOURCE_APP_CLIENT_ID}
+app.demo.todo.test-keyvault-reference: ${TEST_KEYVAULT_REFERENCE}
 logging.level: warn
 logging.level.app.demo.todo: debug

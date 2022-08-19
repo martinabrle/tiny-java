@@ -146,7 +146,7 @@ public class Todo {
         try {
             return new ObjectMapper().writeValueAsString(this);
         } catch (JsonProcessingException ex) {
-            LOGGER.error("Failed to convert Todo into a string: {}\n{}", ex.getMessage(), ex);
+            LOGGER.error(String.format("Failed to convert Todo into a string (%s)", ex.getMessage()));
         }
         // This is just for the impossible case where the ObjectMapper throws an
         // exception

@@ -8,12 +8,11 @@ import app.demo.todo.repository.TodoRepository;
 @SpringBootTest
 public class DbSmokeTest {
 
-	@Autowired 
+    @Autowired
     private TodoRepository todoRepository;
-    
+
     @Test
     void connectionToDbShouldWork() {
         todoRepository.count();
     }
-
 }

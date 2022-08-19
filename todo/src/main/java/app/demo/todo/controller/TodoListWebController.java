@@ -109,14 +109,14 @@ public class TodoListWebController {
 			try {
 				var todo = todoService.createTodo(page.getTodoText());
 
-				LOGGER.error("Saved a new TODO", todo);
-
 				setFormMessage(model, "saved",
 						String.format("Task '%s' has been saved.", Utils.shortenString(page.getTodoText())));
 
 				setCreateTodoMode(model, false);
+				LOGGER.debug(String.format("TODO POST with action '/submit' finished successfully (%s)", todo.getId()));
+
 			} catch (Exception ex) {
-				LOGGER.error("Failed to save a new TODO: {}\n{}", ex.getMessage(), ex);
+				LOGGER.error(String.format("Failed to save a new TODO (%s)", ex.getMessage()));
 				setCreateTodoMode(model, true);
 				setFormMessage(model, "error", "Error while saving the new task. Please try again later.");
 			}
@@ -184,7 +184,7 @@ public class TodoListWebController {
 			page.setTodoList(todos);
 			model.addAttribute("page", page);
 		} catch (Exception ex) {
-			LOGGER.error("Failed to retrieve the list of TODOs: {}\n{}", ex.getMessage(), ex);
+			LOGGER.error(String.format("Failed to retrieve the list of TODOs (%s)", ex.getMessage()));
 			model.addAttribute("page", page);
 			if (!this.hasTodoListError(model)) {
 				// Do not overwrite a possibly moder important error
@@ -198,7 +198,6 @@ public class TodoListWebController {
 		LOGGER.debug("Starting to process Todo List changes");
 		try {
 			var todoList = page.getTodoList();
-			LOGGER.debug("Retrieved Todo list: {}", todoList);
 			if (todoList != null) {
 				for (Todo todo : todoList) {
 					if (todo.getCompleted() != todo.getCompletedOrig()) {
@@ -208,13 +207,11 @@ public class TodoListWebController {
 						if (todo.getCompleted() && retrievedTodo.getCompletedDateTime() == null) {
 							retrievedTodo.setCompletedDateTime(new Date());
 							var updatedTodo = todoService.updateTodo(retrievedTodo);
-							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'true'",
-									updatedTodo.getId()));
+							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'true'", updatedTodo.getId()));
 						} else if (!todo.getCompleted() && retrievedTodo.getCompletedDateTime() != null) {
 							retrievedTodo.setCompletedDateTime(null);
 							var updatedTodo = todoService.updateTodo(retrievedTodo);
-							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'false'",
-									updatedTodo.getId()));
+							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'false'", updatedTodo.getId()));
 						} else if (todo.getCompletedDateTime() != retrievedTodo.getCompletedDateTime()) {
 							LOGGER.debug(String.format("Processing TODO '%s': no update needed (1)", todo.getId()));
 						}
@@ -225,7 +222,7 @@ public class TodoListWebController {
 			}
 			initPageTodoList(model);
 		} catch (Exception ex) {
-			LOGGER.error("An error has occured while updating TODO:", ex);
+			LOGGER.error(String.format("An error has occured while updating TODO (%s)", ex.getMessage()));
 			setTodoListMessage(model,
 					"error",
 					"An error has occured while updating Todos. Please try again later.");
