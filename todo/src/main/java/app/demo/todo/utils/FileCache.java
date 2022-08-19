@@ -18,7 +18,7 @@ public class FileCache {
 
         File file = new File(fileName);
 
-        LOGGER.debug(String.format("Retrieving resource '%s' and saving it into a local file '%s'", fileName + file.getAbsolutePath()));
+        LOGGER.debug(String.format("Retrieving resource '%s' and saving it into a local file '%s'", fileName, file.getAbsolutePath()));
 
         if (Files.notExists(Paths.get(fileName))) {
             try {
