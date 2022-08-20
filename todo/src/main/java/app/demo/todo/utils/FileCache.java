@@ -1,8 +1,5 @@
 package app.demo.todo.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -10,7 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 public class FileCache {
-    public static final Logger LOGGER = LoggerFactory.getLogger(FileCache.class);
+    
+    public static final AppLogger LOGGER = new AppLogger(FileCache.class);
 
     public String cacheEmbededFile(String fileName) {
 

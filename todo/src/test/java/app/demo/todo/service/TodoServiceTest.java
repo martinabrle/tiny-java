@@ -5,8 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +15,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import app.demo.todo.DatabaseLoader;
 import app.demo.todo.dto.Todo;
 import app.demo.todo.repository.TodoRepository;
+import app.demo.todo.utils.AppLogger;
 
 @SpringBootTest
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
 public class TodoServiceTest {
     
-    public static final Logger LOGGER = LoggerFactory.getLogger(TodoServiceTest.class);
+    public static final AppLogger LOGGER = new AppLogger(TodoServiceTest.class);
 
 	@Autowired 
     private TodoService todoService;

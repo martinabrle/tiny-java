@@ -3,18 +3,17 @@ package app.demo.todo;
 import java.util.Date;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import app.demo.todo.repository.TodoRepository;
+import app.demo.todo.utils.AppLogger;
 
 @Component
 public class DatabaseLoader implements CommandLineRunner {
 
-        public static final Logger LOGGER = LoggerFactory.getLogger(DatabaseLoader.class);
+        public static final AppLogger LOGGER = new AppLogger(DatabaseLoader.class);
 
         private final TodoRepository todoRepository;
 

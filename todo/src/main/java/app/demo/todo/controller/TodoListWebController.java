@@ -3,8 +3,6 @@ package app.demo.todo.controller;
 import java.util.ArrayList;
 import java.util.Date;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -17,12 +15,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import app.demo.todo.dto.Todo;
 import app.demo.todo.dto.TodoPage;
 import app.demo.todo.service.TodoService;
+import app.demo.todo.utils.AppLogger;
 import app.demo.todo.utils.Utils;
 
 @Controller
 public class TodoListWebController {
 
-	public static final Logger LOGGER = LoggerFactory.getLogger(TodoListWebController.class);
+	public static final AppLogger LOGGER = new AppLogger(TodoListWebController.class);
 
 	private TodoService todoService;
 
@@ -97,7 +96,7 @@ public class TodoListWebController {
 	@RequestMapping(value = "/submit", method = RequestMethod.POST)
 	public String submit(@ModelAttribute TodoPage page, Model model) {
 
-		LOGGER.debug("TODO POST called with action '/submit' ", page);
+		LOGGER.debug(String.format("TODO POST called with action '/submit' :\n%s", page.toString()));
 
 		initPageHeader(model, true);
 
@@ -207,11 +206,13 @@ public class TodoListWebController {
 						if (todo.getCompleted() && retrievedTodo.getCompletedDateTime() == null) {
 							retrievedTodo.setCompletedDateTime(new Date());
 							var updatedTodo = todoService.updateTodo(retrievedTodo);
-							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'true'", updatedTodo.getId()));
+							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'true'",
+									updatedTodo.getId()));
 						} else if (!todo.getCompleted() && retrievedTodo.getCompletedDateTime() != null) {
 							retrievedTodo.setCompletedDateTime(null);
 							var updatedTodo = todoService.updateTodo(retrievedTodo);
-							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'false'", updatedTodo.getId()));
+							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'false'",
+									updatedTodo.getId()));
 						} else if (todo.getCompletedDateTime() != retrievedTodo.getCompletedDateTime()) {
 							LOGGER.debug(String.format("Processing TODO '%s': no update needed (1)", todo.getId()));
 						}

@@ -1,7 +1,5 @@
 package app.demo.todo.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,12 +11,16 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Random;
 
 import app.demo.todo.service.TodoService;
+import app.demo.todo.utils.AppLogger;
 
 @RestController
 public class TodoListHealthApiController {
 
 	private TodoService todoService;
+
 	private static Random randomGenerator = new Random();
+
+	public static final AppLogger LOGGER = new AppLogger(TodoListHealthApiController.class);
 
 	@Autowired
 	public TodoListHealthApiController(TodoService service) {
@@ -28,8 +30,6 @@ public class TodoListHealthApiController {
 			this.todoService = null;
 		}
 	}
-
-	public static final Logger LOGGER = LoggerFactory.getLogger(TodoListHealthApiController.class);
 
 	@GetMapping(value = { "/health" }, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody

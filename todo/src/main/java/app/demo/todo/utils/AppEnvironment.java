@@ -1,10 +1,8 @@
 package app.demo.todo.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class AppEnvironment {
-	public static final Logger LOGGER = LoggerFactory.getLogger(AppEnvironment.class);
+	
+	public static final AppLogger LOGGER = new AppLogger(AppEnvironment.class);
 
 	public static String GetCurrentDirectory() {
 		String currentPath = "";

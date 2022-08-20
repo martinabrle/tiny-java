@@ -7,8 +7,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.List;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +16,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import app.demo.todo.DatabaseLoader;
 import app.demo.todo.entity.Todo;
+import app.demo.todo.utils.AppLogger;
 
 @SpringBootTest
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
 public class TodoRepositoryTest {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(TodoRepositoryTest.class);
+    public static final AppLogger LOGGER = new AppLogger(TodoRepositoryTest.class);
 
 	@Autowired 
     private TodoRepository todoRepository;

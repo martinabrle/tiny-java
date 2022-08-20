@@ -3,8 +3,6 @@ package app.demo.todo.utils;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
@@ -16,7 +14,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AppEnvironmentListener implements EnvironmentPostProcessor {
-    public static final Logger LOGGER = LoggerFactory.getLogger(AppEnvironment.class);
+    
+    public static final AppLogger LOGGER = new AppLogger(AppEnvironmentListener.class);
+
     private static final boolean DEBUG_AUTH_TOKEN = getDebugAuthToken();
 
     @Override
@@ -38,13 +38,16 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
             }
 
             if (propertySource == null) {
-                LOGGER.debug(String.format("Skipping PropertySource as it is not of type '%s'", MapPropertySource.class.getName()));
+                LOGGER.debug(String.format("Skipping PropertySource as it is not of type '%s'",
+                        MapPropertySource.class.getName()));
                 continue;
             }
 
             var propertyNames = propertySource.getPropertyNames();
             if (propertyNames.length < 1) {
-                LOGGER.debug(String.format("Skipping property source name '%s', type '%s', as the getNames() returned nothing.", propertySource.getName(), propertySource.getClass().getName()));
+                LOGGER.debug(String.format(
+                        "Skipping property source name '%s', type '%s', as the getNames() returned nothing.",
+                        propertySource.getName(), propertySource.getClass().getName()));
                 continue;
             }
 
@@ -60,7 +63,8 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
                         String transformedPropertyValue = replaceEnvironmentVars(propertyValue);
                         if (!propertyValue.equals(transformedPropertyValue)) {
                             propertyTransformed = true;
-                            LOGGER.debug(String.format("Property transformation 1: '%s': '%s' -> '%s'", propertyNames[i], origPropertyValue, transformedPropertyValue));
+                            LOGGER.debug(String.format("Property transformation 1: '%s': '%s' -> '%s'",
+                                    propertyNames[i], origPropertyValue, transformedPropertyValue));
                             propertyValue = transformedPropertyValue;
                         }
 
@@ -70,14 +74,16 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
 
                             if (!transformedPropertyValue.equals(secondTransformedPropertyValue)) {
                                 propertyTransformed = true;
-                                LOGGER.debug(String.format("Property transformation 2: '%s': '%s' -> '%s'", propertyNames[i], transformedPropertyValue, secondTransformedPropertyValue));
+                                LOGGER.debug(String.format("Property transformation 2: '%s': '%s' -> '%s'",
+                                        propertyNames[i], transformedPropertyValue, secondTransformedPropertyValue));
                                 propertyValue = secondTransformedPropertyValue;
                             }
                         }
                     }
                     newProperties.put(propertyNames[i], propertyValue);
                 } catch (Exception ignoreException) {
-                    LOGGER.error(String.format("Failed to retrieve a configuration property '%s' (%s)", propertyNames[i], ignoreException.getMessage()));
+                    LOGGER.error(String.format("Failed to retrieve a configuration property '%s' (%s)",
+                            propertyNames[i], ignoreException.getMessage()));
                 }
             }
 
@@ -117,12 +123,14 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
                                         keyVaultSecretName, DEBUG_AUTH_TOKEN);
 
                                 if (transformedPropertyValue != null) {
-                                    processedValue = processedValue.replace("@Microsoft.KeyVault(" + localKVReference + ")", transformedPropertyValue);
+                                    processedValue = processedValue.replace(
+                                            "@Microsoft.KeyVault(" + localKVReference + ")", transformedPropertyValue);
                                 }
                             }
                         }
                     } catch (Exception ex) {
-                        LOGGER.error(String.format("An error has occurred while replacing KeyVault references ('%s')", ex.getMessage()));
+                        LOGGER.error(String.format("An error has occurred while replacing KeyVault references ('%s')",
+                                ex.getMessage()));
                     }
                 }
             }

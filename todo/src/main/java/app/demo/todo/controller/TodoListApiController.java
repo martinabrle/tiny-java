@@ -2,8 +2,6 @@ package app.demo.todo.controller;
 
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -28,10 +26,13 @@ import app.demo.todo.exception.TodoIsEmptyException;
 import app.demo.todo.exception.TodoNotFoundException;
 import app.demo.todo.exception.TodosRetrievalFailedException;
 import app.demo.todo.service.TodoService;
+import app.demo.todo.utils.AppLogger;
 
 @RestController
 @RequestMapping(value = {"/api"})
 public class TodoListApiController {
+
+	public static final AppLogger LOGGER = new AppLogger(TodoListApiController.class);
 
 	private TodoService todoService;
 	
@@ -40,7 +41,6 @@ public class TodoListApiController {
 			this.todoService = service;
 	}
 
-	public static final Logger LOGGER = LoggerFactory.getLogger(TodoListApiController.class);
 
 	@GetMapping( value = {"todos/"}, produces = MediaType.APPLICATION_JSON_VALUE)
 	@ResponseBody

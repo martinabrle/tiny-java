@@ -7,8 +7,6 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -23,6 +21,7 @@ import app.demo.todo.exception.TodoNotFoundException;
 import app.demo.todo.exception.TodoUpdateFailedException;
 import app.demo.todo.exception.TodosRetrievalFailedException;
 import app.demo.todo.repository.TodoRepository;
+import app.demo.todo.utils.AppLogger;
 
 @Service
 public class TodoServiceImpl implements TodoService {
@@ -30,7 +29,7 @@ public class TodoServiceImpl implements TodoService {
     @Autowired
     private TodoRepository repository;
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(TodoServiceImpl.class);
+    public static final AppLogger LOGGER = new AppLogger(TodoServiceImpl.class);
 
     public List<Todo> getTodos() throws TodosRetrievalFailedException {
 

@@ -1,16 +1,14 @@
 package app.demo.todo.dto;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import app.demo.todo.utils.AppLogger;
 import app.demo.todo.utils.Utils;
 
 public class NewTodo {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(NewTodo.class);
+    public static final AppLogger LOGGER = new AppLogger(NewTodo.class);
 
     private String todoText;
 

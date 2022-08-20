@@ -3,17 +3,15 @@ package app.demo.todo.dto;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import app.demo.todo.utils.AppLogger;
 import app.demo.todo.utils.Utils;
 
 public class TodoPage {
 
-    public static final Logger LOGGER = LoggerFactory.getLogger(TodoPage.class);
+    public static final AppLogger LOGGER = new AppLogger(TodoPage.class);
 
     private String todoText;
 

@@ -1,8 +1,5 @@
 package app.demo.todo;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,16 +10,13 @@ import com.azure.identity.AzureCliCredentialBuilder;
 import com.azure.identity.ManagedIdentityCredential;
 import com.azure.identity.ManagedIdentityCredentialBuilder;
 
+import app.demo.todo.utils.AppLogger;
+
 //https://www.azureblue.io/how-to-authenicated-aad-identity-against-postgres-using-spring-boot/
-//TODO: Review working with profiles: I need to be able to do the following:
-//  1) Use H2 for local development
-//  2) Use AzureCliCredentialconnect for local testing
-//  3) Use ManagedIdentityCredentialBuilder for UAT, PROD,...
-//  4) But also be able to use the old username/password for backward compatibility 
 @Configuration
 @ConfigurationProperties(prefix = "app.demo.todo")
 public class AppConfig {
-    public static final Logger LOGGER = LoggerFactory.getLogger(AppConfig.class);
+    public static final AppLogger LOGGER = new AppLogger(AppConfig.class);
 
     private String applicationClientId;
     private String loadDemoData;

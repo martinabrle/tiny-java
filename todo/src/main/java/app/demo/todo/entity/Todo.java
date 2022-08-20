@@ -1,8 +1,5 @@
 package app.demo.todo.entity;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
@@ -10,6 +7,7 @@ import javax.persistence.Id;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import app.demo.todo.utils.AppLogger;
 import app.demo.todo.utils.Utils;
 
 import java.util.Date;
@@ -18,7 +16,8 @@ import java.util.UUID;
 
 @Entity
 public class Todo {
-    public static final Logger LOGGER = LoggerFactory.getLogger(Todo.class);
+    
+    public static final AppLogger LOGGER = new AppLogger(Todo.class);
 
     private @Id @Column(columnDefinition = "uuid") UUID id; //Column definition needed due to https://github.com/quarkusio/quarkus/discussions/25535
 

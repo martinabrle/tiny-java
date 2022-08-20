@@ -1,11 +1,9 @@
 package app.demo.todo.dto;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import app.demo.todo.utils.AppLogger;
 import app.demo.todo.utils.Utils;
 
 import java.text.SimpleDateFormat;
@@ -14,7 +12,8 @@ import java.util.Objects;
 import java.util.UUID;
 
 public class Todo {
-    public static final Logger LOGGER = LoggerFactory.getLogger(Todo.class);
+    
+    public static final AppLogger LOGGER = new AppLogger(Todo.class);
 
     private UUID id;
 
