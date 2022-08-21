@@ -38,7 +38,7 @@ resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secret
 
 resource kvSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
-  name: 'APP-INSIGHTS-INSTRUMENTATION-KEY'
+  name: 'APPINSIGHTS-INSTRUMENTATIONKEY'
   properties: {
     value: appInsights.properties.InstrumentationKey
     contentType: 'string'

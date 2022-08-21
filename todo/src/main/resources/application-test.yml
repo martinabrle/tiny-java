@@ -13,3 +13,6 @@ spring:
 app.demo.todo.load-demo-data: false
 logging.level: warn
 logging.level.app.demo.todo: debug
+azure.application-insights.instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY}
+azure.application-insights.connection-string:  ${APPLICATIONINSIGHTS_CONNECTION_STRING}
+

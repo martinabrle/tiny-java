@@ -202,24 +202,6 @@ resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   }
 }
 
-resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-  parent: keyVault
-  name: 'APPLICATIONINSIGHTS-CONNECTION-STRING'
-  properties: {
-    value: appInsights.properties.ConnectionString
-    contentType: 'string'
-  }
-}
-
-resource kvSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-  parent: keyVault
-  name: 'APP-INSIGHTS-INSTRUMENTATION-KEY'
-  properties: {
-    value: appInsights.properties.InstrumentationKey
-    contentType: 'string'
-  }
-}
-
 resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-URL'
@@ -244,28 +226,6 @@ resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-previe
   properties: {
     value: dbUserName
     contentType: 'string'
-  }
-}
-
-module rbacKVApplicationInsightsConnectionString './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-app-insights-con-str'
-  params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: containerInstance.identity.principalId
-    roleAssignmentNameGuid: guid(containerInstance.id, kvApplicationInsightsConnectionString.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: kvApplicationInsightsConnectionString.name
-  }
-}
-
-module rbacKVAppInsightsInstrKey './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-app-insights-instr'
-  params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: containerInstance.identity.principalId
-    roleAssignmentNameGuid: guid(containerInstance.id, kvSecretAppInsightsInstrumentationKey.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: kvSecretAppInsightsInstrumentationKey.name
   }
 }
 
@@ -310,8 +270,8 @@ module containerInstanceConfig 'container-instance-service.bicep' = {
     containerAppName: containerAppName
     containerImage: containerImageName
     containerInstanceIdentityName: containerUserManagedIdentity.name
-    appInsightsConnectionString: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
-    appInsightsInstrumentationKey: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
+    appInsightsConnectionString: appInsights.properties.ConnectionString
+    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
     springDatasourceUrl: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
     springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
     springDatasourceShowSql: 'true'

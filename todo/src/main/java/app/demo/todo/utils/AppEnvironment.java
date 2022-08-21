@@ -11,7 +11,7 @@ public class AppEnvironment {
 			currentPath = new java.io.File(".").getCanonicalPath();
 			LOGGER.info(String.format("Current dir: '%s'", currentPath));
 		} catch (Exception ignoreException) {
-			LOGGER.error("Exception ocurred while querying user's current directory.");
+			LOGGER.error("Exception ocurred while querying user's current directory.", ignoreException);
 		}
 
 		return currentPath;
@@ -23,7 +23,7 @@ public class AppEnvironment {
 			currentDir = System.getProperty("user.dir");
 			LOGGER.info(String.format("Current dir using System: '%s'", currentDir));
 		} catch (Exception ignoreException) {
-			LOGGER.error("Exception ocurred while querying current directory using System.");
+			LOGGER.error("Exception ocurred while querying current directory using System.", ignoreException);
 		}
 
 		return currentDir;

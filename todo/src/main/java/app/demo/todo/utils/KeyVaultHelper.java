@@ -8,13 +8,11 @@ import java.net.http.HttpResponse.BodyHandlers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import app.demo.todo.TodoApplication;
-
 //How to debug:
 // ...retrieve the token first:
 //   token=$(curl -s 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net' -H Metadata:true | awk -F"[{,\":}]" '{print $6}')
 // ...retrieved the secret from the keyvault
-//   curl -s "https://MY_KEYVAULT_NAME.vault.azure.net/secrets/APP-INSIGHTS-INSTRUMENTATION-KEY?api-version=2016-10-01" -H "Authorization: Bearer ${token}"
+//   curl -s "https://MY_KEYVAULT_NAME.vault.azure.net/secrets/APPINSIGHTS-INSTRUMENTATIONKEY?api-version=2016-10-01" -H "Authorization: Bearer ${token}"
 
 public class KeyVaultHelper {
     public static final AppLogger LOGGER = new AppLogger(KeyVaultHelper.class);
@@ -23,8 +21,12 @@ public class KeyVaultHelper {
             "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https%3A%2F%2Fvault.azure.net");
     private final static String KV_SECRET_URI_TEMPLATE = "https://%KEYVAULT_NAME%.vault.azure.net/secrets/%KEYVAULT_SECRET_NAME%?api-version=2016-10-01";
 
+    private static Token currentToken = null;
+
     public static String getSecret(String keyVaultName, String keyVaultSecretName, boolean debugAuthToken) {
         KeyVaultSecret secret = null;
+        LOGGER.debug(String.format("Attempting to retrieve secret '%s' from KeyVault '%s'", keyVaultSecretName,
+                keyVaultName));
         try {
             Token localToken = getLocalToken(debugAuthToken);
 
@@ -47,21 +49,21 @@ public class KeyVaultHelper {
             HttpResponse<String> httpResponse = httpClient.send(httpRequest, BodyHandlers.ofString());
 
             if (httpResponse.statusCode() != 200) {
-                error(
+                LOGGER.error(
                         String.format("Received HTTP Status '%d' as a response from the keyvault.",
                                 httpResponse.statusCode()));
                 return null;
             }
-            
+
             ObjectMapper objMapper = new ObjectMapper();
 
             secret = objMapper.readValue(httpResponse.body(), KeyVaultSecret.class);
-            
+
             if (secret == null) {
                 return null;
             }
         } catch (Exception ex) {
-            error(String.format("KeyVault secret retrieval request failed: (%s)", ex.getMessage()));
+            LOGGER.error(String.format("KeyVault secret retrieval request failed: (%s)", ex.getMessage()), ex);
             return null;
         }
 
@@ -70,7 +72,10 @@ public class KeyVaultHelper {
 
     public static Token getLocalToken(boolean debugAuthToken) {
 
-        Token token;
+        if (currentToken != null && !currentToken.isExpired()) {
+            LOGGER.debug(String.format("Reusing a not-yet expired token: %s", currentToken));
+            return currentToken;
+        }
 
         try {
             HttpRequest httpRequest = HttpRequest.newBuilder()
@@ -85,43 +90,28 @@ public class KeyVaultHelper {
             HttpResponse<String> httpResponse = httpClient.send(httpRequest, BodyHandlers.ofString());
 
             if (httpResponse.statusCode() != 200) {
-                error(String.format("Received '%d' from the local identity endpoint.", httpResponse.statusCode()));
+                LOGGER.error(
+                        String.format("Received '%d' from the local identity endpoint.", httpResponse.statusCode()));
                 return null;
             }
             String responseString = httpResponse.body();
             if (debugAuthToken) {
-                debug(String.format("Received identity endpoint's response: %s", responseString));
+                LOGGER.debug(String.format("Received identity endpoint's response: %s", responseString));
             }
 
             ObjectMapper objMapper = new ObjectMapper();
 
-            token = objMapper.readValue(httpResponse.body(), Token.class);
+            currentToken = objMapper.readValue(httpResponse.body(), Token.class);
 
             if (debugAuthToken) {
-                debug(String.format("Received token: %s", token));
+                LOGGER.debug(String.format("Received token: %s", currentToken));
             }
 
         } catch (Exception ex) {
-            error(String.format("Token retrieval request failed (%s)", ex.getMessage()));
+            LOGGER.error(String.format("Token retrieval request failed (%s)", ex.getMessage()), ex);
             return null;
         }
 
-        return token;
-    }
-
-    private static void debug(String message) {
-        if (TodoApplication.isInitialized()) {
-            LOGGER.debug(message);
-        } else {
-            System.out.println(message);
-        }
-    }
-
-    private static void error(String message) {
-        if (TodoApplication.isInitialized()) {
-            LOGGER.debug(message);
-        } else {
-            System.out.println(message);
-        }
+        return currentToken;
     }
 }

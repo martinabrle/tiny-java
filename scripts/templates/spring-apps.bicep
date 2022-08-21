@@ -91,7 +91,7 @@ resource keyVaultSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@20
 
 resource keyVaultSecretAppInsightsKey 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
-  name: 'APPLICATION-INSIGHTS-CONNECTION-STRING'
+  name: 'APPLICATIONINSIGHTS-CONNECTION-STRING'
   properties: {
     value: appInsights.properties.ConnectionString
     contentType: 'string'
@@ -100,7 +100,7 @@ resource keyVaultSecretAppInsightsKey 'Microsoft.KeyVault/vaults/secrets@2021-11
 
 resource keyVaultSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
-  name: 'APP-INSIGHTS-INSTRUMENTATION-KEY'
+  name: 'APPINSIGHTS-INSTRUMENTATIONKEY'
   properties: {
     value: appInsights.properties.InstrumentationKey
     contentType: 'string'

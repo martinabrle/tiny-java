@@ -1,8 +1,11 @@
 package app.demo.todo.utils;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class Token {
+    public static final AppLogger LOGGER = new AppLogger(Token.class);
+
     @JsonProperty("access_token")
     private String accessToken;
 
@@ -23,6 +26,9 @@ public class Token {
 
     @JsonProperty("token_type")
     private String tokenType;
+
+    @JsonIgnore
+    private Long expiresOnEpochTimeMS;
 
     public String getAccessToken() {
         return accessToken;
@@ -54,6 +60,12 @@ public class Token {
 
     public void setExpiresOn(String expiresOn) {
         this.expiresOn = expiresOn;
+        try {
+            this.expiresOnEpochTimeMS = Long.parseLong(expiresOn) * 1000;
+        } catch (Exception ignoreException) {
+            LOGGER.error(String.format("Weird exception while converting '%s' to epoch time (%s)", expiresOn, ignoreException.getMessage()), ignoreException);
+            ignoreException.printStackTrace();
+        }
     }
 
     public String getNotBefore() {
@@ -78,6 +90,14 @@ public class Token {
 
     public void setTokenType(String tokenType) {
         this.tokenType = tokenType;
+    }
+
+    public boolean isExpired() {
+        if (this.expiresOnEpochTimeMS < (System.currentTimeMillis() + 200))
+        {
+            return true;
+        }
+        return false;
     }
 
     @Override

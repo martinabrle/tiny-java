@@ -83,7 +83,7 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
                     newProperties.put(propertyNames[i], propertyValue);
                 } catch (Exception ignoreException) {
                     LOGGER.error(String.format("Failed to retrieve a configuration property '%s' (%s)",
-                            propertyNames[i], ignoreException.getMessage()));
+                            propertyNames[i], ignoreException.getMessage()), ignoreException);
                 }
             }
 
@@ -95,7 +95,7 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
         }
     }
 
-    private String replaceKeyVaultSecretReferences(String value) {
+    public static String replaceKeyVaultSecretReferences(String value) {
         String processedValue = value;
 
         if (processedValue.contains("@Microsoft.KeyVault(")) {
@@ -130,7 +130,7 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
                         }
                     } catch (Exception ex) {
                         LOGGER.error(String.format("An error has occurred while replacing KeyVault references ('%s')",
-                                ex.getMessage()));
+                                ex.getMessage()), ex);
                     }
                 }
             }
@@ -160,7 +160,7 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
                     }
                 }
             } catch (Exception ex) {
-                LOGGER.error(String.format("Exception '%s' has occured", ex.getMessage()));
+                LOGGER.error(String.format("Exception '%s' has occured", ex.getMessage()), ex);
             }
         }
 

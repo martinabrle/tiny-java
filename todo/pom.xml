@@ -25,9 +25,7 @@
     </dependency>
     <dependency>
       <groupId>com.microsoft.azure</groupId>
-      <artifactId>applicationinsights-web-auto</artifactId>
-      <!-- or applicationinsights-web for manual web filter registration -->
-      <!-- or applicationinsights-core for bare API -->
+      <artifactId>applicationinsights-spring-boot-starter</artifactId>
       <version>2.6.4</version>
     </dependency>
     <dependency>

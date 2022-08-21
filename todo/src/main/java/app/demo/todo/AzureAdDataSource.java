@@ -44,7 +44,7 @@ public class AzureAdDataSource extends HikariDataSource {
 
         var token = accessToken.getToken();
         if (debugAuthToken()) {
-            LOGGER.debug(String.format("Retrieved token for connecting to the datasource: '%s',", token));
+            LOGGER.debug(String.format("Retrieved token for connecting to the datasource: '%s',", token.toString()));
         }
 
         return token;

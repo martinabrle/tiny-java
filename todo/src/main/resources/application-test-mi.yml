@@ -13,3 +13,5 @@ app.demo.todo.app-client-id: ${SPRING_DATASOURCE_APP_CLIENT_ID}
 app.demo.todo.test-keyvault-reference: ${TEST_KEYVAULT_REFERENCE}
 logging.level: warn
 logging.level.app.demo.todo: debug
+azure.application-insights.instrumentation-key: ${APPINSIGHTS_INSTRUMENTATIONKEY}
+azure.application-insights.connection-string:  ${APPLICATIONINSIGHTS_CONNECTION_STRING}

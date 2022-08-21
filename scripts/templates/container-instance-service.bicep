@@ -48,14 +48,36 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
         name: containerAppName
         properties: {
           image: containerImage
+          livenessProbe: {
+            httpGet: {
+              port: 80
+              path: contains(containerImage, 'aci-helloworld') ? '/' : '/health' //initial deployment has an aci-helloworld from mcr deployed
+            }
+            initialDelaySeconds: 50
+            periodSeconds: 3
+            failureThreshold: 3
+            successThreshold: 2
+            timeoutSeconds: 3
+          }
+          readinessProbe: {
+            httpGet: {
+              port: 80
+              path: contains(containerImage, 'aci-helloworld') ? '/' : '/health/warmup' //initial deployment has an aci-helloworld from mcr deployed
+            }
+            initialDelaySeconds: 50
+            periodSeconds: 3
+            failureThreshold: 3
+            successThreshold: 2
+            timeoutSeconds: 3
+          }
           environmentVariables: [
+            {
+              name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+              value: appInsightsInstrumentationKey
+            }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
               value: appInsightsConnectionString
-            }
-            {
-              name: 'APP_INSIGHTS_INSTRUMENTATION_KEY'
-              value: appInsightsInstrumentationKey
             }
             {
               name: 'SPRING_DATASOURCE_URL'
@@ -87,7 +109,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
             }
             {
               name: 'TEST_KEYVAULT_REFERENCE'
-              value: '@Microsoft.KeyVault(VaultName=maabrle-tiny-java-app-ci;SecretName=SPRING-DATASOURCE-URL)'
+              value: springDatasourceUserName
             }
           ]
           ports: [

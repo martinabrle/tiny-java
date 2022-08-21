@@ -46,7 +46,7 @@ public class TodoServiceImpl implements TodoService {
                         e.getCompletedDateTime() != null));
             }
         } catch (Exception ex) {
-            LOGGER.error(String.format("Retrieving all TODOs failed (%s)", ex.getMessage()));
+            LOGGER.error(String.format("Retrieving all TODOs failed (%s)", ex.getMessage()), ex);
             throw new TodosRetrievalFailedException(ex.getMessage());
         }
 
@@ -83,7 +83,7 @@ public class TodoServiceImpl implements TodoService {
         } catch (TodoNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()));
+            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()), ex);
             throw new TodosRetrievalFailedException(ex.getMessage());
         }
         
@@ -116,7 +116,7 @@ public class TodoServiceImpl implements TodoService {
         } catch (NewTodoIsEmptyException ex) {
             throw ex;
         } catch (Exception ex) {
-            LOGGER.error(String.format("Todo creation failed (%s)", ex.getMessage()));
+            LOGGER.error(String.format("Todo creation failed (%s)", ex.getMessage()), ex);
             throw new TodoCreationFailedException(ex.getMessage());
         }
         return todo;
@@ -153,7 +153,7 @@ public class TodoServiceImpl implements TodoService {
         } catch (TodoNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            LOGGER.error(String.format("Todo update failed (%s)", ex.getMessage()));
+            LOGGER.error(String.format("Todo update failed (%s)", ex.getMessage()), ex);
             throw new TodoUpdateFailedException(ex.getMessage());
         }
 
@@ -176,12 +176,12 @@ public class TodoServiceImpl implements TodoService {
             repository.deleteById(id);
 
         } catch (IllegalArgumentException ex) {
-            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()));
+            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()), ex);
             throw new TodoIdCannotBeEmptyException(ex.getMessage());
         } catch (TodoNotFoundException ex) {
             throw ex;
         } catch (Exception ex) {
-            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()));
+            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()), ex);
             throw new TodosRetrievalFailedException(ex.getMessage());
         }
         LOGGER.debug(String.format("Deleted a TODO synchronously using deleteTodo('%s')", id));

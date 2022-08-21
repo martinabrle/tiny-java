@@ -1,5 +1,8 @@
 package app.demo.todo.utils;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,6 +21,7 @@ public class AppLogger {
     public void debug(String message) {
         if (!TodoApplication.isInitialized()) {
             System.out.println(message);
+            return;
         }
         if (logger == null) {
             logger = LoggerFactory.getLogger(clazz);
@@ -28,6 +32,7 @@ public class AppLogger {
     public void error(String message) {
         if (!TodoApplication.isInitialized()) {
             System.err.println(message);
+            return;
         }
         if (logger == null) {
             logger = LoggerFactory.getLogger(clazz);
@@ -35,9 +40,26 @@ public class AppLogger {
         logger.error(message);
     }
 
+    public void error(String message, Exception ex) {
+        if (!TodoApplication.isInitialized()) {
+            System.err.println(message);
+            ex.printStackTrace();
+            return;
+        }
+        if (logger == null) {
+            logger = LoggerFactory.getLogger(clazz);
+        }
+
+        logger.error(message);
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        ex.printStackTrace(pw);
+    }
+
     public void info(String message) {
         if (!TodoApplication.isInitialized()) {
             System.out.println(message);
+            return;
         }
         if (logger == null) {
             logger = LoggerFactory.getLogger(clazz);
