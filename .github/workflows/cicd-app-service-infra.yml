@@ -190,7 +190,7 @@ jobs:
                                      deploymentClientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
                                      createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
 
-          dbAppUserId=`az ad sp list --display-name ${{ secrets.AZURE_APP_NAME }} --query "[*].appId" --out tsv`
+          dbAppUserId=`az ad sp list --display-name ${{ secrets.AZURE_APP_NAME }} --query "[*].appId"--query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
 
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
 
