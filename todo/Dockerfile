@@ -25,8 +25,9 @@ RUN ./mvnw -B package
 RUN mv ./target/todo-*.jar "./target/todo-app.jar"
 
 # package stage
-# For debugging, bash and curl, use FROM openjdk:11-jre-slim
-FROM mcr.microsoft.com/openjdk/jdk:11-distroless as runtime
+# For debugging, bash and curl, use FROM openjdk:11-jre-slim as runtime
+# FROM mcr.microsoft.com/openjdk/jdk:11-distroless as runtime
+FROM openjdk:11-jre-slim-buster as runtime
 
 ARG VERSION
 

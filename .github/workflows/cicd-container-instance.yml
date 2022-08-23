@@ -43,7 +43,7 @@ jobs:
         id: version
         run: |
           export pomVersion=`java ../scripts/JavaUtils.java -get_pom_version ./pom.xml`
-          export containerRegistryVersion='2.0.0'
+          export containerRegistryVersion='2.0.3'
           export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
           export newVersion=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
 
