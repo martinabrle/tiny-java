@@ -1,0 +1,106 @@
+name: cicd-container-instance
+
+on:
+  #push:
+  #  branches:
+  #    - main
+  #  paths:
+  #    - 'todo/**'  
+  workflow_dispatch:
+    inputs:
+    
+jobs:  
+  build_app:
+    runs-on: ubuntu-latest
+    environment: CONTAINER-INSTANCE
+    defaults:
+      run:
+        working-directory: ./todo
+    outputs:
+      RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
+      RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
+      RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
+      
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Set default Azure subscription
+        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@v3
+        with:
+          java-version: '11'
+          distribution: 'microsoft'
+
+      # Review: Implement some more mature mono repo versioning 
+      - name: Figure out the version info
+        id: version
+        run: |
+          export pomVersion=`java ../scripts/JavaUtils.java -get_pom_version ./pom.xml`
+          export containerRegistryVersion='2.0.0'
+          export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
+          export newVersion=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
+
+          echo "POM Version: ${pomVersion}"
+          echo "Container Registry Version: ${containerRegistryVersion}"
+          echo "Higher Version: ${higherVersion}"
+          echo "New Version: ${newVersion}"
+
+          echo "::set-output name=RELEASE_VERSION::${newVersion}"
+          echo "::set-output name=RELEASE_NAME::todo-${newVersion}"
+          echo "::set-output name=RELEASE_FILE_NAME::todo-${newVersion}.jar"
+
+          mv ./pom.xml ./pom.xml.bak
+          java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${newVersion} ./pom.xml
+          echo "New POM.xml:"
+          cat ./pom.xml
+          
+      - name: Display next version
+        run: |
+          echo "Version: ${{ steps.version.outputs.RELEASE_VERSION }}"
+          echo "Release name: ${{ steps.version.outputs.RELEASE_NAME }}"
+          echo "Release file name: ${{ steps.version.outputs.RELEASE_FILE_NAME }}"
+      
+      - name: Build and upload container
+        run: |
+          az acr build ./ -t "${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io/tiny-java:${{steps.version.outputs.RELEASE_VERSION}}"" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
+  
+  # deploy_app:
+  #   needs: [build_app]
+  #   runs-on: ubuntu-latest
+  #   environment: APP-SERVICE
+  #   steps:
+  #     - name: Download build artefacts
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: ${{needs.build_app.outputs.RELEASE_NAME}}
+  #     - name: Check downloaded files
+  #       run: |
+  #         pwd
+  #         ls -la
+  #         ls -la ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
+      
+  #     - name: Azure login
+  #       uses: azure/login@v1
+  #       with:
+  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+  #     - name: Set default Azure subscription
+  #       run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      
+  #     - name: Deploy to AppService
+  #       uses: azure/webapps-deploy@v2
+  #       with: 
+  #         app-name: "${{ secrets.AZURE_APP_NAME }}"
+  #         package: ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
+      
+  #     - name: Run integration test(s)
+  #       run: |
+  #         echo "Run integration tests...."
+  
