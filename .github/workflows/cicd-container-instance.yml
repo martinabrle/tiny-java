@@ -103,7 +103,7 @@ jobs:
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
 
-          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${newVersion}"
+          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${{needs.build_app.outputs.RELEASE_VERSION}}"
           echo "::set-output name=CONTAINER_IMAGE_NAME::${containerImageName}"
           echo "Container image name: ${containerImageName}"          
 
