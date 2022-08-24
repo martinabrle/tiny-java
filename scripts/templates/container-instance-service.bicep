@@ -1,16 +1,11 @@
 param containerInstanceName string
 param containerInstanceIdentityName string
-@secure()
 param appClientId string
 param containerAppName string
 param containerImage string
-@secure()
 param appInsightsConnectionString string
-@secure()
 param appInsightsInstrumentationKey string
-@secure()
 param springDatasourceUrl string
-@secure()
 param springDatasourceUserName string
 param springDatasourceShowSql string
 param containerAppPort string
