@@ -109,7 +109,7 @@ jobs:
                         containerInstanceName=${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} \
                         containerAppName=${{ secrets.AZURE_CONTAINER_APP_NAME }} \
                         containerAppPort=${{ secrets.AZURE_APP_PORT }} \
-                        containerImageName=${{ jobs.build.outputs.CONTAINER_IMAGE_NAME }} \
+                        containerImageName=${{ jobs.build_app.outputs.CONTAINER_IMAGE_NAME }} \
                         deploymentClientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
                         appSpringProfile="test-mi"
       
