@@ -20,7 +20,7 @@ jobs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
       RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
-      CONTAINER_IMAGE_NAME: ${{ steps.vars.outputs.CONTAINER_IMAGE_NAME }}
+      CONTAINER_IMAGE_NAME: ${{ steps.version.outputs.CONTAINER_IMAGE_NAME }}
     
     steps:
       - uses: actions/checkout@v3
@@ -48,27 +48,31 @@ jobs:
           export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
           export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
           export newVersion=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
+          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${newVersion}"
 
           echo "POM Version: ${pomVersion}"
           echo "Container Registry Version: ${containerRegistryVersion}"
           echo "Higher Version: ${higherVersion}"
           echo "New Version: ${newVersion}"
+          echo "Container image name: ${containerImageName}"
 
           echo "::set-output name=RELEASE_VERSION::${newVersion}"
           echo "::set-output name=RELEASE_NAME::todo-${newVersion}"
           echo "::set-output name=RELEASE_FILE_NAME::todo-${newVersion}.jar"
+          echo "::set-output name=CONTAINER_IMAGE_NAME::${containerImageName}"
+          
 
           mv ./pom.xml ./pom.xml.bak
           java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${newVersion} ./pom.xml
           export newVersionFromPOM=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
           echo "Checking new POM.xml version: ${newVersionFromPOM}"
-          cat ./pom.xml
           
       - name: Display next version
         run: |
           echo "Version: ${{ steps.version.outputs.RELEASE_VERSION }}"
           echo "Release name: ${{ steps.version.outputs.RELEASE_NAME }}"
           echo "Release file name: ${{ steps.version.outputs.RELEASE_FILE_NAME }}"
+          echo "Container image name: ${{ steps.version.outputs.CONTAINER_IMAGE_NAME }}"
 
       - name: Build and upload container
         run: |
@@ -90,10 +94,6 @@ jobs:
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
 
-          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${{steps.version.outputs.RELEASE_VERSION}}"
-          echo "::set-output name=CONTAINER_IMAGE_NAME::$containerImageName"
-          echo "App Spring profile: $containerImageName"
-
       - name: Deploy to Container Instance
         run: |
           az deployment group create \
@@ -109,7 +109,7 @@ jobs:
                         containerInstanceName=${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} \
                         containerAppName=${{ secrets.AZURE_CONTAINER_APP_NAME }} \
                         containerAppPort=${{ secrets.AZURE_APP_PORT }} \
-                        containerImageName=${{ steps.vars.outputs.CONTAINER_IMAGE_NAME }} \
+                        containerImageName=${{ jobs.build.outputs.CONTAINER_IMAGE_NAME }} \
                         deploymentClientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
                         appSpringProfile="test-mi"
       
