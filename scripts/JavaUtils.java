@@ -15,7 +15,9 @@ import org.w3c.dom.Document;
 
 public class JavaUtils {
     public static void main(String args[]) {
-        //String[] args = {"-increase_semver", "2.0.9"};
+        // String[] args2 = {"-get_highest_semver_from_file", "./scripts/container_tags.txt"};
+        // args = args2;
+
         try {
 
             Map<String, List<String>> params = parseParms(args);
@@ -100,7 +102,7 @@ public class JavaUtils {
         version2 = version2.trim();
 
         int[] parsedVersion1 = getParsedSemVer(version1);
-        int[] parsedVersion2 = getParsedSemVer(version1);
+        int[] parsedVersion2 = getParsedSemVer(version2);
 
         var higherSemVer = getHigherSemVerInt(parsedVersion1, parsedVersion2);
         if (higherSemVer == 0) {
