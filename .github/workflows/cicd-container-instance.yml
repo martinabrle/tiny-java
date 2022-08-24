@@ -20,7 +20,6 @@ jobs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
       RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
-      CONTAINER_IMAGE_NAME: ${{ steps.version.outputs.CONTAINER_IMAGE_NAME }}
     
     steps:
       - uses: actions/checkout@v3
@@ -104,7 +103,9 @@ jobs:
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
 
-          echo "Container image name: ${{needs.build_app.outputs.CONTAINER_IMAGE_NAME}}"
+          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${newVersion}"
+          echo "::set-output name=CONTAINER_IMAGE_NAME::${containerImageName}"
+          echo "Container image name: ${containerImageName}"          
 
       - name: Deploy to Container Instance
         run: |
@@ -121,7 +122,7 @@ jobs:
                         containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
                         containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
                         containerAppPort=${{secrets.AZURE_APP_PORT}} \
-                        containerImageName=${{needs.build_app.outputs.CONTAINER_IMAGE_NAME}} \
+                        containerImageName=${{steps.vars.outputs.CONTAINER_IMAGE_NAME}} \
                         deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                         appSpringProfile="test-mi"
       
