@@ -3,6 +3,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -14,6 +15,7 @@ import org.w3c.dom.Document;
 
 public class JavaUtils {
     public static void main(String args[]) {
+        //String[] args = {"-get_highest_semver_from_file", "./todo/tmp.txt"};
         try {
 
             Map<String, List<String>> params = parseParms(args);
@@ -32,17 +34,18 @@ public class JavaUtils {
                 var fileName = options.get(0);
                 var version = options.get(1);
                 var newFileName = options.get(2);
-                if (fileName == null || fileName.isEmpty() || version == null || version.isEmpty() || newFileName == null || newFileName.isEmpty()) {
+                if (fileName == null || fileName.isEmpty() || version == null || version.isEmpty()
+                        || newFileName == null || newFileName.isEmpty()) {
                     throw new Exception("Wrong parameters");
                 }
                 updatePomVersion(fileName, version, newFileName);
-            } else if (params.containsKey("get_highest_semver")) {
-                var options = params.get("get_highest_semver");
+            } else if (params.containsKey("get_highest_semver_from_file")) {
+                var options = params.get("get_highest_semver_from_file");
                 var fileName = options.get(0);
                 if (fileName == null || fileName.isEmpty()) {
                     throw new Exception("Wrong parameters");
                 }
-                getHighestSemVer(fileName);
+                displayHighestSemVerFromFile(fileName);
             } else if (params.containsKey("get_higher_semver")) {
                 var options = params.get("get_higher_semver");
                 var version1 = options.get(0);
@@ -50,14 +53,14 @@ public class JavaUtils {
                 if (version1 == null || version1.isEmpty() || version2 == null || version2.isEmpty()) {
                     throw new Exception("Wrong parameters");
                 }
-                getHigherSemVer(version1, version2);
+                displayHigherSemVer(version1, version2);
             } else if (params.containsKey("increase_semver")) {
                 var options = params.get("increase_semver");
                 var version = options.get(0);
                 if (version == null || version.isEmpty()) {
                     throw new Exception("Wrong parameters");
                 }
-                increaseSemVer(version);
+                displayIncreasedSemVer(version);
             } else {
                 displayHelp();
                 System.exit(-1);
@@ -70,53 +73,96 @@ public class JavaUtils {
         }
     }
 
-    private static void increaseSemVer(String version) {
+    private static void displayIncreasedSemVer(String version) {
+        String newVersionString = increaseSemVer(version);
+        System.out.println(newVersionString);
+    }
+
+    private static String increaseSemVer(String version) {
         int[] parsedVersion = getParsedSemVer(version);
         String semVerSuffix = getParsedSemVerSuffix(version);
         parsedVersion[2]++;
-        String newVersionString = Integer.toString(parsedVersion[0]) + "." + Integer.toString(parsedVersion[1]) + "." + Integer.toString(parsedVersion[2]) + semVerSuffix;
-        System.out.println(newVersionString);
-        return;
+        String newVersionString = Integer.toString(parsedVersion[0]) + "." + Integer.toString(parsedVersion[1]) + "."
+                + Integer.toString(parsedVersion[2]) + semVerSuffix;
+        
+        return newVersionString;
     }
 
-    private static void getHigherSemVer(String version1, String version2) {
+    private static void displayHigherSemVer(String version1, String version2) {
+
+        var higherSemVer = getHigherSemVerString(version1, version2);
+
+        System.out.println(higherSemVer);
+    }
+
+    private static String getHigherSemVerString(String version1, String version2) {
+        version1 = version1.trim();
+        version2 = version2.trim();
+
         int[] parsedVersion1 = getParsedSemVer(version1);
         int[] parsedVersion2 = getParsedSemVer(version1);
 
-        if (parsedVersion1[0] > parsedVersion2[0]) {
-            System.out.println(version1);
-            return;
+        var higherSemVer = getHigherSemVerInt(parsedVersion1, parsedVersion2);
+        if (higherSemVer == 0) {
+            if (version1.compareToIgnoreCase(version2) < 0) {
+                return version2;
+            }
+            return version1;
         }
-        if (parsedVersion1[0] < parsedVersion2[0]) {
-            System.out.println(version2);
-            return;
+        if (higherSemVer == 1) {
+            return version1;
         }
-        if (parsedVersion1[1] > parsedVersion2[1]) {
-            System.out.println(version1);
-            return;
-        }
-        if (parsedVersion1[1] < parsedVersion2[1]) {
-            System.out.println(version2);
-            return;
-        }
-        if (parsedVersion1[2] > parsedVersion2[2]) {
-            System.out.println(version1);
-            return;
-        }
-        if (parsedVersion1[2] < parsedVersion2[2]) {
-            System.out.println(version2);
-            return;
-        }
-        if (version1.compareToIgnoreCase(version2) < 0) {
-            System.out.println(version2);
-            return;
-        }
-        System.out.println(version1);
-        return;
+        return version2;
     }
 
-    private static void getHighestSemVer(String fileName) {
-        System.out.println("3.0.0"); 
+    private static int getHigherSemVerInt(int[] parsedVersion1, int[] parsedVersion2) {
+        if (parsedVersion1[0] > parsedVersion2[0]) {
+            return 1;
+        }
+        if (parsedVersion1[0] < parsedVersion2[0]) {
+            return 2;
+        }
+        if (parsedVersion1[1] > parsedVersion2[1]) {
+            return 1;
+        }
+        if (parsedVersion1[1] < parsedVersion2[1]) {
+            return 2;
+        }
+        if (parsedVersion1[2] > parsedVersion2[2]) {
+            return 1;
+        }
+        if (parsedVersion1[2] < parsedVersion2[2]) {
+            return 2;
+        }
+        return 0;
+    }
+
+    private static void displayHighestSemVerFromFile(String fileName) throws Exception {
+        Scanner scanner = null;
+        String highestSemVer = "0.0.0";
+        try {
+            scanner = new Scanner(new File(fileName));
+            scanner.useDelimiter("\"|\n| |\'");
+            while (scanner.hasNext()) {
+                String token = scanner.next();
+                if (isSemVer(token)) {
+                    highestSemVer = getHigherSemVerString(highestSemVer, token);
+                }
+            }
+        } catch (Exception ignoreException) {
+            System.err.println(String.format("Unable to read the file '%s'.", fileName));
+            throw new Exception(String.format("Unable to read the file '%s'.", fileName));
+        } finally {
+            if (scanner != null) {
+                try {
+                    scanner.close();
+                } catch (Exception ignoreException) {
+                    System.err.println(String.format("Unable to close the file '%s'.", fileName));
+                    throw new Exception(String.format("Unable to close the file '%s'.", fileName));
+                }
+            }
+        }
+        System.out.println(highestSemVer);
     }
 
     private static void updatePomVersion(String fileName, String version, String newFileName) throws Exception {
@@ -273,7 +319,7 @@ public class JavaUtils {
             return "";
         }
         String suffix = version.substring(version.lastIndexOf(".") + 1);
-        for (int i=0; i < suffix.length(); i++) {
+        for (int i = 0; i < suffix.length(); i++) {
             if (suffix.charAt(i) < '0' || suffix.charAt(i) > '9') {
                 return suffix.substring(i);
             }
@@ -289,5 +335,22 @@ public class JavaUtils {
             }
         }
         return retVal;
+    }
+
+    private static boolean isSemVer(String token) {
+        if (token == null || token.isEmpty()) {
+            return false;
+        }
+        String tmp = token.trim();
+
+        try {
+            int tmpInt = Integer.parseInt("" + tmp.charAt(0));
+            if (Integer.toString(tmpInt).charAt(0) == tmp.charAt(0)) {
+                return true;
+            }
+        } catch (Exception ignoreException) {
+            return false;
+        }
+        return false;
     }
 }

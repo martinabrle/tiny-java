@@ -20,6 +20,7 @@ jobs:
       RELEASE_VERSION: ${{ steps.version.outputs.RELEASE_VERSION }}
       RELEASE_NAME: ${{ steps.version.outputs.RELEASE_NAME }}
       RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
+      CONTAINER_IMAGE_NAME: ${{ steps.vars.outputs.CONTAINER_IMAGE_NAME }}
     
     steps:
       - uses: actions/checkout@v3
@@ -42,8 +43,9 @@ jobs:
       - name: Figure out the version info
         id: version
         run: |
+          az acr repository show-tags --name ${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }} --repository "tiny-java" -o tsv >container_tags.txt
           export pomVersion=`java ../scripts/JavaUtils.java -get_pom_version ./pom.xml`
-          export containerRegistryVersion='2.0.3'
+          export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file $./container_tags.txt`
           export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
           export newVersion=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
 
@@ -58,7 +60,8 @@ jobs:
 
           mv ./pom.xml ./pom.xml.bak
           java ../scripts/JavaUtils.java -update_pom_version ./pom.xml.bak ${newVersion} ./pom.xml
-          echo "New POM.xml:"
+          export newVersionFromPOM=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
+          echo "Checking new POM.xml version: ${newVersionFromPOM}"
           cat ./pom.xml
           
       - name: Display next version
@@ -66,41 +69,51 @@ jobs:
           echo "Version: ${{ steps.version.outputs.RELEASE_VERSION }}"
           echo "Release name: ${{ steps.version.outputs.RELEASE_NAME }}"
           echo "Release file name: ${{ steps.version.outputs.RELEASE_FILE_NAME }}"
-      
+
       - name: Build and upload container
         run: |
-          az acr build ./ -t "${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io/tiny-java:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
+          az acr build ./ -t "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${{steps.version.outputs.RELEASE_VERSION}}" -r "${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io" --build-arg VERSION=${{steps.version.outputs.RELEASE_VERSION}}
   
-  # deploy_app:
-  #   needs: [build_app]
-  #   runs-on: ubuntu-latest
-  #   environment: APP-SERVICE
-  #   steps:
-  #     - name: Download build artefacts
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: ${{needs.build_app.outputs.RELEASE_NAME}}
-  #     - name: Check downloaded files
-  #       run: |
-  #         pwd
-  #         ls -la
-  #         ls -la ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
-      
-  #     - name: Azure login
-  #       uses: azure/login@v1
-  #       with:
-  #         creds: ${{ secrets.AZURE_CREDENTIALS }}
+  deploy_app:
+    needs: [build_app]
+    runs-on: ubuntu-latest
+    environment: CONTAINER-INSTANCE
+    steps:      
+      - name: Initialize deployment variables
+        id: vars
+        run: |
+          clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
+          echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
+          echo "Client IP: ${clientIP}"
 
-  #     - name: Set default Azure subscription
-  #       run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          dbAppUserName=`echo "${{ secrets.AZURE_CONTAINER_APP_NAME }}" | tr '-' '_'`;
+          echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
+          echo "App user name: $dbAppUserName"
+
+          export containerImageName=mabrtinyjavareg.azurecr.io/tiny-java:${{steps.version.outputs.RELEASE_VERSION}}`
+          echo "::set-output name=CONTAINER_IMAGE_NAME::$containerImageName"
+          echo "App Spring profile: $containerImageName"
+
+      - name: Deploy to Container Instance
+        run: |
+        az deployment group create \
+          --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+          --template-file ../scripts/templates/container-instance-re-deploy.bicep \
+          --parameters location=${{ secrets.AZURE_LOCATION }}  \
+                       keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
+                       appInsightsName=${{ secrets.AZURE_APP_INSIGHTS_NAME }}  \
+                       dbServerName=${{ secrets.AZURE_DB_SERVER_NAME }} \
+                       dbName=${{ secrets.AZURE_DB_NAME }} \
+                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                       containerRegistryName=${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }} \
+                       containerInstanceName=${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} \
+                       containerAppName=${{ secrets.AZURE_CONTAINER_APP_NAME }} \
+                       containerAppPort=${{ secrets.AZURE_APP_PORT }} \
+                       containerImageName=${{ steps.vars.outputs.CONTAINER_IMAGE_NAME }} \
+                       deploymentClientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
+                       appSpringProfile="test-mi"
       
-  #     - name: Deploy to AppService
-  #       uses: azure/webapps-deploy@v2
-  #       with: 
-  #         app-name: "${{ secrets.AZURE_APP_NAME }}"
-  #         package: ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
-      
-  #     - name: Run integration test(s)
-  #       run: |
-  #         echo "Run integration tests...."
+      - name: Run integration test(s)
+        run: |
+          echo "Run integration tests...."
   
