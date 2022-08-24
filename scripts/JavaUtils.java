@@ -15,7 +15,7 @@ import org.w3c.dom.Document;
 
 public class JavaUtils {
     public static void main(String args[]) {
-        // String[] args = {"-get_highest_semver_from_file", "./todo/tmp.txt"};
+        //String[] args = {"-increase_semver", "2.0.9"};
         try {
 
             Map<String, List<String>> params = parseParms(args);
@@ -333,7 +333,7 @@ public class JavaUtils {
     private static String getLeadingNumbers(String parm) {
         String retVal = "";
         for (int i = 0; i < parm.length(); i++) {
-            if (parm.charAt(i) >= '0' && parm.charAt(i) < '9') {
+            if (parm.charAt(i) >= '0' && parm.charAt(i) <= '9') {
                 retVal = retVal + parm.charAt(i);
             }
         }
