@@ -104,23 +104,25 @@ jobs:
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
 
+          echo "Container image name: ${{needs.build_app.outputs.CONTAINER_IMAGE_NAME}}"
+
       - name: Deploy to Container Instance
         run: |
           az deployment group create \
-            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
             --template-file ./scripts/templates/container-instance-redeploy.bicep \
-            --parameters location=${{ secrets.AZURE_LOCATION }}  \
-                        keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
-                        appInsightsName=${{ secrets.AZURE_APP_INSIGHTS_NAME }}  \
-                        dbServerName=${{ secrets.AZURE_DB_SERVER_NAME }} \
-                        dbName=${{ secrets.AZURE_DB_NAME }} \
+            --parameters location=${{secrets.AZURE_LOCATION}}  \
+                        keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                        appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                        dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                        dbName=${{secrets.AZURE_DB_NAME}} \
                         dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
-                        containerRegistryName=${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }} \
-                        containerInstanceName=${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} \
-                        containerAppName=${{ secrets.AZURE_CONTAINER_APP_NAME }} \
-                        containerAppPort=${{ secrets.AZURE_APP_PORT }} \
-                        containerImageName=${{ needs.build_app.outputs.CONTAINER_IMAGE_NAME }} \
-                        deploymentClientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
+                        containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
+                        containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
+                        containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
+                        containerAppPort=${{secrets.AZURE_APP_PORT}} \
+                        containerImageName=${{needs.build_app.outputs.CONTAINER_IMAGE_NAME}} \
+                        deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                         appSpringProfile="test-mi"
       
       - name: Run integration test(s)
