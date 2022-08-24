@@ -15,7 +15,7 @@ import org.w3c.dom.Document;
 
 public class JavaUtils {
     public static void main(String args[]) {
-        //String[] args = {"-get_highest_semver_from_file", "./todo/tmp.txt"};
+        // String[] args = {"-get_highest_semver_from_file", "./todo/tmp.txt"};
         try {
 
             Map<String, List<String>> params = parseParms(args);
@@ -84,7 +84,7 @@ public class JavaUtils {
         parsedVersion[2]++;
         String newVersionString = Integer.toString(parsedVersion[0]) + "." + Integer.toString(parsedVersion[1]) + "."
                 + Integer.toString(parsedVersion[2]) + semVerSuffix;
-        
+
         return newVersionString;
     }
 
@@ -235,9 +235,12 @@ public class JavaUtils {
         System.out.println(String.format("USAGE: java %s.java [ARGS]", getShortClassName()));
         System.out.println("\t-get_pom_version ./pom.xml - retrieves the current version from a pom.xml file");
         System.out
-                .println("\t-update_pom_version ./pom.xml 3.11.0 - saves the version (3.11.0 into the pom.xml file)");
+                .println(
+                        "\t-update_pom_version ./pom.xml 3.11.0 - saves the new version (3.11.0 into the pom.xml file)");
         System.out.println(
-                "\t-get_highest_docker_version ./docker_image_list.txt - retrieves the highest version from a list of docker images");
+                "\t-get_highest_semver_from_file ./file_with_semver_numbers.txt - retrieves the highest SemVer version from a text file");
+        System.out.println("\t-get_higher_semver 1.3.4 1.3.5 - returns a higher semver from a list (of two)");
+        System.out.println("\t-increase_semver 1.3.4 - increases the semver (patch number)");
     }
 
     private static Map<String, List<String>> parseParms(String args[]) {

@@ -45,7 +45,7 @@ jobs:
         run: |
           az acr repository show-tags --name ${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }} --repository "tiny-java" -o tsv >container_tags.txt
           export pomVersion=`java ../scripts/JavaUtils.java -get_pom_version ./pom.xml`
-          export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file $./container_tags.txt`
+          export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
           export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
           export newVersion=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
 
