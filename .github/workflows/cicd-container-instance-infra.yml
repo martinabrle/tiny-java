@@ -155,6 +155,7 @@ jobs:
             dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
             echo "DBA Group Id: $dbaGroupId"
             echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
+            echo "::set-output name=DB_APP_USER_PASSWORD::not_uset_with_managed_identities"
             appSpringProfile="test-mi"
           fi
           echo "App user password: $dbAppUserPassword"
@@ -180,6 +181,7 @@ jobs:
 
       - name: Initial deployment to keep SystemAssignedIdentity fairies happy
         id: initial_deployment
+        if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true')
         run: |
           echo "Deploying with the following parameters:"
           echo "Container instance name: '${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} '"
