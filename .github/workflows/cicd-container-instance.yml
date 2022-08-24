@@ -90,7 +90,7 @@ jobs:
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
 
-          export containerImageName=mabrtinyjavareg.azurecr.io/tiny-java:${{steps.version.outputs.RELEASE_VERSION}}`
+          export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${{steps.version.outputs.RELEASE_VERSION}}"
           echo "::set-output name=CONTAINER_IMAGE_NAME::$containerImageName"
           echo "App Spring profile: $containerImageName"
 
