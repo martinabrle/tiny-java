@@ -36,7 +36,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
           port: int(containerAppPort)
         }
       ]
-      dnsNameLabel: containerInstanceName
+      dnsNameLabel: replace(replace(containerInstanceName,'-',''),'_','')
     }
     containers: [
       {
