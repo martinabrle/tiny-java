@@ -42,9 +42,15 @@ jobs:
       - name: Figure out the version info
         id: version
         run: |
-          az acr repository show-tags --name ${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }} --repository "tiny-java" -o tsv >container_tags.txt
+          export repoList=`az acr repository list --name mabrtinyjavareg -o tsv`
+          export containerRegistryVersion="0.0.0"
+          if [[ -z "$repoList" ]]; then
+            export containerRegistryVersion="1.0.0"
+          else
+            az acr repository show-tags --name ${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }} --repository "tiny-java" -o tsv >container_tags.txt
+            export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
+          fi
           export pomVersion=`java ../scripts/JavaUtils.java -get_pom_version ./pom.xml`
-          export containerRegistryVersion=`java ../scripts/JavaUtils.java -get_highest_semver_from_file ./container_tags.txt`
           export higherVersion=`java ../scripts/JavaUtils.java -get_higher_semver ${pomVersion} ${containerRegistryVersion}`
           export newVersion=`java ../scripts/JavaUtils.java -increase_semver ${higherVersion}`
           export containerImageName="${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}.azurecr.io/tiny-java:${newVersion}"
