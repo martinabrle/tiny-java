@@ -92,7 +92,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-
       - name: Azure login
         uses: azure/login@v1
         with:
@@ -173,7 +172,7 @@ jobs:
             echo "::set-output name=FIRST_DEPLOYMENT::false"
           fi
 
-     - name: Initial deployment to keep SystemAssignedIdentity fairies happy
+      - name: Initial deployment to keep SystemAssignedIdentity fairies happy
         id: initial_deployment
         if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true')
         run: |
