@@ -6,9 +6,6 @@ param dbName string
 
 param dbUserName string
 
-param deploymentClientIPAddress string
-
-param containerRegistryName string
 param containerInstanceName string
 param containerInstanceIdentityName string = '${containerInstanceName}-identity'
 param containerAppName string

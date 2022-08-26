@@ -184,17 +184,17 @@ jobs:
         if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true')
         run: |
           echo "Deploying with the following parameters:"
-          echo "Container instance name: '${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} '"
-          echo "Container app name: '${{ steps.vars.outputs.DB_ADMIN_PASSWORD }}'"
-          echo "Client IP: ${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }}"
+          echo "Container instance name: '${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} '"
+          echo "Container app name: '${{steps.vars.outputs.DB_ADMIN_PASSWORD}}'"
+          echo "Container app port: ${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}"
 
           az deployment group create \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
               --template-file ./templates/container-instance-init.bicep \
-              --parameters location=${{ secrets.AZURE_LOCATION }}  \
-                           containerInstanceName=${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} \
-                           containerAppName=${{ secrets.AZURE_CONTAINER_APP_NAME }} \
-                           containerAppPort=${{ secrets.AZURE_APP_PORT }} 
+              --parameters location=${{secrets.AZURE_LOCATION}}  \
+                           containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
+                           containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
+                           containerAppPort=${{secrets.AZURE_APP_PORT}} 
       
       - name: Deploy Azure resources (main part)
         id: deployment
@@ -208,26 +208,26 @@ jobs:
           echo "Client IP: ${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }}"
 
           az deployment group create \
-              --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+              --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
               --template-file ./templates/container-instance.bicep \
-              --parameters location=${{ secrets.AZURE_LOCATION }}  \
-                           logAnalyticsWorkspaceName=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}  \
-                           logAnalyticsWorkspaceRG=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }}  \
-                           keyVaultName=${{ secrets.AZURE_KEY_VAULT_NAME }}  \
-                           appInsightsName=${{ secrets.AZURE_APP_INSIGHTS_NAME }}  \
-                           dbServerName=${{ secrets.AZURE_DB_SERVER_NAME }} \
-                           dbName=${{ secrets.AZURE_DB_NAME }} \
-                           dbAdminName=${{ steps.vars.outputs.DB_ADMIN_NAME }} \
-                           dbAdminPassword=${{ steps.vars.outputs.DB_ADMIN_PASSWORD }} \
+              --parameters location=${{secrets.AZURE_LOCATION}}  \
+                           logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
+                           logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}  \
+                           keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                           appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                           dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                           dbName=${{secrets.AZURE_DB_NAME}} \
+                           dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                           dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                            dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
-                           containerRegistryName=${{ secrets.AZURE_CONTAINER_REGISTRY_NAME }} \
-                           containerInstanceName=${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} \
-                           containerAppName=${{ secrets.AZURE_CONTAINER_APP_NAME }} \
-                           containerAppPort=${{ secrets.AZURE_APP_PORT }} \
-                           containerImageName=${{ steps.vars.outputs.CONTAINER_NAME }}  \
-                           deploymentClientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
-                           appSpringProfile="test-mi" \
-                           createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
+                           containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
+                           containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
+                           containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME }} \
+                           containerAppPort=${{secrets.AZURE_APP_PORT}} \
+                           containerImageName=${{steps.vars.outputs.CONTAINER_NAME}}  \
+                           deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
+                           appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \ 
+                           createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}}
 
           dbAppUserId=`az ad sp list --display-name ${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} --query "[?displayName=='${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}'].appId" --out tsv`
 

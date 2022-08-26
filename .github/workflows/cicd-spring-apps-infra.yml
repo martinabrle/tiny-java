@@ -150,30 +150,20 @@ jobs:
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
 
-          dbAppUserPassword=""
+          
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
-            echo "New app user password generated"
-            dbAppUserPassword="`openssl rand -hex 25`#@"
-            echo "::add-mask::$dbAppUserPassword"
-            echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
-            appSpringProfile="test"
-          else
-            dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
-            echo "DBA Group Id: $dbaGroupId"
-            echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
-            echo "::set-output name=DB_APP_USER_PASSWORD::not_uset_with_managed_identities"
-            appSpringProfile="test-mi"
+             echo "DBA Group is empty"
+             exit 1
           fi
-          echo "App user password: $dbAppUserPassword"
+
+          dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
+          echo "DBA Group Id: $dbaGroupId"
+          echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
+          echo "::set-output name=DB_APP_USER_PASSWORD::not_uset_with_managed_identities"
+          appSpringProfile="test-mi"
 
           echo "::set-output name=APP_SPRING_PROFILE::$appSpringProfile"
           echo "App Spring profile: $appSpringProfile"
-          
-          if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
-             echo "::set-output name=DB_AAD_INTEGRATION::true"
-          else
-            echo "::set-output name=DB_AAD_INTEGRATION::false"
-          fi
           
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
 
@@ -183,6 +173,26 @@ jobs:
             echo "::set-output name=FIRST_DEPLOYMENT::false"
           fi
 
+     - name: Initial deployment to keep SystemAssignedIdentity fairies happy
+        id: initial_deployment
+        if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true')
+        run: |
+          echo "Deploying with the following parameters:"
+          echo "Spring service name: '${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }}'"
+          echo "Spring app name: '${{ steps.vars.outputs.DB_ADMIN_PASSWORD }}'"
+          echo "Client IP: ${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }}"
+
+          cd ./templates
+          az bicep build --file ./spring-apps-init.bicep
+
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./spring-apps.json \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                     springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
+                                     appName=${{secrets.AZURE_APP_NAME}} \
+                                     appPort=${{secrets.AZURE_APP_PORT}}
+
+
+          cd ..
       # - name: Debug deployment variables
       #   run: |
       #     cd ./templates
@@ -213,11 +223,13 @@ jobs:
         id: deployment
         run: |
           cd ./templates
-          az bicep build --file ./spring-apps.bicep
+          az bicep build --file ./spring-apps-mi.bicep
 
           ls -la
+          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
+          echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
 
-          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./spring-apps.json \
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./spring-apps-mi.json \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                      logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
                                      logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
@@ -229,17 +241,14 @@ jobs:
                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
-                                     dbUserPassword="" \
                                      springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
                                      appName=${{secrets.AZURE_APP_NAME}} \
                                      appPort=${{secrets.AZURE_APP_PORT}} \
+                                     appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \
                                      clientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+          cd ..
           
-          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
-          echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
-
       - name: Set-up DB AAD Integration
-        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
           echo "Setting AAD DB Admin Group"
           az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
@@ -249,30 +258,7 @@ jobs:
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           psql "${dbConnectionString}" --file=./db.sql
         
-      - name: If not AAD, set-up traditional DB User(s)
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
-        run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=postgres user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='$dbUserName';"`
-
-          if [[ $dbUserExists -ne '1' ]]; then
-            echo "CREATE USER \"${{steps.vars.outputs.DB_APP_USER_NAME}}\" WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
-          else
-            echo "ALTER USER \"${{steps.vars.outputs.DB_APP_USER_NAME}}\" WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
-          fi
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";">> ./create_user.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-
-          echo "User ${{steps.vars.outputs.DB_ADMIN_NAME}} is running a user creation script:"
-          cat ./create_user.sql
-          psql "${dbConnectionString}" --file=./db.sql
-
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          
-          echo "Granting GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES to the app user"
-          psql "${dbConnectionString}" -tAc "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO \"${{steps.vars.outputs.DB_APP_USER_NAME}}\";"
-      
-      - name: If AAD, set-up AAD DB User(s)
+      - name: Set-up AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
           echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
