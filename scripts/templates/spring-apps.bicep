@@ -167,6 +167,7 @@ resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12
     collation: 'en_US.utf8'
   }
 }
+
 resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
   name: 'allowClientIP'
   parent: postgreSQLServer
@@ -219,8 +220,6 @@ resource springApps 'Microsoft.AppPlatform/Spring@2022-05-01-preview' = {
   }
   properties: {
     zoneRedundant: false
-    networkProfile: {
-    }
   }
 }
 
