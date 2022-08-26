@@ -185,6 +185,31 @@ jobs:
           echo "::set-output name=CONTAINER_NAME::$containerImageName"
           echo "App Spring profile: $containerImageName"
 
+      - name: Deploy Azure resources test
+        run: |
+          cd ./templates
+          az bicep build --file ./spring-apps.bicep
+
+          echo "secrets.AZURE_RESOURCE_GROUP: ${{secrets.AZURE_RESOURCE_GROUP}}"> temp.txt
+          echo "secrets.AZURE_LOCATION: ${{secrets.AZURE_LOCATION}}">> temp.txt
+          echo "secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME: ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}">> temp.txt
+          echo "secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP: ${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}">> temp.txt
+          echo "secrets.AZURE_KEY_VAULT_NAME: ${{secrets.AZURE_KEY_VAULT_NAME}}">> temp.txt
+          echo "secrets.AZURE_APP_INSIGHTS_NAME: ${{secrets.AZURE_APP_INSIGHTS_NAME}}">> temp.txt
+          echo "secrets.AZURE_DB_SERVER_NAME: ${{secrets.AZURE_DB_SERVER_NAME}}">> temp.txt
+          echo "secrets.AZURE_DB_NAME: ${{secrets.AZURE_DB_NAME}}">> temp.txt
+          echo "steps.vars.outputs.DB_NOT_INITIALIZED: ${{steps.vars.outputs.DB_NOT_INITIALIZED}}">> temp.txt
+          echo "steps.vars.outputs.DB_ADMIN_NAME: ${{steps.vars.outputs.DB_ADMIN_NAME}}">> temp.txt
+          echo "steps.vars.outputs.DB_ADMIN_PASSWORD: ${{steps.vars.outputs.DB_ADMIN_PASSWORD}}">> temp.txt
+          echo "steps.vars.outputs.DB_APP_USER_NAME: ${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}">> temp.txt
+          echo "dbUserPassword=' '">> temp.txt
+          echo "secrets.AZURE_SPRING_SERVICE_NAME: ${{secrets.AZURE_SPRING_SERVICE_NAME}} ">> temp.txt
+          echo "secrets.AZURE_APP_NAME: ${{secrets.AZURE_APP_NAME}}">> temp.txt
+          echo "secrets.AZURE_APP_PORT: ${{secrets.AZURE_APP_PORT}}">> temp.txt
+          echo "steps.vars.outputs.DEPLOYMENT_CLIENT_IP: ${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}">> temp.txt
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3.11
       - name: Deploy Azure resources
         run: |
           cd ./templates
@@ -200,7 +225,7 @@ jobs:
                                      appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                                      dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                                      dbName=${{secrets.AZURE_DB_NAME}} \
-                                     createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }} \
+                                     createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
