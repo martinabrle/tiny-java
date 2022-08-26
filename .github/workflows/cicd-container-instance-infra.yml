@@ -177,7 +177,7 @@ jobs:
             echo "::set-output name=FIRST_DEPLOYMENT::false"
           fi
           echo "::set-output name=CONTAINER_NAME::$containerImageName"
-          echo "App Spring profile: $containerImageName"
+          echo "App Spring container: $containerImageName"
 
       - name: Initial deployment to keep SystemAssignedIdentity fairies happy
         id: initial_deployment
