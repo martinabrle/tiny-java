@@ -24,7 +24,7 @@ param springAppsServiceName string
 param appName string
 param appPort string
 param appSpringProfile string
-param springDatasourceShowSql string
+param springDatasourceShowSql string = 'true'
 param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
