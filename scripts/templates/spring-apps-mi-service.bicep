@@ -5,7 +5,7 @@ param appInsightsConnectionString string
 param appInsightsInstrumentationKey string
 param springDatasourceUrl string
 param springDatasourceUserName string
-param springDatasourceShowSql string
+param springDatasourceShowSql string = 'true'
 param appPort string
 param appSpringProfile string
 
