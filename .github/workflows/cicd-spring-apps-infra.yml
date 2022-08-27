@@ -187,9 +187,9 @@ jobs:
         if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true' && steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
           echo "Deploying with the following parameters:"
-          echo "Spring service name: '${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }}'"
-          echo "Spring app name: '${{ steps.vars.outputs.DB_ADMIN_PASSWORD }}'"
-          echo "Client IP: ${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }}"
+          echo "Spring service name: '${{secrets.AZURE_SPRING_SERVICE_NAME}}'"
+          echo "Spring app name: '${{secrets.AZURE_APP_NAME}}'"
+          echo "App port: '${{secrets.AZURE_APP_PORT}}'"
 
           cd ./templates
           az bicep build --file ./spring-apps-mi-init.bicep
