@@ -23,7 +23,8 @@ param springAppsServiceName string
 
 param appName string
 param appPort string
-
+param appSpringProfile string
+param springDatasourceShowSql string
 param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
@@ -303,9 +304,8 @@ resource springAppsAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@
         SPRING_DATASOURCE_PASSWORD: dbUserPassword
         APPLICATIONINSIGHTS_CONNECTION_STRING: appInsights.properties.ConnectionString
         APPINSIGHTS_INSTRUMENTATIONKEY: appInsights.properties.InstrumentationKey
-        SPRING_PROFILES_ACTIVE: 'test'
-        SPRING_DATASOURCE_SHOW_SQL: 'true'
-        SCM_DO_BUILD_DURING_DEPLOYMENT: 'false'
+        SPRING_PROFILES_ACTIVE: appSpringProfile
+        SPRING_DATASOURCE_SHOW_SQL: springDatasourceShowSql
       }
     }
     source: any({

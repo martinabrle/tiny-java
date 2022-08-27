@@ -127,10 +127,6 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
         name: replace(kvSecretAppInsightsInstrumentationKey.name,'-','_')
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
       }
-      {
-        name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
-        value: 'false'
-      }
     ]
   }
 }

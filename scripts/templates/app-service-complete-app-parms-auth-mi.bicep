@@ -114,10 +114,6 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
         name: 'SPRING_DATASOURCE_SHOW_SQL'
         value: 'false'
       }
-      {
-        name: 'SCM_DO_BUILD_DURING_DEPLOYMENT'
-        value: 'false'
-      }      
     ]    
   }
 }

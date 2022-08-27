@@ -22,7 +22,7 @@ param springAppsServiceName string
 param appName string
 param appPort string
 
-param appSpringProfile string = 'test-mi'
+param appSpringProfile string
 
 param location string = resourceGroup().location
 
