@@ -168,7 +168,7 @@ jobs:
             echo "::set-output name=DB_AAD_INTEGRATION::false"
           fi
 
-       - name: Initial deployment to keep SystemAssignedIdentity fairies happy
+      - name: Initial deployment to keep SystemAssignedIdentity fairies happy
         id: initial_deployment
         if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true' && steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
