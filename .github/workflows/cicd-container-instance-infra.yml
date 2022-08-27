@@ -145,6 +145,7 @@ jobs:
           echo "App user name: $dbAppUserName"
 
           dbAppUserPassword=""
+          appSpringProfile=""
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "New app user password generated"
             dbAppUserPassword="`openssl rand -hex 25`#@"
@@ -160,7 +161,7 @@ jobs:
           fi
           echo "App user password: $dbAppUserPassword"
 
-          echo "::set-output name=APP_SPRING_PROFILE::$appSpringProfile"
+          echo "::set-output name=APP_SPRING_PROFILE::${appSpringProfile}"
           echo "App Spring profile: $appSpringProfile"
           
           if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
