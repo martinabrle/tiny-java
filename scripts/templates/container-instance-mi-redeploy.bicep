@@ -92,7 +92,7 @@ module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   }
 }
 
-module containerInstanceConfig 'container-instance-service.bicep' = {
+module containerInstanceConfig 'container-instance-mi-service.bicep' = {
   name: 'deployment-container-instance-core'
   params: {
     containerInstanceName: containerInstanceName
