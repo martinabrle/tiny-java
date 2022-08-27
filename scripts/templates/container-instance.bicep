@@ -1,28 +1,24 @@
 param logAnalyticsWorkspaceName string
 param logAnalyticsWorkspaceRG string
 param appInsightsName string
-
 param keyVaultName string
 param dbServerName string
 param dbName string
 param createDB bool
-
 @secure()
 param dbAdminName string
 @secure()
 param dbAdminPassword string
 @secure()
 param dbUserName string
-
-param deploymentClientIPAddress string
-
-param appSpringProfile string='test-mi'
 param containerRegistryName string
 param containerInstanceName string
 param containerInstanceIdentityName string = '${containerInstanceName}-identity'
 param containerAppName string
+param springProfileName string
 param containerAppPort string
 param containerImageName string
+param deploymentClientIPAddress string
 
 param location string = resourceGroup().location
 param tagsArray object = resourceGroup().tags
@@ -274,7 +270,7 @@ module containerInstanceConfig 'container-instance-service.bicep' = {
     springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
     springDatasourceShowSql: 'true'
     containerAppPort: containerAppPort
-    appSpringProfile: appSpringProfile
+    appSpringProfile: springProfileName
     location: location
     tagsArray: tagsArray
   }

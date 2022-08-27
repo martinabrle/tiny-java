@@ -252,7 +252,7 @@ jobs:
                            containerAppPort=${{secrets.AZURE_APP_PORT}} \
                            containerImageName=${{steps.vars.outputs.CONTAINER_NAME}}  \
                            deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
-                           appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \ 
+                           springProfileName=${{steps.vars.outputs.APP_SPRING_PROFILE}} \ 
                            createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}}
 
           dbAppUserId=`az ad sp list --display-name ${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} --query "[?displayName=='${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}'].appId" --out tsv`
