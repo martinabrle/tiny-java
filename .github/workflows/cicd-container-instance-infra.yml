@@ -190,7 +190,7 @@ jobs:
 
           az deployment group create \
               --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
-              --template-file ./templates/container-instance-init.bicep \
+              --template-file ./templates/container-instance-init-mi.bicep \
               --parameters location=${{secrets.AZURE_LOCATION}}  \
                            containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
                            containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
