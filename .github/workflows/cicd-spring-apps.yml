@@ -137,7 +137,7 @@ jobs:
         run: |
           pwd
           ls -la
-          ls -la ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
+          ls -la ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
       
       - name: Azure login
         uses: azure/login@v1
@@ -147,17 +147,17 @@ jobs:
         #    az account list-locations -o table
 
       - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
       
       - name: Deploy to Spring Apps
         uses: azure/spring-cloud-deploy@v1
         with:
-          azure-subscription: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          azure-subscription: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           action: Deploy
-          service-name: "${{ secrets.AZURE_SPRING_SERVICE_NAME }}"
-          app-name: "${{ secrets.AZURE_APP_NAME }}"
+          service-name: "${{ secrets.AZURE_SPRING_SERVICE_NAME}}"
+          app-name: "${{secrets.AZURE_APP_NAME}}"
           use-staging-deployment: false
-          package: ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
+          package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
 
       - name: Run integration test(s)
         run: |
