@@ -128,8 +128,7 @@ jobs:
                         containerInstanceIdentityName="${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}identity" \
                         containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
                         containerAppPort=${{secrets.AZURE_APP_PORT}} \
-                        containerImageName=${{steps.vars.outputs.CONTAINER_IMAGE_NAME}} \
-                        appSpringProfile="test-mi"
+                        containerImageName=${{steps.vars.outputs.CONTAINER_IMAGE_NAME}}
       
       - name: Run integration test(s)
         run: |

@@ -9,7 +9,6 @@ param springDatasourceUrl string
 param springDatasourceUserName string
 param springDatasourceShowSql string
 param containerAppPort string
-param appSpringProfile string
 
 param location string = resourceGroup().location
 
@@ -88,7 +87,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
             }
             {
               name: 'SPRING_PROFILES_ACTIVE'
-              value: appSpringProfile
+              value: 'test-mi'
             }
             {
               name: 'PORT'

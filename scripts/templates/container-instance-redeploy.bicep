@@ -12,8 +12,6 @@ param containerAppName string
 param containerAppPort string
 param containerImageName string
 
-param appSpringProfile string
-
 param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
@@ -108,7 +106,6 @@ module containerInstanceConfig 'container-instance-service.bicep' = {
     springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
     springDatasourceShowSql: 'true'
     containerAppPort: containerAppPort
-    appSpringProfile: appSpringProfile
     location: location
     tagsArray: tagsArray
   }

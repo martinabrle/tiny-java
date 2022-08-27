@@ -145,24 +145,18 @@ jobs:
           echo "App user name: $dbAppUserName"
 
           dbAppUserPassword=""
-          appSpringProfile=""
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "New app user password generated"
             dbAppUserPassword="`openssl rand -hex 25`#@"
             echo "::add-mask::$dbAppUserPassword"
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
-            appSpringProfile="test"
           else
             dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
             echo "DBA Group Id: $dbaGroupId"
             echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
             echo "::set-output name=DB_APP_USER_PASSWORD::not_used_with_managed_identities"
-            appSpringProfile="test-mi"
           fi
           echo "App user password: $dbAppUserPassword"
-
-          echo "::set-output name=APP_SPRING_PROFILE::${appSpringProfile}"
-          echo "App Spring profile: $appSpringProfile"
           
           if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
              echo "::set-output name=DB_AAD_INTEGRATION::true"
@@ -218,7 +212,6 @@ jobs:
       #        echo "AZURE_APP_PORT: ${{secrets.AZURE_APP_PORT}}" >>./tmp.txt
       #        echo "CONTAINER_NAME: ${{steps.vars.outputs.CONTAINER_NAME}}" >>./tmp.txt
       #        echo "DEPLOYMENT_CLIENT_IP: ${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}" >>./tmp.txt
-      #        echo "APP_SPRING_PROFILE: ${{steps.vars.outputs.APP_SPRING_PROFILE}}" >>./tmp.txt
       #        echo "DB_NOT_INITIALIZED: ${{steps.vars.outputs.DB_NOT_INITIALIZED}}" >>./tmp.txt
       
       # - name: Setup tmate session
@@ -232,7 +225,6 @@ jobs:
           echo "Admin password: '${{steps.vars.outputs.DB_ADMIN_PASSWORD}}'"
           echo "App user name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
           echo "App user password: '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}'"
-          echo "App spring profile: '${{steps.vars.outputs.APP_SPRING_PROFILE}}'"
           echo "Client IP: ${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}"
 
           az deployment group create \
@@ -255,7 +247,6 @@ jobs:
                            containerAppPort=${{secrets.AZURE_APP_PORT}} \
                            containerImageName=${{steps.vars.outputs.CONTAINER_NAME}}  \
                            deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
-                           springProfileName=${{steps.vars.outputs.APP_SPRING_PROFILE}} \ 
                            createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}}
 
           dbAppUserId=`az ad sp list --display-name ${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} --query "[?displayName=='${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}'].appId" --out tsv`

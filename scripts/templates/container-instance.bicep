@@ -15,7 +15,6 @@ param containerRegistryName string
 param containerInstanceName string
 param containerInstanceIdentityName string
 param containerAppName string
-param springProfileName string
 param containerAppPort string
 param containerImageName string
 param deploymentClientIPAddress string
@@ -270,7 +269,6 @@ module containerInstanceConfig 'container-instance-service.bicep' = {
     springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
     springDatasourceShowSql: 'true'
     containerAppPort: containerAppPort
-    appSpringProfile: springProfileName
     location: location
     tagsArray: tagsArray
   }
