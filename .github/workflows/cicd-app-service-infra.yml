@@ -167,7 +167,69 @@ jobs:
           else
             echo "::set-output name=DB_AAD_INTEGRATION::false"
           fi
-      
+
+       - name: Initial deployment to keep SystemAssignedIdentity fairies happy
+        id: initial_deployment
+        if: (steps.vars.outputs.FIRST_DEPLOYMENT == 'true' && steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
+        run: |
+          echo "Deploying with the following parameters:"
+          echo "App service name: '${{secrets.AZURE_APP_NAME}}'"
+          echo "App port: '${{secrets.AZURE_APP_PORT}}'"
+
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-init.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                     appServiceName=${{secrets.AZURE_APP_NAME}} \
+                                     appPort=${{secrets.AZURE_APP_PORT}}
+
+      - name: Deploy Azure resources (AAD Integration)
+        id: deployment_aad
+        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
+        run: |
+          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
+          echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
+
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                     logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
+                                     logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
+                                     keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                                     appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                                     dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     dbName=${{secrets.AZURE_DB_NAME}} \
+                                     createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
+                                     dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
+                                     appName=${{secrets.AZURE_APP_NAME}} \
+                                     appPort=${{secrets.AZURE_APP_PORT}} \
+                                     appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \
+                                     clientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+          cd ..
+
+      - name: Deploy Azure resources (NO AAD Integration)
+        id: deployment_no_aad
+        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
+        run: |
+
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                     logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
+                                     logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
+                                     keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                                     appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                                     dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     dbName=${{secrets.AZURE_DB_NAME}} \
+                                     createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
+                                     dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                     dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}}\
+                                     springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
+                                     appName=${{secrets.AZURE_APP_NAME}} \
+                                     appPort=${{secrets.AZURE_APP_PORT}} \
+                                     clientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+
       - name: Deploy Azure resources (main part)
         id: deployment
         run: |

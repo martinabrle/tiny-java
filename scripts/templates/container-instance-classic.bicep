@@ -18,7 +18,6 @@ param containerAppName string
 param containerAppPort string
 param containerImageName string
 param deploymentClientIPAddress string
-param springDatasourceShowSql string = 'true'
 param location string = resourceGroup().location
 param tagsArray object = resourceGroup().tags
 
@@ -129,120 +128,20 @@ resource containerRegistry 'Microsoft.ContainerRegistry/registries@2022-02-01-pr
   }
 }
 
-// module containerInstanceConfig 'container-instance-mi-service.bicep' = {
-//   name: 'deployment-container-instance-core'
-//   params: {
-//     containerInstanceName: containerInstanceName
-//     appClientId: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientId.name})'
-//     containerAppName: containerAppName
-//     containerImage: containerImageName
-//     containerInstanceIdentityName: containerUserManagedIdentity.name
-//     appInsightsConnectionString: appInsights.properties.ConnectionString
-//     appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
-//     springDatasourceUrl: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
-//     springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
-//     springDatasourceShowSql: 'true'
-//     containerAppPort: containerAppPort
-//     location: location
-//     tagsArray: tagsArray
-//   }
-// }
-resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-01' = {
-  name: containerInstanceName
-  location: location
-  tags: tagsArray
-  properties: {
-    osType: 'Linux'
-    restartPolicy: 'OnFailure'
-    sku: 'Standard'
-    ipAddress: {
-      type: 'Public'
-      ports: [
-        {
-          port: int(containerAppPort)
-        }
-      ]
-      dnsNameLabel: replace(replace(containerInstanceName,'-',''),'_','')
-    }
-    containers: [
-      {
-        name: containerAppName
-        properties: {
-          image: containerImageName
-          livenessProbe: {
-            httpGet: {
-              port: 80
-              path: contains(containerImageName, 'aci-helloworld') ? '/' : '/health' //initial deployment has an aci-helloworld from mcr deployed
-            }
-            initialDelaySeconds: 50
-            periodSeconds: 3
-            failureThreshold: 3
-            successThreshold: 2
-            timeoutSeconds: 3
-          }
-          readinessProbe: {
-            httpGet: {
-              port: 80
-              path: contains(containerImageName, 'aci-helloworld') ? '/' : '/health/warmup' //initial deployment has an aci-helloworld from mcr deployed
-            }
-            initialDelaySeconds: 50
-            periodSeconds: 3
-            failureThreshold: 3
-            successThreshold: 2
-            timeoutSeconds: 3
-          }
-          environmentVariables: [
-            {
-              name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-              value: appInsights.properties.InstrumentationKey
-            }
-            {
-              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
-              value: appInsights.properties.ConnectionString
-            }
-            {
-              name: 'SPRING_DATASOURCE_URL'
-              value: 'jdbc:postgresql://${dbServerName}.postgres.database.azure.com:5432/${dbName}'
-            }
-            {
-              name: 'SPRING_DATASOURCE_PASSWORD'
-              value: dbUserName
-            }
-            {
-              name: 'SPRING_DATASOURCE_USERNAME'
-              value: dbUserPassword
-            }
-            {
-              name: 'SPRING_PROFILES_ACTIVE'
-              value: 'test-mi'
-            }
-            {
-              name: 'PORT'
-              value: string(containerAppPort)
-            }
-            {
-              name: 'SPRING_DATASOURCE_SHOW_SQL'
-              value: springDatasourceShowSql
-            }
-            {
-              name: 'DEBUG_AUTH_TOKEN'
-              value: 'true'
-            }
-          ]
-          ports: [
-            {
-              port: int(containerAppPort)
-              protocol: 'TCP'
-            }
-          ]
-          resources: {
-            requests: {
-              cpu: 1
-              memoryInGB: 1
-            }
-          }
-        }
-      }
-    ]
+module containerInstance 'container-instance-classic-service.bicep' = {
+  name: 'deployment-container-instance-core'
+  params: {
+    containerInstanceName: containerInstanceName
+    containerAppName: containerAppName
+    containerImage: containerImageName
+    appInsightsConnectionString: appInsights.properties.ConnectionString
+    appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
+    springDatasourceUrl: 'jdbc:postgresql://${dbServerName}.postgres.database.azure.com:5432/${dbName}'
+    springDatasourceUserName: dbUserName
+    springDatasourcePassword: dbUserPassword
+    springDatasourceShowSql: 'true'
+    containerAppPort: containerAppPort
+    location: location
+    tagsArray: tagsArray
   }
 }
