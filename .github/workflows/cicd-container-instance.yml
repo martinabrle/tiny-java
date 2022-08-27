@@ -149,10 +149,10 @@ jobs:
                         containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
                         containerAppPort=${{secrets.AZURE_APP_PORT}} \
                         containerImageName=${{steps.vars.outputs.CONTAINER_IMAGE_NAME}}
-
-       - name: Deploy to Container Instance (NON AAD)
-         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'false')
-         run: |
+                        
+      - name: Deploy to Container Instance (NON AAD)
+        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'false')
+        run: |
           az deployment group create \
             --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
             --template-file ./scripts/templates/container-instance-classic-redeploy.bicep \
