@@ -16,6 +16,7 @@ param dbUserName string
 
 param deploymentClientIPAddress string
 
+param appSpringProfile string='test-mi'
 param containerRegistryName string
 param containerInstanceName string
 param containerInstanceIdentityName string = '${containerInstanceName}-identity'
@@ -23,10 +24,7 @@ param containerAppName string
 param containerAppPort string
 param containerImageName string
 
-param appSpringProfile string
-
 param location string = resourceGroup().location
-
 param tagsArray object = resourceGroup().tags
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' existing = {
