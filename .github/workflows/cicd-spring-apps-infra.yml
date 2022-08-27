@@ -239,6 +239,24 @@ jobs:
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_SPRING_SERVICE_NAME}}/apps/${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
 
+          echo "Deploying with the following parameters:"
+          echo "Location: '${{secrets.AZURE_LOCATION}}'"
+          echo "Log analytics name: '${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}'"
+          echo "Log analytics RG: '${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}'"
+          echo "Key vault name: '${{secrets.AZURE_KEY_VAULT_NAME}}'"
+          echo "App insights name: '${{secrets.AZURE_APP_INSIGHTS_NAME}}'"
+          echo "DB server name: '${{secrets.AZURE_DB_SERVER_NAME}}'"
+          echo "DB name: '${{secrets.AZURE_DB_NAME}}'"
+          echo "DB Not initialized: '${{steps.vars.outputs.DB_NOT_INITIALIZED}}'"
+          echo "DB Admin name: '${{steps.vars.outputs.DB_ADMIN_NAME}}'"
+          echo "DB Admin Password: '${{steps.vars.outputs.DB_ADMIN_PASSWORD}}'"
+          echo "App user name: '${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}'"
+          echo "Spring service name: '${{secrets.AZURE_SPRING_SERVICE_NAME}}'"
+          echo "Spring app name: '${{secrets.AZURE_APP_NAME}}'"
+          echo "App port: '${{secrets.AZURE_APP_PORT}}'"
+          echo "Spring app profile: '${{steps.vars.outputs.APP_SPRING_PROFILE}}'"
+          echo "Client IP Address: '${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}'"
+
           az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./spring-apps-mi.json \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                      logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
@@ -266,6 +284,25 @@ jobs:
           az bicep build --file ./spring-apps-classic.bicep
 
           ls -la
+
+          echo "Deploying with the following parameters:"
+          echo "Location: '${{secrets.AZURE_LOCATION}}'"
+          echo "Log analytics name: '${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}'"
+          echo "Log analytics RG: '${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}'"
+          echo "Key vault name: '${{secrets.AZURE_KEY_VAULT_NAME}}'"
+          echo "App insights name: '${{secrets.AZURE_APP_INSIGHTS_NAME}}'"
+          echo "DB server name: '${{secrets.AZURE_DB_SERVER_NAME}}'"
+          echo "DB name: '${{secrets.AZURE_DB_NAME}}'"
+          echo "DB Not initialized: '${{steps.vars.outputs.DB_NOT_INITIALIZED}}'"
+          echo "DB Admin name: '${{steps.vars.outputs.DB_ADMIN_NAME}}'"
+          echo "DB Admin Password: '${{steps.vars.outputs.DB_ADMIN_PASSWORD}}'"
+          echo "App user name: '${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}'"
+          echo "App user password: '${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}'"
+          echo "Spring service name: '${{secrets.AZURE_SPRING_SERVICE_NAME}}'"
+          echo "Spring app name: '${{secrets.AZURE_APP_NAME}}'"
+          echo "App port: '${{secrets.AZURE_APP_PORT}}'"
+          echo "Spring app profile: '${{steps.vars.outputs.APP_SPRING_PROFILE}}'"
+          echo "Client IP Address: '${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}'"
 
           az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./spring-apps-classic.json \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
