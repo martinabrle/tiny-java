@@ -13,7 +13,7 @@ param dbAdminPassword string
 param dbUserName string
 param containerRegistryName string
 param containerInstanceName string
-param containerInstanceIdentityName string = '${containerInstanceName}-identity'
+param containerInstanceIdentityName string
 param containerAppName string
 param springProfileName string
 param containerAppPort string

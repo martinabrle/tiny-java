@@ -7,7 +7,7 @@ param dbName string
 param dbUserName string
 
 param containerInstanceName string
-param containerInstanceIdentityName string = '${containerInstanceName}-identity'
+param containerInstanceIdentityName string
 param containerAppName string
 param containerAppPort string
 param containerImageName string
