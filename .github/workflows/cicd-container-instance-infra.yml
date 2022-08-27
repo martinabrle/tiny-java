@@ -185,7 +185,7 @@ jobs:
 
           az deployment group create \
               --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
-              --template-file ./templates/container-instance-init.bicep \
+              --template-file ./templates/container-instance-mi-init.bicep \
               --parameters location=${{secrets.AZURE_LOCATION}}  \
                            containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
                            containerInstanceIdentityName="${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}identity" \
@@ -230,20 +230,19 @@ jobs:
 
           az deployment group create \
               --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
-              --template-file ./templates/container-instance.bicep \
+              --template-file ./templates/container-instance-mi.bicep \
               --parameters location=${{secrets.AZURE_LOCATION}}  \
                            logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
                            logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}  \
-                           keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
                            appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                            dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                            dbName=${{secrets.AZURE_DB_NAME}} \
                            dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                            dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                            dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                           dbUserName=${{steps.vars.outputs.DB_APP_USER_PASSWORD}} \
                            containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
                            containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
-                           containerInstanceIdentityName="${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}identity" \
                            containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
                            containerAppPort=${{secrets.AZURE_APP_PORT}} \
                            containerImageName=${{steps.vars.outputs.CONTAINER_NAME}}  \
@@ -266,7 +265,7 @@ jobs:
 
           az deployment group create \
               --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
-              --template-file ./templates/container-instance.bicep \
+              --template-file ./templates/container-instance-classic.bicep \
               --parameters location=${{secrets.AZURE_LOCATION}}  \
                            logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
                            logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}  \
