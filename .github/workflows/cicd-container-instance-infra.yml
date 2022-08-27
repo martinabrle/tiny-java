@@ -155,7 +155,7 @@ jobs:
             dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
             echo "DBA Group Id: $dbaGroupId"
             echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
-            echo "::set-output name=DB_APP_USER_PASSWORD::not_uset_with_managed_identities"
+            echo "::set-output name=DB_APP_USER_PASSWORD::not_used_with_managed_identities"
             appSpringProfile="test-mi"
           fi
           echo "App user password: $dbAppUserPassword"
@@ -190,7 +190,7 @@ jobs:
 
           az deployment group create \
               --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
-              --template-file ./templates/container-instance-init-mi.bicep \
+              --template-file ./templates/container-instance-init.bicep \
               --parameters location=${{secrets.AZURE_LOCATION}}  \
                            containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
                            containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
@@ -200,12 +200,12 @@ jobs:
         id: deployment
         run: |
           echo "Deploying with the following parameters:"
-          echo "Admin name: '${{ steps.vars.outputs.DB_ADMIN_NAME }}'"
-          echo "Admin password: '${{ steps.vars.outputs.DB_ADMIN_PASSWORD }}'"
-          echo "App user name: '${{ steps.vars.outputs.DB_APP_USER_NAME }}'"
+          echo "Admin name: '${{steps.vars.outputs.DB_ADMIN_NAME}}'"
+          echo "Admin password: '${{steps.vars.outputs.DB_ADMIN_PASSWORD}}'"
+          echo "App user name: '${{steps.vars.outputs.DB_APP_USER_NAME}}'"
           echo "App user password: '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}'"
           echo "App spring profile: '${{steps.vars.outputs.APP_SPRING_PROFILE}}'"
-          echo "Client IP: ${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }}"
+          echo "Client IP: ${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}"
 
           az deployment group create \
               --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} \
@@ -222,7 +222,7 @@ jobs:
                            dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
                            containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
                            containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
-                           containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME }} \
+                           containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
                            containerAppPort=${{secrets.AZURE_APP_PORT}} \
                            containerImageName=${{steps.vars.outputs.CONTAINER_NAME}}  \
                            deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \

@@ -182,9 +182,9 @@ jobs:
           echo "Client IP: ${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }}"
 
           cd ./templates
-          az bicep build --file ./spring-apps-init.bicep
+          az bicep build --file ./spring-apps-mi-init.bicep
 
-          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./spring-apps.json \
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./spring-apps-mi-init.json \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                      springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
                                      appName=${{secrets.AZURE_APP_NAME}} \
