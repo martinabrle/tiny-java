@@ -219,7 +219,7 @@ jobs:
       
       - name: Deploy Azure resources (AAD Integration)
         id: deployment
-        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'false')
+        if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
           echo "Deploying with the following parameters:"
           echo "Admin name: '${{steps.vars.outputs.DB_ADMIN_NAME}}'"
