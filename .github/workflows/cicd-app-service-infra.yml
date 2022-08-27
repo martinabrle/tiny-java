@@ -140,7 +140,7 @@ jobs:
           echo "::set-output name=DB_NOT_INITIALIZED::${createDB}"
           echo "Create DB: $createDB"
 
-          dbAppUserName=`echo "${{ secrets.AZURE_APP_NAME }}" | tr '-' '_'`;
+          dbAppUserName=`echo "${{secrets.AZURE_APP_NAME}}" | tr '-' '_'`;
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
 
@@ -189,7 +189,7 @@ jobs:
                                      dbName=${{ secrets.AZURE_DB_NAME }} \
                                      dbAdminName=${{ steps.vars.outputs.DB_ADMIN_NAME }} \
                                      dbAdminPassword=${{ steps.vars.outputs.DB_ADMIN_PASSWORD }} \
-                                     appServiceName=${{ secrets.AZURE_APP_NAME }} \
+                                     appServiceName=${{secrets.AZURE_APP_NAME}} \
                                      deploymentClientIPAddress=${{ steps.vars.outputs.DEPLOYMENT_CLIENT_IP }} \
                                      createDB=${{ steps.vars.outputs.DB_NOT_INITIALIZED }}
 
