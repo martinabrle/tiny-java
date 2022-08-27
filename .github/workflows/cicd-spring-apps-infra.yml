@@ -258,7 +258,7 @@ jobs:
                                      clientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
           cd ..
 
-     - name: Deploy Azure resources (NO AAD Integration)
+      - name: Deploy Azure resources (NO AAD Integration)
         id: deployment_no_aad
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
         run: |
