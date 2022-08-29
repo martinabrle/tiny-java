@@ -1,5 +1,5 @@
-param appName string
-param appPort string
+param appServiceName string
+param appServicePort string
 
 param location string = resourceGroup().location
 param tagsArray object = resourceGroup().tags
@@ -10,8 +10,8 @@ module appServiceInit 'spring-apps-mi-service.bicep' = {
     appClientId: ''
     appInsightsConnectionString: ''
     appInsightsInstrumentationKey: ''
-    appName: appName
-    appPort: appPort
+    appName: appServiceName
+    appPort: appServicePort
     appSpringProfile: 'test-mi'
     springAppsServiceName: ''
     springDatasourceUrl: ''

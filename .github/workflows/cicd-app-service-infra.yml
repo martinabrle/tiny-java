@@ -179,7 +179,7 @@ jobs:
           az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-init.bicep \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                      appServiceName=${{secrets.AZURE_APP_NAME}} \
-                                     appPort=${{secrets.AZURE_APP_PORT}}
+                                     appServicePort=${{secrets.AZURE_APP_PORT}}
 
       - name: Deploy Azure resources (AAD Integration)
         id: deployment_aad
@@ -201,7 +201,7 @@ jobs:
                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
                                      appServiceName=${{secrets.AZURE_APP_NAME}} \
-                                     appPort=${{secrets.AZURE_APP_PORT}} \
+                                     appServicePort=${{secrets.AZURE_APP_PORT}} \
                                      appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \
                                      clientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
           cd ..
