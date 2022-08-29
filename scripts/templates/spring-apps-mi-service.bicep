@@ -70,7 +70,7 @@ resource springAppsAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@
         SPRING_DATASOURCE_APP_CLIENT_ID: appClientId
         APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsConnectionString
         APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsInstrumentationKey
-        SPRING_PROFILES_ACTIVE: 'test'
+        SPRING_PROFILES_ACTIVE: 'test-mi'
         SPRING_DATASOURCE_SHOW_SQL: springDatasourceShowSql
       }
 
