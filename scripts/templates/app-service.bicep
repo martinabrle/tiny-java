@@ -12,7 +12,7 @@ param dbUserName string
 @secure()
 param dbUserPassword string
 
-param clientIPAddress string
+param deploymentClientIPAddress string
 param appServiceName string
 param appServicePort string
 
@@ -106,8 +106,8 @@ resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/fi
   name: 'allowClientIP'
   parent: postgreSQLServer
   properties: {
-    endIpAddress: clientIPAddress
-    startIpAddress: clientIPAddress
+    endIpAddress: deploymentClientIPAddress
+    startIpAddress: deploymentClientIPAddress
   }
 }
 

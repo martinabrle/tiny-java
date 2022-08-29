@@ -15,7 +15,7 @@ param dbAdminPassword string
 @secure()
 param dbUserName string
 
-param clientIPAddress string
+param deploymentClientIPAddress string
 
 param springAppsServiceName string
 
@@ -173,8 +173,8 @@ resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRu
   name: 'allowClientIP'
   parent: postgreSQLServer
   properties: {
-    endIpAddress: clientIPAddress
-    startIpAddress: clientIPAddress
+    endIpAddress: deploymentClientIPAddress
+    startIpAddress: deploymentClientIPAddress
   }
 }
 resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {

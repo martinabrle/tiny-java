@@ -273,7 +273,7 @@ jobs:
                                      appName=${{secrets.AZURE_APP_NAME}} \
                                      appPort=${{secrets.AZURE_APP_PORT}} \
                                      appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \
-                                     clientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+                                     deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
           cd ..
 
       - name: Deploy Azure resources (NO AAD Integration)
@@ -321,7 +321,7 @@ jobs:
                                      appName=${{secrets.AZURE_APP_NAME}} \
                                      appPort=${{secrets.AZURE_APP_PORT}} \
                                      appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \
-                                     clientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+                                     deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
           cd ..
                     
       - name: Set-up DB AAD Integration
