@@ -111,7 +111,7 @@ jobs:
 
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "Retrieve the db user password from container params"
-            dbAppUserPassword="`az container show --resource-group "${{secrets.AZURE_DBA_GROUP_NAME}}" --name ${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}  --query "[containers[0].environmentVariables][0][?name=='SPRING_DATASOURCE_PASSWORD'].value" -o tsv`"
+            dbAppUserPassword="`az container show -g "${{secrets.AZURE_RESOURCE_GROUP}}" --name ${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}  --query "[containers[0].environmentVariables][0][?name=='SPRING_DATASOURCE_PASSWORD'].value" -o tsv`"
             echo "App user password: $dbAppUserPassword"
             echo "::add-mask::$dbAppUserPassword"
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
