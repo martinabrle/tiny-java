@@ -225,7 +225,7 @@ jobs:
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
                                      dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}}\
                                      appServiceName=${{secrets.AZURE_APP_NAME}} \
-                                     appPort=${{secrets.AZURE_APP_PORT}} \
+                                     appServicePort=${{secrets.AZURE_APP_PORT}} \
                                      clientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
 
       - name: Deploy Azure resources (main part)
