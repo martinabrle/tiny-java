@@ -175,7 +175,7 @@ resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
   dependsOn: [
-    keyVault
+    containerInstanceConfig
   ]
   properties: {
     logs: [

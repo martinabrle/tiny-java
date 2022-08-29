@@ -110,6 +110,9 @@ resource keyVaultSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/
 resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
+  dependsOn: [
+    springAppsAppDeployment
+  ]
   properties: {
     logs: [
       {

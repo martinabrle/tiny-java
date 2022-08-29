@@ -186,6 +186,9 @@ resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-pr
 resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
+  dependsOn: [
+    appServicePARMS
+  ]
   properties: {
     logs: [
       {
