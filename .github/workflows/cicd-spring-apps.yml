@@ -89,14 +89,6 @@ jobs:
       
       - name: Deploy to Spring Apps
         run: az spring app deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} -s ${{secrets.AZURE_SPRING_SERVICE_NAME}} -n ${{secrets.AZURE_APP_NAME}} --runtime-version Java_11 -d default --artifact-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}} --disable-probe --verbose 
-        # uses: Azure/spring-apps-deploy@v1
-        # with:
-        #   azure-subscription: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-        #   action: Deploy
-        #   service-name: "${{ secrets.AZURE_SPRING_SERVICE_NAME}}"
-        #   app-name: "${{secrets.AZURE_APP_NAME}}"
-        #   use-staging-deployment: false
-        #   package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
 
       - name: Run integration test(s)
         run: |
