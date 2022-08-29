@@ -88,7 +88,7 @@ jobs:
         run: az account set -s ${{secrets.AZURE_SUBSCRIPTION_ID}}
       
       - name: Deploy to Spring Apps
-        uses: azure/spring-cloud-deploy@v1
+        uses: Azure/spring-apps-deploy@v1
         with:
           azure-subscription: ${{secrets.AZURE_SUBSCRIPTION_ID}}
           action: Deploy
