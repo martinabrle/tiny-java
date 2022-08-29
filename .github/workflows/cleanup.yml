@@ -85,6 +85,7 @@ jobs:
             echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
             az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
           fi
+  
   cleanup_container_instance:
     runs-on: ubuntu-latest
     environment: CONTAINER-INSTANCE
