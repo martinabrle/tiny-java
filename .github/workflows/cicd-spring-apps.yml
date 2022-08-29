@@ -91,10 +91,13 @@ jobs:
         uses: Azure/spring-apps-deploy@v1
         with:
           azure-subscription: ${{secrets.AZURE_SUBSCRIPTION_ID}}
-          action: Deploy
-          service-name: "${{ secrets.AZURE_SPRING_SERVICE_NAME}}"
+          service-name: "${{secrets.AZURE_SPRING_SERVICE_NAME}}"
           app-name: "${{secrets.AZURE_APP_NAME}}"
+          deployment-name: default
+          action: deploy
           use-staging-deployment: false
+          runtime-version: Java_11
+          version: Java_11
           package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
 
       - name: Run integration test(s)
