@@ -74,7 +74,7 @@ resource keyVaultSecretSpringDatasourceUserName 'Microsoft.KeyVault/vaults/secre
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
-    value: '${dbUserName}@${dbServerName}'
+    value: dbUserName
     contentType: 'string'
   }
 }
