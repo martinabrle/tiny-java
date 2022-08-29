@@ -12,7 +12,6 @@ module springAppsInit 'spring-apps-mi-service.bicep' = {
     appInsightsInstrumentationKey: ''
     appName: appName
     appPort: appPort
-    appSpringProfile: ''
     springAppsServiceName: springAppsServiceName
     springDatasourceShowSql: 'true'
     springDatasourceUrl: ''

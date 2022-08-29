@@ -22,8 +22,6 @@ param springAppsServiceName string
 param appName string
 param appPort string
 
-param appSpringProfile string
-
 param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
@@ -258,7 +256,6 @@ module springAppsConfig 'spring-apps-mi-service.bicep' = {
     appInsightsInstrumentationKey: appInsights.properties.InstrumentationKey
     appName: appName
     appPort: appPort
-    appSpringProfile: appSpringProfile
     springAppsServiceName: springAppsServiceName
     springDatasourceShowSql: 'true'
     springDatasourceUrl: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${keyVaultSecretSpringDataSourceURL.name})'

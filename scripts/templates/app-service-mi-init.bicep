@@ -12,7 +12,6 @@ module appServiceInit 'spring-apps-mi-service.bicep' = {
     appInsightsInstrumentationKey: ''
     appName: appServiceName
     appPort: appServicePort
-    appSpringProfile: 'test-mi'
     springAppsServiceName: ''
     springDatasourceUrl: ''
     springDatasourceUserName: ''

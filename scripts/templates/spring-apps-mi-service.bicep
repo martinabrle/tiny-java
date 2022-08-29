@@ -7,7 +7,6 @@ param springDatasourceUrl string
 param springDatasourceUserName string
 param springDatasourceShowSql string = 'true'
 param appPort string
-param appSpringProfile string
 
 param location string = resourceGroup().location
 
@@ -71,7 +70,7 @@ resource springAppsAppDeployment 'Microsoft.AppPlatform/Spring/apps/deployments@
         SPRING_DATASOURCE_APP_CLIENT_ID: appClientId
         APPLICATIONINSIGHTS_CONNECTION_STRING: appInsightsConnectionString
         APPINSIGHTS_INSTRUMENTATIONKEY: appInsightsInstrumentationKey
-        SPRING_PROFILES_ACTIVE: appSpringProfile
+        SPRING_PROFILES_ACTIVE: 'test'
         SPRING_DATASOURCE_SHOW_SQL: springDatasourceShowSql
       }
 

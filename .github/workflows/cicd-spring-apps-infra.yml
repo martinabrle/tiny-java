@@ -272,7 +272,6 @@ jobs:
                                      springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
                                      appName=${{secrets.AZURE_APP_NAME}} \
                                      appPort=${{secrets.AZURE_APP_PORT}} \
-                                     appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \
                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
           cd ..
 
@@ -320,7 +319,6 @@ jobs:
                                      springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
                                      appName=${{secrets.AZURE_APP_NAME}} \
                                      appPort=${{secrets.AZURE_APP_PORT}} \
-                                     appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \
                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
           cd ..
                     

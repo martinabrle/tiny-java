@@ -81,7 +81,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
             }
             {
               name: 'SPRING_PROFILES_ACTIVE'
-              value: 'test-mi'
+              value: 'test'
             }
             {
               name: 'PORT'
