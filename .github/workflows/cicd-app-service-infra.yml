@@ -200,7 +200,6 @@ jobs:
                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
-                                     springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
                                      appName=${{secrets.AZURE_APP_NAME}} \
                                      appPort=${{secrets.AZURE_APP_PORT}} \
                                      appSpringProfile=${{steps.vars.outputs.APP_SPRING_PROFILE}} \
@@ -225,7 +224,6 @@ jobs:
                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
                                      dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}}\
-                                     springAppsServiceName=${{secrets.AZURE_SPRING_SERVICE_NAME}} \
                                      appName=${{secrets.AZURE_APP_NAME}} \
                                      appPort=${{secrets.AZURE_APP_PORT}} \
                                      clientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
