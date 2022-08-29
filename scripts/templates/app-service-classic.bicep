@@ -164,20 +164,21 @@ resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-
   }
 }
 
-resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-  parent: keyVault
-  name: 'SPRING-DATASOURCE-USER-PASSWORD'
-  properties: {
-    value: appService.identity.principalId
-    contentType: 'string'
-  }
-}
 
 resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
     value: dbUserName
+    contentType: 'string'
+  }
+}
+
+resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'SPRING-DATASOURCE-USER-PASSWORD'
+  properties: {
+    value: dbUserPassword
     contentType: 'string'
   }
 }
