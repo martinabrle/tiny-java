@@ -5,5 +5,3 @@ spring:
     open-in-view: false
 server:
   port: ${PORT}
-
-
