@@ -176,7 +176,7 @@ resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-previe
 
 resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
-  name: 'SPRING-DATASOURCE-USER-PASSWORD'
+  name: 'SPRING-DATASOURCE-PASSWORD'
   properties: {
     value: dbUserPassword
     contentType: 'string'

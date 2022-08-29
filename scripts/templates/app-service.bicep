@@ -207,7 +207,7 @@ module rbacKVSecretApiSpringDatasourceUserName './components/role-assignment-kv-
 }
 
 module rbacKVSecretApiSpringDatasourceUserPassword './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-api-spring-datasource-user-password'
+  name: 'deployment-rbac-kv-secret-api-spring-datasource-password'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
     principalId: apiService.identity.principalId
