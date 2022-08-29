@@ -111,7 +111,7 @@ jobs:
 
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "New app user password generated"
-            dbAppUserPassword="`openssl rand -hex 25`#@"
+            dbAppUserPassword="`az container show -g ${{secrets.AZURE_DBA_GROUP_NAME}} --name ${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}  --query "[containers[0].environmentVariables][0][?name=='SPRING_DATASOURCE_PASSWORD'].value" -o tsv`"
             echo "::add-mask::$dbAppUserPassword"
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
           else
