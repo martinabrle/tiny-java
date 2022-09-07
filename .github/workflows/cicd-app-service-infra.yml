@@ -118,28 +118,25 @@ jobs:
           echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
           echo "Client IP: $clientIP"
 
-          dbAdminPassword="`openssl rand -hex 25`#@"
-          echo "::add-mask::$dbAdminPassword"
-          echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
-
-          createDB=true
+          createDB=false
           dbAdminName=`az postgres server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
-          else
-            #echo "Re-setting password for an existing admin user"
-            #az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
-            createDB=false
+            createDB=true
           fi
           echo "Admin name: $dbAdminName"
+          echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
+          
+          echo "Create DB: $createDB"
+          echo "::set-output name=DB_NOT_INITIALIZED::${createDB}"
+
+          dbAdminPassword="`openssl rand -hex 25`#@"
+          echo "::add-mask::$dbAdminPassword"
+          echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
           echo "Admin password: $dbAdminPassword"
           
-          echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
-          echo "::set-output name=DB_NOT_INITIALIZED::${createDB}"
-          echo "Create DB: $createDB"
-
           dbAppUserName=`echo "${{secrets.AZURE_APP_NAME}}" | tr '-' '_'`;
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
@@ -159,8 +156,8 @@ jobs:
           fi
           echo "App user password: $dbAppUserPassword"
 
-          echo "::set-output name=APP_SPRING_PROFILE::$appSpringProfile"
           echo "App Spring profile: $appSpringProfile"
+          echo "::set-output name=APP_SPRING_PROFILE::$appSpringProfile"
           
           if [[ ! -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
              echo "::set-output name=DB_AAD_INTEGRATION::true"
@@ -215,7 +212,6 @@ jobs:
         id: deployment_no_aad
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
         run: |
-
           az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-classic.bicep \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                      logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
