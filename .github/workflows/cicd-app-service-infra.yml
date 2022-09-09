@@ -11,6 +11,11 @@ on:
       run_cleanup:
         type: boolean
         description: Delete all existing resources first
+      environment:
+        type: environment
+        options: 
+        - SPRING-APPS
+        - APP-SERVICE
 
 jobs:
   cleanup_if_requested:
