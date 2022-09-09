@@ -12,7 +12,8 @@ on:
         type: boolean
         description: Delete all existing resources first
       environment:
-        type: environment
+        type: choice
+        description: Deployment environment
         options: 
         - SPRING-APPS
         - APP-SERVICE
@@ -20,7 +21,7 @@ on:
 jobs:
   cleanup_if_requested:
     runs-on: ubuntu-latest
-    environment: APP-SERVICE
+    environment: github.event.inputs.environment
     steps:
       - name: Azure login
         if: github.event.inputs.run_cleanup == 'true'
@@ -85,7 +86,7 @@ jobs:
   deploy_infra:
     needs: [deploy_log_analytics_if_needed]
     runs-on: ubuntu-latest
-    environment: APP-SERVICE
+    environment: github.event.inputs.environment
     defaults:
       run:
         working-directory: ./scripts
