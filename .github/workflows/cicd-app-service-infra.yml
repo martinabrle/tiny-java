@@ -305,7 +305,7 @@ jobs:
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
           
-          echo "User group {{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
           cat ./create_user.sql
 
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
