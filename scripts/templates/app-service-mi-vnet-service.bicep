@@ -130,14 +130,14 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
         name: 'db'
         properties: {
           addressPrefix: dbSubnetAddressPrefix
-          delegations: [
-            {
-              name: 'delegation'
-              properties: {
-                serviceName: 'Microsoft.DBforPostgreSQL/singleServers'
-              }
-            }
-          ]
+          // delegations: [ <-- private link not happy with that
+          //   {
+          //     name: 'delegation'
+          //     properties: {
+          //       serviceName: 'Microsoft.DBforPostgreSQL/singleServers'
+          //     }
+          //   }
+          // ]
         }
       }
     ]

@@ -105,14 +105,62 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRule
   }
 }
 
-resource dbPrivateEndpoint 'Microsoft.DBforPostgreSQL/servers/privateEndpointConnections@2018-06-01' = {
-  name: 'PrivateEndpointConnection'
-  parent: postgreSQLServer
+// resource dbPrivateEndpoint 'Microsoft.DBforPostgreSQL/servers/privateEndpointConnections@2018-06-01' = {
+//   name: 'PrivateEndpointConnection'
+//   parent: postgreSQLServer
+//   properties: {
+//     privateEndpoint: dbSubnet
+//   }
+// }
+
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2021-05-01' = {
+  location: location
+  name: '${dbServerName}-private-endpoint'
+  tags: tagsArray
   properties: {
-    privateEndpoint: dbSubnet
+    subnet: dbSubnet
+    customNetworkInterfaceName: '${dbServerName}-private-private-link-nic'
+    privateLinkServiceConnections: [
+      {
+        name: '${dbServerName}-private-endpoint'
+        properties: {
+          privateLinkServiceId: postgreSQLServer.id
+          groupIds: [ 'postgresqlServer' ]
+        }
+      }
+    ]
   }
 }
 
+resource privateDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones@2018-09-01' = {
+  name: 'privatelink.postgres.database.azure.com'
+  location: 'global'
+  tags: tagsArray
+}
+
+resource privateLinkDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2018-09-01' = {
+  name: 'privatelink.postgres.database.azure.com/${uniqueString(vnet.id)}'
+  location: 'global'
+  tags: tagsArray
+  properties: {
+    virtualNetwork: vnet
+    registrationEnabled: false
+  }
+}
+
+resource privateEndpointName_default 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+  name: '${privateEndpoint.name}/default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-postgres-database-azure-com'
+        properties: {
+          privateDnsZoneId: privateLinkDNSZonePostgresqlServer.id
+        }
+      }
+    ]
+  }
+}
 resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${dbServerName}-db-logs'
   scope: postgreSQLServer
