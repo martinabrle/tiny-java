@@ -105,13 +105,13 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRule
   }
 }
 
-resource dbPrivateEndpoint 'Microsoft.DBforPostgreSQL/servers/privateEndpointConnections@2018-06-01' = {
-  name: 'PrivateEndpointConnection'
-  parent: postgreSQLServer
-  properties: {
-    privateEndpoint: dbSubnet
-  }
-}
+// resource dbPrivateEndpoint 'Microsoft.DBforPostgreSQL/servers/privateEndpointConnections@2018-06-01' = {
+//   name: 'PrivateEndpointConnection'
+//   parent: postgreSQLServer
+//   properties: {
+//     privateEndpoint: dbSubnet
+//   }
+// }
 
 resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${dbServerName}-db-logs'
