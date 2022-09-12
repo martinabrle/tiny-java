@@ -117,9 +117,11 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2021-05-01' = {
   location: location
   name: '${dbServerName}-private-endpoint'
   tags: tagsArray
+  dependsOn: [
+    vnet
+  ]
   properties: {
     subnet: dbSubnet
-    customNetworkInterfaceName: '${dbServerName}-private-private-link-nic'
     privateLinkServiceConnections: [
       {
         name: '${dbServerName}-private-endpoint'
@@ -139,28 +141,50 @@ resource privateDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones@2018-
 }
 
 resource privateLinkDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2018-09-01' = {
-  name: 'privatelink.postgres.database.azure.com/${uniqueString(vnet.id)}'
+  name: '${privateDNSZonePostgresqlServer.name}-link'
   location: 'global'
   tags: tagsArray
   properties: {
-    virtualNetwork: vnet
+    virtualNetwork: {
+      id: vnet.id
+    }
     registrationEnabled: false
   }
 }
 
-resource privateEndpointName_default 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
   name: '${privateEndpoint.name}/default'
   properties: {
     privateDnsZoneConfigs: [
       {
         name: 'privatelink-postgres-database-azure-com'
         properties: {
-          privateDnsZoneId: privateLinkDNSZonePostgresqlServer.id
+          privateDnsZoneId: privateDNSZonePostgresqlServer.id
         }
       }
     ]
   }
+  dependsOn: [
+    privateEndpoint
+  ]
 }
+
+// https://docs.microsoft.com/en-us/azure/private-link/create-private-endpoint-bicep?tabs=CLI
+
+// resource privateEndpointName_default 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+//   name: '${privateEndpoint.name}/default'
+//   properties: {
+//     privateDnsZoneConfigs: [
+//       {
+//         name: 'privatelink-postgres-database-azure-com'
+//         properties: {
+//           privateDnsZoneId: privateLinkDNSZonePostgresqlServer.id
+//         }
+//       }
+//     ]
+//   }
+// }
+
 resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
   name: '${dbServerName}-db-logs'
   scope: postgreSQLServer
