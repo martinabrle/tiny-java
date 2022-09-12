@@ -121,7 +121,9 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2021-05-01' = {
     vnet
   ]
   properties: {
-    subnet: dbSubnet
+    subnet: {
+      id: dbSubnet.id
+    }
     privateLinkServiceConnections: [
       {
         name: '${dbServerName}-private-endpoint'
