@@ -141,7 +141,8 @@ resource privateDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones@2018-
 }
 
 resource privateLinkDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2018-09-01' = {
-  name: '${privateDNSZonePostgresqlServer.name}-link'
+  parent: privateDNSZonePostgresqlServer
+  name: 'link'
   location: 'global'
   tags: tagsArray
   properties: {
