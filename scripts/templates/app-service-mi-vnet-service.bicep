@@ -32,7 +32,7 @@ resource appService 'Microsoft.Web/sites@2022-03-01' = {
   }
   properties: {
     serverFarmId: appServicePlan.id
-    virtualNetworkSubnetId: vnet.properties.subnets[0].id
+    //virtualNetworkSubnetId: vnet.properties.subnets[0].id
     httpsOnly: true
 
     siteConfig: {
@@ -91,7 +91,8 @@ var vnetAddressPrefix = '10.0.0.0/16'
 
 var appSubnetAddressPrefix = '10.0.0.0/24'
 
-var mgmtSubnetAddressPrefix = '10.0.1.0/24'
+var bastionSubnetAddressPrefix = '10.0.1.0/24'
+var mgmtSubnetAddressPrefix = '10.0.2.0/24'
 
 var dbSubnetAddressPrefix = '10.0.4.0/24'
 
@@ -110,20 +111,27 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
         name: 'web'
         properties: {
           addressPrefix: appSubnetAddressPrefix
-          delegations: [
-            {
-              name: 'delegation'
-              properties: {
-                serviceName: 'Microsoft.Web/serverFarms'
-              }
-            }
-          ]
+          // TODO: why?
+          // delegations: [
+          //   {
+          //     name: 'delegation'
+          //     properties: {
+          //       serviceName: 'Microsoft.Web/serverFarms'
+          //     }
+          //   }
+          // ]
         }
       }
       {
         name: 'mgmt'
         properties: {
           addressPrefix: mgmtSubnetAddressPrefix
+        }
+      }
+      {
+        name: 'AzureBastionSubnet'
+        properties: {
+          addressPrefix: bastionSubnetAddressPrefix
         }
       }
       {

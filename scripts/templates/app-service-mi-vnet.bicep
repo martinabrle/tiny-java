@@ -13,10 +13,11 @@ param dbAdminName string
 param dbAdminPassword string
 @secure()
 param dbUserName string
+
+param appServiceName string
 param appServicePort string
 
 param deploymentClientIPAddress string
-param appServiceName string
 
 param location string = resourceGroup().location
 
@@ -34,6 +35,11 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' existing = {
 resource dbSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' existing = {
   parent: vnet
   name: 'db'
+}
+
+resource webSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' existing = {
+  parent: vnet
+  name: 'web'
 }
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
@@ -113,7 +119,13 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRule
 //   }
 // }
 
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2021-05-01' = {
+// We deploy VNET with subnets
+// Subnet "web"
+// Subnet "db"
+//  Private endpoint '${dbServerName}-private-endpoint' connected to DB via a private link connection
+//  Private DNS Zone 'privatelink.postgres.database.azure.com', connected to the VNET / Subnet
+
+resource privateEndpointPostgresqlServer 'Microsoft.Network/privateEndpoints@2021-05-01' = {
   location: location
   name: '${dbServerName}-private-endpoint'
   tags: tagsArray
@@ -133,11 +145,42 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2021-05-01' = {
         }
       }
     ]
+    customNetworkInterfaceName: '${dbServerName}-private-endpoint-nic'
+  }
+}
+
+resource privateEndpointAppService 'Microsoft.Network/privateEndpoints@2021-05-01' = {
+  location: location
+  name: '${appServiceName}-private-endpoint'
+  tags: tagsArray
+  dependsOn: [
+    vnet
+  ]
+  properties: {
+    subnet: {
+      id: webSubnet.id
+    }
+    privateLinkServiceConnections: [
+      {
+        name: '${appServiceName}-private-endpoint'
+        properties: {
+          privateLinkServiceId: appService.id
+          groupIds: [ 'sites' ]
+        }
+      }
+    ]
+    customNetworkInterfaceName: '${appServiceName}-private-endpoint-nic'
   }
 }
 
 resource privateDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones@2018-09-01' = {
   name: 'privatelink.postgres.database.azure.com'
+  location: 'global'
+  tags: tagsArray
+}
+
+resource privateDNSZoneAppService 'Microsoft.Network/privateDnsZones@2018-09-01' = {
+  name: 'privatelink.azurewebsites.net'
   location: 'global'
   tags: tagsArray
 }
@@ -155,8 +198,21 @@ resource privateLinkDNSZonePostgresqlServer 'Microsoft.Network/privateDnsZones/v
   }
 }
 
+resource privateLinkDNSZoneAppService 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2018-09-01' = {
+  parent: privateDNSZoneAppService
+  name: 'link'
+  location: 'global'
+  tags: tagsArray
+  properties: {
+    virtualNetwork: {
+      id: vnet.id
+    }
+    registrationEnabled: false
+  }
+}
+
 resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
-  name: '${privateEndpoint.name}/default'
+  name: '${privateEndpointPostgresqlServer.name}/default'
   properties: {
     privateDnsZoneConfigs: [
       {
@@ -168,7 +224,24 @@ resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneG
     ]
   }
   dependsOn: [
-    privateEndpoint
+    privateEndpointPostgresqlServer
+  ]
+}
+
+resource pvtEndpointDnsGroupAppService 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
+  name: '${privateEndpointAppService.name}/default'
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'privatelink-azurewebsites-net'
+        properties: {
+          privateDnsZoneId: privateDNSZoneAppService.id
+        }
+      }
+    ]
+  }
+  dependsOn: [
+    privateEndpointAppService
   ]
 }
 
