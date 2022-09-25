@@ -4,9 +4,7 @@
 ![Architecture Diagram](../../diagrams/tiny-java-app-service-classic.png)
 
 ### Deployment (bash)
-First, create a Log Analytics Workspace in a new resource group
-
-Than, set the following environment variables:
+Set environment variables:
 ```
 export PREFIX="!!!REPLACE_WITH_DEPLOYMENT_PREFIX!!!"
 
@@ -29,8 +27,14 @@ export createDB=false
 export AZURE_RESOURCE_TAGS="{ 'Department': 'RESEARCH', 'CostCentre': 'DEV', 'DeleteNightly': 'true',  'DeleteWeekly': 'true'}"
 export RESOURCE_TAGS='{ \"Department\": \"RESEARCH\", \"CostCentre\": \"DEV\", \"DeleteNightly\": \"true\",  \"DeleteWeekly\": \"true\"}'
 ```
+If it there is no existing Log Analytics Workspace in a region you are deploying into, create a new resource group and a new Log Analytics Workspace in it:
+```
+az group create -l $AZURE_LOCATION -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
 
-After that change the current directory to tiny-java/scripts/
+az monitor log-analytics workspace create -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP --workspace-name $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
+```
+
+Change the current directory to ```tiny-java/scripts/```
 
 Create the new deployment resource group:
 ```
