@@ -34,9 +34,9 @@ az group create -l $AZURE_LOCATION -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
 az monitor log-analytics workspace create -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP --workspace-name $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
 ```
 
-Change the current directory to ```tiny-java/scripts/```
+Change directory to ```tiny-java/scripts/```
 
-Create the new deployment resource group:
+Create a new resource group:
 ```
 az deployment sub create \
            --l $AZURE_LOCATION \
@@ -44,7 +44,7 @@ az deployment sub create \
            --parameters name=$AZURE_RESOURCE_GROUP location=$AZURE_LOCATION resourceTags="$AZURE_RESOURCE_TAGS"
 ```   
 
-Deploy all services
+Deploy all services:
 ```
 az deployment group create \
     --resource-group $AZURE_RESOURCE_GROUP \
@@ -66,9 +66,11 @@ az deployment group create \
 ```
 
 Connecto the the newly created Postgresql database:
-```psql "host=${AZURE_DB_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=${AZURE_DB_NAME} user=${AZURE_DB_APP_USER_NAME}@${AZURE_DB_SERVER_NAME} password=${dbAdminPassword} sslmode=require"```
+```
+psql "host=${AZURE_DB_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=${AZURE_DB_NAME} user=${AZURE_DB_APP_USER_NAME}@${AZURE_DB_SERVER_NAME} password=${dbAdminPassword} sslmode=require"
+```
 
-Initialize DB schema
+Initialize DB schema:
 ```
 CREATE TABLE IF NOT EXISTS todo (
     "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
@@ -78,7 +80,7 @@ CREATE TABLE IF NOT EXISTS todo (
 );
 ```
 
-Create an App DB user and assign their rights
+Create an App DB user and assign their rights:
 ```
 CREATE USER {your_app_user_name} WITH PASSWORD '{your_app_user_password}';
 GRANT CONNECT ON DATABASE tododb TO {your_app_user_name};
