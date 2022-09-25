@@ -1,9 +1,10 @@
 # Spring Boot Todo App on App Service
 
 There are 3 deployments demonstrated here:
-* [Simplified deployment with partial managed identities usage](./app-service-classic.md)
-* [Deployment with full managed identities usage](./app-service-mi.md)
-* [Deployment with full managed identities and VNET usage](./app-service-mi-vnet.md)
+* [Manual deployment using AZ CLI](./app-service-az-cli.md)
+* [Simplified deployment with partial managed identities usage (Bicep)](./app-service-classic.md)
+* [Deployment with full managed identities usage (Bicep)](./app-service-mi.md)
+* [Deployment with full managed identities and VNET usage (Bicep)](./app-service-mi-vnet.md)
 
 
 ### Running Todo App on your computer (with Postgresql in Azure)
