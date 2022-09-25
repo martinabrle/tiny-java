@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2022-09-25T08:35:15.476Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="NUbRxr5GnZ3mLwHMKRZj" version="20.3.6" type="github">
+<mxfile host="app.diagrams.net" modified="2022-09-25T08:45:37.340Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="p7lR_UxGJ1WuQkDIaDXa" version="20.3.6" type="github">
   <diagram id="CIYdKKqNAJBwTVAFqt9w" name="Page-1">
     <mxGraphModel dx="1420" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -37,16 +37,16 @@
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-12" value="" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/general/Browser.svg;" parent="1" vertex="1">
           <mxGeometry x="87" y="256" width="65" height="52" as="geometry" />
         </mxCell>
-        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-13" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.016;entryY=0.516;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1.01;exitY=0.34;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="0QP-IHk7IyoN1cNLL2Y5-12" target="0QP-IHk7IyoN1cNLL2Y5-1" edge="1">
+        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-13" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.016;entryY=0.469;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1.015;exitY=0.263;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="0QP-IHk7IyoN1cNLL2Y5-12" target="0QP-IHk7IyoN1cNLL2Y5-1" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
             <mxPoint x="170" y="280" as="sourcePoint" />
             <mxPoint x="347" y="272" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-14" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.016;entryY=0.516;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1.015;exitY=0.308;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" edge="1">
+        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-14" value="" style="endArrow=classic;html=1;rounded=0;" parent="1" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="443.9749999999999" y="273.0160000000001" as="sourcePoint" />
-            <mxPoint x="671.0239999999999" y="274.0239999999999" as="targetPoint" />
+            <mxPoint x="444" y="270" as="sourcePoint" />
+            <mxPoint x="671" y="270" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-15" value="" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
@@ -90,7 +90,7 @@
         <mxCell id="gKN0slglhCB6e-M4ENdB-1" value="Full managed identities deployment" style="text;strokeColor=none;fillColor=none;html=1;fontSize=24;fontStyle=1;verticalAlign=middle;align=center;" parent="1" vertex="1">
           <mxGeometry x="3" y="20" width="427" height="30" as="geometry" />
         </mxCell>
-        <mxCell id="OqzE98QxFuoe7ZCpbJcY-1" value="GitHub Repo" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/general/Branch.svg;" vertex="1" parent="1">
+        <mxCell id="OqzE98QxFuoe7ZCpbJcY-1" value="GitHub Repo" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/general/Branch.svg;" parent="1" vertex="1">
           <mxGeometry x="660" y="610" width="72" height="72" as="geometry" />
         </mxCell>
       </root>
