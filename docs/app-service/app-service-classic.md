@@ -6,12 +6,12 @@
 ### Deployment (bash)
 Set environment variables:
 ```
-export PREFIX="!!!REPLACE_WITH_DEPLOYMENT_PREFIX!!!"
+export PREFIX="{{{REPLACE_WITH_DEPLOYMENT_PREFIX}}}"
 
 export AZURE_RESOURCE_GROUP=${PREFIX}-tinyjava-app-svc_rg
 export AZURE_LOCATION=eastus
-export AZURE_LOG_ANALYTICS_WRKSPC_NAME="!!!REPLACE_WITH_LOG_WORKSPACE_NAME!!!"
-export AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP="!!!REPLACE_WITH_LOG_WORKSPACE_RESOURCE_GROUP!!!"
+export AZURE_LOG_ANALYTICS_WRKSPC_NAME="{{{REPLACE_WITH_LOG_WORKSPACE_NAME}}}"
+export AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP="{{{REPLACE_WITH_LOG_WORKSPACE_RESOURCE_GROUP}}}"
 export AZURE_KEY_VAULT_NAME=${PREFIX}-tinyjava-app-svc-kv
 export AZURE_APP_INSIGHTS_NAME=${PREFIX}-tinyjava-app-svc-ai
 export AZURE_DB_SERVER_NAME=${PREFIX}-tinyjava-app-svc-pg
@@ -23,7 +23,7 @@ export AZURE_DB_APP_USER_PASSWORD="`openssl rand -base64 25`#@"
 export AZURE_APP_NAME=${PREFIX}-tinyjava-app-svc
 export AZURE_APP_PORT=443
 export clientIPAddress=`dig +short myip.opendns.com @resolver1.opendns.com.`
-export createDB=false
+export createDB=true
 export AZURE_RESOURCE_TAGS="{ 'Department': 'RESEARCH', 'CostCentre': 'DEV', 'DeleteNightly': 'true',  'DeleteWeekly': 'true'}"
 export RESOURCE_TAGS='{ \"Department\": \"RESEARCH\", \"CostCentre\": \"DEV\", \"DeleteNightly\": \"true\",  \"DeleteWeekly\": \"true\"}'
 ```
