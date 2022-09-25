@@ -13,26 +13,36 @@
   ([link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-set)); replace ```00000000-0000-0000-0000-000000000000``` with Azure subscription Id you will deploy into
 * Set environment variables:
     ```
-    export PREFIX="{{{REPLACE_WITH_DEPLOYMENT_PREFIX}}}"
-
-    export AZURE_RESOURCE_GROUP=${PREFIX}-tinyjava-app-svc_rg
-    export AZURE_LOCATION=eastus
     export AZURE_LOG_ANALYTICS_WRKSPC_NAME="{{{REPLACE_WITH_LOG_WORKSPACE_NAME}}}"
     export AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP="{{{REPLACE_WITH_LOG_WORKSPACE_RESOURCE_GROUP}}}"
-    export AZURE_KEY_VAULT_NAME=${PREFIX}-tinyjava-app-svc-kv
-    export AZURE_APP_INSIGHTS_NAME=${PREFIX}-tinyjava-app-svc-ai
-    export AZURE_DB_SERVER_NAME=${PREFIX}-tinyjava-app-svc-pg
+    export ENV_PREFIX="{{{REPLACE_WITH_DEPLOYMENT_PREFIX}}}"
+    ```
+
+    ```
+    export AZURE_RESOURCE_GROUP=${ENV_PREFIX}-tinyjava-app-svc_rg
+    export AZURE_LOCATION=eastus
+    export AZURE_KEY_VAULT_NAME=${ENV_PREFIX}-tinyjava-app-svc-kv
+    export AZURE_APP_INSIGHTS_NAME=${ENV_PREFIX}-tinyjava-app-svc-ai
+    export AZURE_DB_SERVER_NAME=${ENV_PREFIX}-tinyjava-app-svc-pg
     export AZURE_DB_NAME=tododb
-    export dbAdminName=a7badc89a8d
+    export dbAdminName="a`openssl rand -hex 5`"
     export dbAdminPassword="`openssl rand -base64 25`#@"
-    export AZURE_DB_APP_USER_NAME=whateveruser
+    export AZURE_DB_APP_USER_NAME="u`openssl rand -hex 5`"
     export AZURE_DB_APP_USER_PASSWORD="`openssl rand -base64 25`#@"
-    export AZURE_APP_NAME=${PREFIX}-tinyjava-app-svc
+    export AZURE_APP_NAME=${ENV_PREFIX}-tinyjava-app-svc
     export AZURE_APP_PORT=443
     export clientIPAddress=`dig +short myip.opendns.com @resolver1.opendns.com.`
     export createDB=true
     export AZURE_RESOURCE_TAGS="{ 'Department': 'RESEARCH', 'CostCentre': 'DEV', 'DeleteNightly': 'true',  'DeleteWeekly': 'true'}"
     export RESOURCE_TAGS='{ \"Department\": \"RESEARCH\", \"CostCentre\": \"DEV\", \"DeleteNightly\": \"true\",  \"DeleteWeekly\": \"true\"}'
+
+    echo "-------------------"
+    echo "Save for later use:"
+    echo "-------------------"
+    echo "DB Admin: ${dbAdminName}"
+    echo "DB Admins password: ${dbAdminPassword}"
+    echo "DB App user: ${AZURE_DB_APP_USER_NAME}"
+    echo "DB App users password: ${AZURE_DB_APP_USER_PASSWORD}"   
     ```
 * If it there is no existing Log Analytics Workspace in a region you are deploying into, create a new resource group and a new Log Analytics Workspace in it:
     ```
