@@ -19,6 +19,9 @@
     ```
 
     ```
+    export AZURE_DBA_GROUP_NAME="All TEST PGSQL Admins"
+    export AZURE_DBA_GROUP_ID=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
+
     export AZURE_RESOURCE_GROUP=${ENV_PREFIX}-tinyjava-app-svc_rg
     export AZURE_LOCATION=eastus
     export AZURE_KEY_VAULT_NAME=${ENV_PREFIX}-tinyjava-app-svc-kv
@@ -84,14 +87,19 @@
                      appServicePort=$AZURE_APP_PORT \
                      deploymentClientIPAddress=$clientIPAddress
     ```
-* Assign admin group to the newly created Postgresql server:
+* Assign a newly created appservice's AppId to a variable:
     ```
+    export DB_APP_USER_ID=`az ad sp list --display-name $AZURE_APP_NAME --query "[?displayName=='${AZURE_APP_NAME}'].appId" --out tsv`
     ```
-* Connect to the the newly created Postgresql database:
+* Assign AAD DBA group to the newly created Postgresql server:
     ```
-    psql "host=${AZURE_DB_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=${AZURE_DB_NAME} user=${AZURE_DB_APP_USER_NAME}@${AZURE_DB_SERVER_NAME} password=${dbAdminPassword} sslmode=require"
+    az postgres server ad-admin create -s $AZURE_DB_SERVER_NAME -g $AZURE_RESOURCE_GROUP --object-id $AZURE_DBA_GROUP_ID --display-name "${AZURE_DBA_GROUP_NAME}"
     ```
-
+* Log-in into the newly created Postgresql server as an AAD admin user (assuming the current user is a member of the DBA group):
+    ```
+    export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
+    psql --set=sslmode=require -h ${AZURE_DB_SERVER_NAME}.postgres.database.azure.com -p 5432 -d postgres -U "${AZURE_DBA_GROUP_NAME}@${AZURE_DB_SERVER_NAME}"
+    ```
 * Initialize DB schema:
     ```
     CREATE TABLE IF NOT EXISTS todo (
@@ -101,16 +109,13 @@
         "completed_date_time" TIMESTAMP DEFAULT NULL
     );
     ```
-
-* Create an App DB user and assign their rights:
+* Create AAD DB user and assign their permissions:
     ```
-    CREATE USER ${AZURE_DB_APP_USER_NAME} WITH PASSWORD '${AZURE_DB_APP_USER_PASSWORD}';
-    GRANT CONNECT ON DATABASE tododb TO ${AZURE_DB_APP_USER_NAME};
-    GRANT USAGE ON SCHEMA public TO ${AZURE_DB_APP_USER_NAME};
-    GRANT SELECT ON todo TO ${AZURE_DB_APP_USER_NAME};
-    GRANT INSERT ON todo TO ${AZURE_DB_APP_USER_NAME};
+    SET aad_validate_oids_in_tenant=off;
+    CREATE ROLE ${DB_APP_USER_NAME} WITH LOGIN PASSWORD '${DB_APP_USER_ID}' IN ROLE azure_ad_user;
+    GRANT CONNECT ON DATABASE ${AZURE_DB_NAME} TO ${DB_APP_USER_NAME};
+    GRANT USAGE ON SCHEMA public TO ${DB_APP_USER_NAME};
     ```
-
 * Change your current directory to ```tiny-java/todo```:
     ```
     cd ../todo
