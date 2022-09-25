@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2022-09-25T08:28:46.015Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="f8iGoO6Vhehvqr7p_65J" version="20.3.6" type="github">
+<mxfile host="app.diagrams.net" modified="2022-09-25T08:29:02.516Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="2TSoKeRlTpdRQ8UgYWas" version="20.3.6" type="github">
   <diagram id="CIYdKKqNAJBwTVAFqt9w" name="Page-1">
     <mxGraphModel dx="1420" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -91,7 +91,7 @@
           <mxGeometry x="3" y="20" width="427" height="30" as="geometry" />
         </mxCell>
         <mxCell id="OqzE98QxFuoe7ZCpbJcY-1" value="GitHub Repo" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/general/Branch.svg;" vertex="1" parent="1">
-          <mxGeometry x="672" y="640" width="72" height="72" as="geometry" />
+          <mxGeometry x="672" y="610" width="72" height="72" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
