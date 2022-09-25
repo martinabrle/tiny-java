@@ -1,7 +1,7 @@
 # Spring Boot Todo App on App Service
 ## Deployment with full managed identities and VNET usage (Bicep)
 
-![Architecture Diagram](../../diagrams/tiny-java-app-service-managed-identities-vnet.png.png)
+![Architecture Diagram](../../diagrams/tiny-java-app-service-managed-identities-vnet.png)
 
 * Start the command line, clone the repo using ```git clone https://github.com/martinabrle/tiny-java.git``` and change your current directory to ```tiny-java/scripts``` directory:
     ```
