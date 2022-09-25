@@ -4,6 +4,9 @@
 ![Architecture Diagram](../../diagrams/tiny-java-app-service-classic.png)
 
 * Start the command line, clone the repo using ```git clone https://github.com/martinabrle/tiny-java.git``` and change your current directory to ```tiny-java/scripts``` directory:
+```
+cd ./scripts
+```
 * Log in into Azure from the command line using ```az login``` ([link](https://docs.microsoft.com/en-us/cli/azure/authenticate-azure-cli))
 * List available Azure subscriptions using ```az account list -o table``` ([link](https://docs.microsoft.com/en-us/cli/azure/account#az-account-list))
 * Select an Azure subscription to deploy the database into ```az account set -s 00000000-0000-0000-0000-000000000000```
@@ -36,11 +39,6 @@ If it there is no existing Log Analytics Workspace in a region you are deploying
 az group create -l $AZURE_LOCATION -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
 
 az monitor log-analytics workspace create -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP --workspace-name $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
-```
-
-* Change the current directory to ```tiny-java/scripts/```:
-```
-cd ./scripts
 ```
 
 * Create a new resource group:
