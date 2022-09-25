@@ -34,65 +34,65 @@
     export AZURE_RESOURCE_TAGS="{ 'Department': 'RESEARCH', 'CostCentre': 'DEV', 'DeleteNightly': 'true',  'DeleteWeekly': 'true'}"
     export RESOURCE_TAGS='{ \"Department\": \"RESEARCH\", \"CostCentre\": \"DEV\", \"DeleteNightly\": \"true\",  \"DeleteWeekly\": \"true\"}'
     ```
-If it there is no existing Log Analytics Workspace in a region you are deploying into, create a new resource group and a new Log Analytics Workspace in it:
-```
-az group create -l $AZURE_LOCATION -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
+* If it there is no existing Log Analytics Workspace in a region you are deploying into, create a new resource group and a new Log Analytics Workspace in it:
+    ```
+    az group create -l $AZURE_LOCATION -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
 
-az monitor log-analytics workspace create -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP --workspace-name $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
-```
+    az monitor log-analytics workspace create -g $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP --workspace-name $AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP
+    ```
 
 * Create a new resource group:
-```
-az deployment sub create \
-           --l $AZURE_LOCATION \
-           --template-file ./templates/components/rg.bicep \
-           --parameters name=$AZURE_RESOURCE_GROUP location=$AZURE_LOCATION resourceTags="$AZURE_RESOURCE_TAGS"
-```   
+    ```
+    az deployment sub create \
+            --l $AZURE_LOCATION \
+            --template-file ./templates/components/rg.bicep \
+            --parameters name=$AZURE_RESOURCE_GROUP location=$AZURE_LOCATION resourceTags="$AZURE_RESOURCE_TAGS"
+    ```   
 
 * Deploy all services:
-```
-az deployment group create \
-    --resource-group $AZURE_RESOURCE_GROUP \
-    --template-file ./templates/app-service-mi-vnet.bicep \
-    --parameters logAnalyticsWorkspaceName=$AZURE_LOG_ANALYTICS_WRKSPC_NAME \
-                 logAnalyticsWorkspaceRG=$AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP \
-                 appInsightsName=$AZURE_APP_INSIGHTS_NAME  \
-                 keyVaultName=$AZURE_KEY_VAULT_NAME  \
-                 dbServerName=$AZURE_DB_SERVER_NAME \
-                 dbName=$AZURE_DB_NAME \
-                 createDB=true \
-                 dbAdminName=$dbAdminName \
-                 dbAdminPassword=$dbAdminPassword \
-                 dbUserName=$AZURE_DB_APP_USER_NAME@$AZURE_DB_SERVER_NAME \
-                 dbUserPassword=$dbAdminPassword \
-                 appServiceName=$AZURE_APP_NAME \
-                 appServicePort=$AZURE_APP_PORT \
-                 deploymentClientIPAddress=$clientIPAddress
-```
+    ```
+    az deployment group create \
+        --resource-group $AZURE_RESOURCE_GROUP \
+        --template-file ./templates/app-service-mi-vnet.bicep \
+        --parameters logAnalyticsWorkspaceName=$AZURE_LOG_ANALYTICS_WRKSPC_NAME \
+                    logAnalyticsWorkspaceRG=$AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP \
+                    appInsightsName=$AZURE_APP_INSIGHTS_NAME  \
+                    keyVaultName=$AZURE_KEY_VAULT_NAME  \
+                    dbServerName=$AZURE_DB_SERVER_NAME \
+                    dbName=$AZURE_DB_NAME \
+                    createDB=true \
+                    dbAdminName=$dbAdminName \
+                    dbAdminPassword=$dbAdminPassword \
+                    dbUserName=$AZURE_DB_APP_USER_NAME@$AZURE_DB_SERVER_NAME \
+                    dbUserPassword=$dbAdminPassword \
+                    appServiceName=$AZURE_APP_NAME \
+                    appServicePort=$AZURE_APP_PORT \
+                    deploymentClientIPAddress=$clientIPAddress
+    ```
 
 * Connect to the the newly created Postgresql database:
-```
-psql "host=${AZURE_DB_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=${AZURE_DB_NAME} user=${AZURE_DB_APP_USER_NAME}@${AZURE_DB_SERVER_NAME} password=${dbAdminPassword} sslmode=require"
-```
+    ```
+    psql "host=${AZURE_DB_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=${AZURE_DB_NAME} user=${AZURE_DB_APP_USER_NAME}@${AZURE_DB_SERVER_NAME} password=${dbAdminPassword} sslmode=require"
+    ```
 
 * Initialize DB schema:
-```
-CREATE TABLE IF NOT EXISTS todo (
-    "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
-    "todo_text" VARCHAR(255) NOT NULL,
-    "created_date_time" TIMESTAMP DEFAULT NOW()::date,
-    "completed_date_time" TIMESTAMP DEFAULT NULL
-);
-```
+    ```
+    CREATE TABLE IF NOT EXISTS todo (
+        "id" UUID DEFAULT gen_random_uuid() PRIMARY KEY NOT NULL,
+        "todo_text" VARCHAR(255) NOT NULL,
+        "created_date_time" TIMESTAMP DEFAULT NOW()::date,
+        "completed_date_time" TIMESTAMP DEFAULT NULL
+    );
+    ```
 
 * Create an App DB user and assign their rights:
-```
-CREATE USER ${AZURE_DB_APP_USER_NAME} WITH PASSWORD '${AZURE_DB_APP_USER_PASSWORD}';
-GRANT CONNECT ON DATABASE tododb TO ${AZURE_DB_APP_USER_NAME};
-GRANT USAGE ON SCHEMA public TO ${AZURE_DB_APP_USER_NAME};
-GRANT SELECT ON todo TO ${AZURE_DB_APP_USER_NAME};
-GRANT INSERT ON todo TO ${AZURE_DB_APP_USER_NAME};
-```
+    ```
+    CREATE USER ${AZURE_DB_APP_USER_NAME} WITH PASSWORD '${AZURE_DB_APP_USER_PASSWORD}';
+    GRANT CONNECT ON DATABASE tododb TO ${AZURE_DB_APP_USER_NAME};
+    GRANT USAGE ON SCHEMA public TO ${AZURE_DB_APP_USER_NAME};
+    GRANT SELECT ON todo TO ${AZURE_DB_APP_USER_NAME};
+    GRANT INSERT ON todo TO ${AZURE_DB_APP_USER_NAME};
+    ```
 
 * Deploy web application
 
