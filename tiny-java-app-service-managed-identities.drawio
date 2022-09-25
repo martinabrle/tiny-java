@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2022-09-25T07:05:23.770Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="pzXGrHO_OXnnLmjFiLok" version="20.3.6" type="github">
+<mxfile host="app.diagrams.net" modified="2022-09-25T07:09:04.233Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="ifSNd5AiGzboVQ89fWyo" version="20.3.6" type="github">
   <diagram id="CIYdKKqNAJBwTVAFqt9w" name="Page-1">
     <mxGraphModel dx="1420" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -78,8 +78,8 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-27" value="&lt;ul&gt;&lt;li&gt;DB Connection string &lt;i&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;(w/out username / pwd)&lt;/font&gt;&lt;/i&gt;&lt;/li&gt;&lt;li&gt;App DB User name&lt;/li&gt;&lt;li&gt;App DB User Password&lt;/li&gt;&lt;/ul&gt;" style="text;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;verticalAlign=middle;overflow=hidden;" parent="1" vertex="1">
-          <mxGeometry x="419" y="70" width="176" height="73" as="geometry" />
+        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-27" value="&lt;ul&gt;&lt;li&gt;DB Connection string &lt;i&gt;&lt;font style=&quot;font-size: 11px;&quot;&gt;(w/out username / pwd)&lt;/font&gt;&lt;/i&gt;&lt;/li&gt;&lt;li&gt;App DB User name&lt;/li&gt;&lt;li&gt;&lt;strike&gt;App DB User Password&lt;/strike&gt;&lt;/li&gt;&lt;li&gt;AAD Application ID &lt;font style=&quot;font-size: 11px;&quot;&gt;&lt;i&gt;(authentication of AppService against DB using a token retrieved by AppService from the local identity endpoint)&lt;/i&gt;&lt;/font&gt;&lt;/li&gt;&lt;/ul&gt;" style="text;strokeColor=none;fillColor=none;html=1;whiteSpace=wrap;verticalAlign=middle;overflow=hidden;" parent="1" vertex="1">
+          <mxGeometry x="419" y="70" width="191" height="130" as="geometry" />
         </mxCell>
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-30" value="Azure" style="text;strokeColor=none;fillColor=none;html=1;fontSize=24;fontStyle=1;verticalAlign=middle;align=center;" parent="1" vertex="1">
           <mxGeometry x="647" y="70" width="90" height="40" as="geometry" />
@@ -87,7 +87,7 @@
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-31" value="System managed identity + RBAC + KeyVault references in app config" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=2;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="317" y="195" width="81" height="61" as="geometry" />
         </mxCell>
-        <mxCell id="gKN0slglhCB6e-M4ENdB-1" value="Managed identities deployment" style="text;strokeColor=none;fillColor=none;html=1;fontSize=24;fontStyle=1;verticalAlign=middle;align=center;" parent="1" vertex="1">
+        <mxCell id="gKN0slglhCB6e-M4ENdB-1" value="&quot;Managed identities&quot; deployment" style="text;strokeColor=none;fillColor=none;html=1;fontSize=24;fontStyle=1;verticalAlign=middle;align=center;" parent="1" vertex="1">
           <mxGeometry x="18" y="20" width="362" height="30" as="geometry" />
         </mxCell>
       </root>
