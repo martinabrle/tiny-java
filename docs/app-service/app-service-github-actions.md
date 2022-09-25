@@ -3,9 +3,7 @@
 ## Deploying Todo App into an App Service with Github actions (CI/CD Pipeline)
 * Copy the repo's content into your personal or organizational GitHub Account
 * Create a new environment called ```APP-SERVICE``` in *GitHub->Settings->Environments*
-* Click on this environment
-* Open your repository in the browser and select *Settings->Secrets->Actions*
-* Set the following GitHub action variables:
+* Click on this environment and set the following GitHub action variables:
 ```
 AZURE_SUBSCRIPTION_ID
 AZURE_CREDENTIALS
