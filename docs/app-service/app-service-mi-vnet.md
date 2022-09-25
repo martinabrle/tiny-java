@@ -121,7 +121,7 @@
     ```
 * Deploy Bastion manually into the newly created VNET (subnet ```AzureBastionSubnet```)
 * Deploy a new Jumpbox into the newly created VNET (subnet ```mgmt```); do not assign nor create any public IP to this VM
-* Remote into the newly created VM and install [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli), [OpenJDK™](https://www.microsoft.com/openjdk) and [git cli]([OpenJDK™](https://www.microsoft.com/openjdk))
+* Remote into the newly created VM and install [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli), [OpenJDK™](https://www.microsoft.com/openjdk) and [git cli](https://git-scm.com/downloads)
 * Start the command line, clone the repo using ```git clone https://github.com/martinabrle/tiny-java.git``` and change your current directory to ```tiny-java/scripts``` directory:
     ```
     cd ./tiny-java/scripts
