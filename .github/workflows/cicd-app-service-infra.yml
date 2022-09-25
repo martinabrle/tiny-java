@@ -11,9 +11,11 @@ on:
       run_cleanup:
         type: boolean
         description: Delete all existing resources first
+        required: true
       deployment_environment:
         type: choice
         description: Deployment environment
+        required: true
         options: 
         - CLASSIC
         - MANAGED_IDENTITIES
@@ -147,7 +149,6 @@ jobs:
           dbAppUserName=`echo "${{secrets.AZURE_APP_NAME}}" | tr '-' '_'`;
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
-
           
           if [[ "${{github.event.inputs.deployment_environment}}" -ne 'CLASSIC' ]]; then
             if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
