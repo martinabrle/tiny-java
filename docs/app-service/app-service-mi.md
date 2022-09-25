@@ -1,7 +1,7 @@
 # Spring Boot Todo App on App Service
-## Simplified deployment with partial managed identities usage (Bicep)
+## Simplified deployment with full managed identities usage (Bicep)
 
-![Architecture Diagram](../../diagrams/tiny-java-app-service-classic.png)
+![Architecture Diagram](../../diagrams/tiny-java-app-service-mi.png)
 
 * Start the command line, clone the repo using ```git clone https://github.com/martinabrle/tiny-java.git``` and change your current directory to ```tiny-java/scripts``` directory:
     ```
@@ -28,7 +28,6 @@
     export dbAdminName="a`openssl rand -hex 5`"
     export dbAdminPassword="`openssl rand -base64 25`#@"
     export AZURE_DB_APP_USER_NAME="u`openssl rand -hex 5`"
-    export AZURE_DB_APP_USER_PASSWORD="`openssl rand -base64 25`#@"
     export AZURE_APP_NAME=${ENV_PREFIX}-tinyjava-app-svc
     export AZURE_APP_PORT=443
     export clientIPAddress=`dig +short myip.opendns.com @resolver1.opendns.com.`
@@ -58,12 +57,19 @@
             --template-file ./templates/components/rg.bicep \
             --parameters name=$AZURE_RESOURCE_GROUP location=$AZURE_LOCATION resourceTags="$AZURE_RESOURCE_TAGS"
     ```   
-
+* Initial deployment (only creates an AppService in order to be able to use a SystemAssignedIdentity later on):
+    ```
+    az deployment group create \
+        --resource-group $AZURE_RESOURCE_GROUP \
+        --template-file ./templates/app-service-mi-init.bicep \
+        --parameters appServiceName=$AZURE_APP_NAME \
+                     appServicePort=$AZURE_APP_PORT
+    ```
 * Deploy all services:
     ```
     az deployment group create \
         --resource-group $AZURE_RESOURCE_GROUP \
-        --template-file ./templates/app-service-classic.bicep \
+        --template-file ./templates/app-service-mi.bicep \
         --parameters logAnalyticsWorkspaceName=$AZURE_LOG_ANALYTICS_WRKSPC_NAME \
                      logAnalyticsWorkspaceRG=$AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP \
                      appInsightsName=$AZURE_APP_INSIGHTS_NAME  \
@@ -74,12 +80,13 @@
                      dbAdminName=$dbAdminName \
                      dbAdminPassword=$dbAdminPassword \
                      dbUserName=$AZURE_DB_APP_USER_NAME@$AZURE_DB_SERVER_NAME \
-                     dbUserPassword=$dbAdminPassword \
                      appServiceName=$AZURE_APP_NAME \
                      appServicePort=$AZURE_APP_PORT \
                      deploymentClientIPAddress=$clientIPAddress
     ```
-
+* Assign admin group to the newly created Postgresql server:
+    ```
+    ```
 * Connect to the the newly created Postgresql database:
     ```
     psql "host=${AZURE_DB_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=${AZURE_DB_NAME} user=${AZURE_DB_APP_USER_NAME}@${AZURE_DB_SERVER_NAME} password=${dbAdminPassword} sslmode=require"
