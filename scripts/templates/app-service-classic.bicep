@@ -15,10 +15,11 @@ param dbAdminPassword string
 param dbUserName string
 @secure()
 param dbUserPassword string
+
+param appServiceName string
 param appServicePort string
 
 param deploymentClientIPAddress string
-param appServiceName string
 
 param location string = resourceGroup().location
 
