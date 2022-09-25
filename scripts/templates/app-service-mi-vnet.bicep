@@ -124,6 +124,8 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRule
 // Subnet "db"
 //  Private endpoint '${dbServerName}-private-endpoint' connected to DB via a private link connection
 //  Private DNS Zone 'privatelink.postgres.database.azure.com', connected to the VNET / Subnet
+//    Private DNS Zone Group  '${privateEndpointPostgresqlServer.name}/default', connecting pgsql.id to that dns zone
+
 
 resource privateEndpointPostgresqlServer 'Microsoft.Network/privateEndpoints@2021-05-01' = {
   location: location
