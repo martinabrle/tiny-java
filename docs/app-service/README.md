@@ -1,7 +1,7 @@
 # Spring Boot Todo App on App Service
 
 There are 3 deployments demonstrated here:
-* [Manual deployment using AZ CLI](./app-service-az-cli.md)
+* [Manual deployment using AZ CLI](./app-service-basic-az-cli.md)
 * [Simplified deployment with partial managed identities usage (Bicep)](./app-service-classic.md)
 * [Deployment with full managed identities usage (Bicep)](./app-service-mi.md)
 * [Deployment with full managed identities and VNET usage (Bicep)](./app-service-mi-vnet.md)
