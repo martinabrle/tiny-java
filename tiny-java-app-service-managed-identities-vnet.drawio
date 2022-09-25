@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2022-09-25T08:13:54.893Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="LZ4ZVduh1BymJdPPmtNB" version="20.3.6" type="github">
+<mxfile host="app.diagrams.net" modified="2022-09-25T08:14:27.802Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="geEUqg3NnOtY3VyVjbRu" version="20.3.6" type="github">
   <diagram id="CIYdKKqNAJBwTVAFqt9w" name="Page-1">
     <mxGraphModel dx="1420" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -87,7 +87,7 @@
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-31" value="System managed identity + RBAC + KeyVault references in app config" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=2;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="415" y="244" width="81" height="61" as="geometry" />
         </mxCell>
-        <mxCell id="gKN0slglhCB6e-M4ENdB-1" value="&quot;Managed identities&quot; + VNET deployment" style="text;strokeColor=none;fillColor=none;html=1;fontSize=24;fontStyle=1;verticalAlign=middle;align=center;" parent="1" vertex="1">
+        <mxCell id="gKN0slglhCB6e-M4ENdB-1" value="Managed identities + VNET deployment" style="text;strokeColor=none;fillColor=none;html=1;fontSize=24;fontStyle=1;verticalAlign=middle;align=center;" parent="1" vertex="1">
           <mxGeometry x="18" y="20" width="472" height="30" as="geometry" />
         </mxCell>
         <mxCell id="KiWXB0i-t19H4OeaZ5cn-1" value="App Gateway (WAF)" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/networking/Application_Gateways.svg;" vertex="1" parent="1">
