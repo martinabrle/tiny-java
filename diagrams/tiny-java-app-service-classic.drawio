@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2022-09-25T08:26:24.004Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="OPbx4jbN2PqgzfRfWM0P" version="20.3.6" type="github">
+<mxfile host="app.diagrams.net" modified="2022-09-25T08:42:38.243Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="tdzHy6oLgpskgKO7spaP" version="20.3.6" type="github">
   <diagram id="CIYdKKqNAJBwTVAFqt9w" name="Page-1">
     <mxGraphModel dx="1420" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -8,16 +8,16 @@
           <mxGeometry x="402" y="200" width="64" height="64" as="geometry" />
         </mxCell>
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-2" value="DB" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/databases/Azure_Database_PostgreSQL_Server.svg;" parent="1" vertex="1">
-          <mxGeometry x="695" y="198" width="48" height="64" as="geometry" />
+          <mxGeometry x="695" y="200" width="48" height="64" as="geometry" />
         </mxCell>
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-3" value="Application Insights" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/devops/Application_Insights.svg;" parent="1" vertex="1">
-          <mxGeometry x="548" y="403.5" width="44" height="63" as="geometry" />
+          <mxGeometry x="548" y="403.5" width="34.92" height="50" as="geometry" />
         </mxCell>
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-4" value="KeyVault" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/security/Key_Vaults.svg;" parent="1" vertex="1">
           <mxGeometry x="400" y="40" width="68" height="68" as="geometry" />
         </mxCell>
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-5" value="LogAnalytics (Central)" style="sketch=0;aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/mscae/Log_Analytics_Workspaces.svg;" parent="1" vertex="1">
-          <mxGeometry x="409" y="410" width="50" height="50" as="geometry" />
+          <mxGeometry x="409" y="403.5" width="50" height="50" as="geometry" />
         </mxCell>
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-8" value="" style="endArrow=none;dashed=1;html=1;dashPattern=1 3;strokeWidth=2;rounded=0;exitX=0.484;exitY=-0.047;exitDx=0;exitDy=0;exitPerimeter=0;entryX=0.485;entryY=1.029;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" source="0QP-IHk7IyoN1cNLL2Y5-1" target="0QP-IHk7IyoN1cNLL2Y5-4" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
@@ -37,16 +37,16 @@
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-12" value="" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/general/Browser.svg;" parent="1" vertex="1">
           <mxGeometry x="110" y="216" width="65" height="52" as="geometry" />
         </mxCell>
-        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-13" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.016;entryY=0.516;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1.015;exitY=0.308;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="0QP-IHk7IyoN1cNLL2Y5-12" target="0QP-IHk7IyoN1cNLL2Y5-1" edge="1">
+        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-13" value="" style="endArrow=classic;html=1;rounded=0;exitX=0.995;exitY=0.276;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="0QP-IHk7IyoN1cNLL2Y5-12" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="180" y="233" as="sourcePoint" />
-            <mxPoint x="370" y="232" as="targetPoint" />
+            <mxPoint x="180" y="240" as="sourcePoint" />
+            <mxPoint x="400" y="230" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-14" value="" style="endArrow=classic;html=1;rounded=0;entryX=0.016;entryY=0.516;entryDx=0;entryDy=0;entryPerimeter=0;exitX=1.015;exitY=0.308;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" edge="1">
+        <mxCell id="0QP-IHk7IyoN1cNLL2Y5-14" value="" style="endArrow=classic;html=1;rounded=0;exitX=1;exitY=0.474;exitDx=0;exitDy=0;exitPerimeter=0;entryX=-0.014;entryY=0.458;entryDx=0;entryDy=0;entryPerimeter=0;" parent="1" edge="1" target="0QP-IHk7IyoN1cNLL2Y5-2" source="0QP-IHk7IyoN1cNLL2Y5-1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
-            <mxPoint x="466.9749999999999" y="233.01600000000008" as="sourcePoint" />
-            <mxPoint x="694.0239999999999" y="234.0239999999999" as="targetPoint" />
+            <mxPoint x="480" y="233" as="sourcePoint" />
+            <mxPoint x="690" y="230" as="targetPoint" />
           </mxGeometry>
         </mxCell>
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-15" value="" style="shape=actor;whiteSpace=wrap;html=1;" parent="1" vertex="1">
@@ -87,11 +87,14 @@
         <mxCell id="0QP-IHk7IyoN1cNLL2Y5-31" value="System managed identity + RBAC + KeyVault references in app config" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontStyle=2;fontSize=10;" parent="1" vertex="1">
           <mxGeometry x="340" y="155" width="81" height="61" as="geometry" />
         </mxCell>
-        <mxCell id="gKN0slglhCB6e-M4ENdB-1" value="&quot;Classic&quot; deployment" style="text;strokeColor=none;fillColor=none;html=1;fontSize=24;fontStyle=1;verticalAlign=middle;align=center;" parent="1" vertex="1">
+        <mxCell id="gKN0slglhCB6e-M4ENdB-1" value="Simple deployment" style="text;strokeColor=none;fillColor=none;html=1;fontSize=24;fontStyle=1;verticalAlign=middle;align=center;" parent="1" vertex="1">
           <mxGeometry x="18" y="20" width="252" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="SbZcLWqu1GxGIv8-tLfZ-1" value="GitHub Repo" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/general/Branch.svg;" vertex="1" parent="1">
-          <mxGeometry x="697" y="561" width="72" height="72" as="geometry" />
+        <mxCell id="SbZcLWqu1GxGIv8-tLfZ-1" value="GitHub Repo" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/general/Branch.svg;" parent="1" vertex="1">
+          <mxGeometry x="683" y="561" width="72" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="Wzz_lYJs2OhC6GSg2xJx-1" value="(Partial usage of RBAC + Managed Identities)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="33.5" y="52" width="216.5" height="28" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
