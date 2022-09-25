@@ -1,6 +1,6 @@
 # Spring Boot Todo App
 
-##  Running Todo App to different Azure services:
+##  Running Todo App on different Azure services:
 * [AppService deployments](./docs/app-service/)
 * [Container instances](./docs/container-instances/)
 * [Azure Spring Apps](./docs/spring-apps/)
