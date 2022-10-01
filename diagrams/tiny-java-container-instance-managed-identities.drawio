@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2022-10-01T08:29:35.142Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="Wakd2MaBwB_Sa9-TlqAU" version="20.3.6" type="github">
+<mxfile host="app.diagrams.net" modified="2022-10-01T08:30:59.350Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Safari/605.1.15" etag="SD2sq8MRT9MkQUvEM6e_" version="20.3.6" type="github">
   <diagram id="CIYdKKqNAJBwTVAFqt9w" name="Page-1">
     <mxGraphModel dx="1420" dy="800" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
       <root>
@@ -96,7 +96,7 @@
         <mxCell id="oXqFUN57Jn27sWtj-wTL-2" value="Container Instance&lt;br&gt;WEB + API" style="aspect=fixed;html=1;points=[];align=center;image;fontSize=12;image=img/lib/azure2/containers/Container_Instances.svg;" parent="1" vertex="1">
           <mxGeometry x="377" y="237.5" width="64" height="69" as="geometry" />
         </mxCell>
-        <mxCell id="oXqFUN57Jn27sWtj-wTL-3" value="" style="endArrow=none;html=1;rounded=0;entryX=0.5;entryY=0.998;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=-0.005;exitDx=0;exitDy=0;exitPerimeter=0;" parent="1" source="oXqFUN57Jn27sWtj-wTL-1" target="oXqFUN57Jn27sWtj-wTL-2" edge="1">
+        <mxCell id="oXqFUN57Jn27sWtj-wTL-3" value="" style="endArrow=oval;html=1;rounded=0;entryX=0.5;entryY=0.998;entryDx=0;entryDy=0;entryPerimeter=0;exitX=0.5;exitY=-0.005;exitDx=0;exitDy=0;exitPerimeter=0;startArrow=oval;startFill=0;endFill=0;" parent="1" source="oXqFUN57Jn27sWtj-wTL-1" target="oXqFUN57Jn27sWtj-wTL-2" edge="1">
           <mxGeometry width="50" height="50" relative="1" as="geometry">
             <mxPoint x="300" y="390" as="sourcePoint" />
             <mxPoint x="350" y="340" as="targetPoint" />
