@@ -2,8 +2,7 @@
 
 ##  Running Todo App on different Azure services (PaaS):
 * [AppService deployments](./docs/app-service/)
-* [Container instances](./docs/container-instances/)
-* [Azure Spring Apps](./docs/spring-apps/)
+* [Container instances](./docs/container-instance/)
 
 ##  Running Todo App on the local computer (with Postgresql in Azure):
 

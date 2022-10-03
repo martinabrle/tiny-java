@@ -11,6 +11,14 @@ on:
       run_cleanup:
         type: boolean
         description: Delete all existing resources first
+        required: true
+      deployment_environment:
+        type: choice
+        description: Deployment environment
+        required: true
+        options: 
+        - CLASSIC
+        - MANAGED_IDENTITIES
 
 jobs:
   cleanup_if_requested:
@@ -234,10 +242,11 @@ jobs:
               --parameters location=${{secrets.AZURE_LOCATION}}  \
                            logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
                            logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}}  \
-                           keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
                            appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                           keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
                            dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                            dbName=${{secrets.AZURE_DB_NAME}} \
+                           createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
                            dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                            dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                            dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
@@ -248,7 +257,7 @@ jobs:
                            containerAppPort=${{secrets.AZURE_APP_PORT}} \
                            containerImageName=${{steps.vars.outputs.CONTAINER_NAME}}  \
                            deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
-                           createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}}
+                           
 
           dbAppUserId=`az ad sp list --display-name ${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} --query "[?displayName=='${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}'].appId" --out tsv`
 
