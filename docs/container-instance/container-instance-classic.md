@@ -1,7 +1,7 @@
 # Spring Boot Todo App on Container Instance
 ## Simplified deployment without managed identities usage (Bicep)
 
-![Architecture Diagram](../../diagrams/tiny-java-app-service-classic.png)
+![Architecture Diagram](../../diagrams/tiny-java-container-instance-classic.png)
 
 * Start the command line, clone the repo using ```git clone https://github.com/martinabrle/tiny-java.git``` and change your current directory to ```tiny-java/scripts``` directory:
     ```
