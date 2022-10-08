@@ -42,6 +42,11 @@
     echo "DB App users password: ${AZURE_DB_APP_USER_PASSWORD}"   
     ```
 
+* Create a new resource group to deploy resources into
+    ```
+    az group create --location $AZURE_LOCATION --name $AZURE_RESOURCE_GROUP
+    ```
+
 * Create a new flexible PostgreSQL server ```az postgres flexible-server create --name $AZURE_DB_SERVER_NAME -g $AZURE_RESOURCE_GROUP -l eastus --admin-user $dbAdminName --admin-password $dbAdminPassword --tier Burstable --sku-name Standard_B2s``` ([link](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server#az-postgres-flexible-server-create)) and choose yes to allow your current IP to go through Postgresql's firewall
 
 * Create the app database using ```az postgres flexible-server db create --resource-group $AZURE_RESOURCE_GROUP --server-name $AZURE_DB_SERVER_NAME --database-name $AZURE_DB_NAME``` ([link](https://docs.microsoft.com/en-us/cli/azure/postgres/flexible-server/db#az-postgres-flexible-server-db-create))
