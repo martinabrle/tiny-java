@@ -1,13 +1,12 @@
 name: cicd-app-service
 
 on:
-  #push:
-  #  branches:
-  #    - main
-  #  paths:
-  #    - 'todo/**'  
-  workflow_dispatch:
-    inputs:
+  push:
+   branches:
+     - main
+   paths:
+     - 'todo/**'  
+  workflow_dispatch:     
     
 jobs:  
   build_app:
