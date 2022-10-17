@@ -12,7 +12,6 @@ import com.azure.identity.ManagedIdentityCredentialBuilder;
 
 import app.demo.todo.utils.AppLogger;
 
-
 //https://www.azureblue.io/how-to-authenicated-aad-identity-against-postgres-using-spring-boot/
 @Configuration
 @ConfigurationProperties(prefix = "app.demo.todo")
