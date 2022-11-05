@@ -5,3 +5,4 @@ spring:
     open-in-view: false
 server:
   port: ${PORT}
+management.endpoint.health.group.liveness.include: livenessstate,cacheCheck
