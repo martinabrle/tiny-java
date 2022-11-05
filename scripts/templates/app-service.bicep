@@ -144,7 +144,7 @@ resource apiService 'Microsoft.Web/sites@2021-03-01' = {
     serverFarmId: apiServicePlan.id
     siteConfig: {
       linuxFxVersion: 'JAVA|11-java11'
-      healthCheckPath: '/actuator/health'
+      healthCheckPath: '/actuator/health/liveness'
       scmType: 'None'
     }
   }

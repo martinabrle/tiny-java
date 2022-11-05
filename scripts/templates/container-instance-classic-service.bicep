@@ -39,7 +39,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
           livenessProbe: {
             httpGet: {
               port: 80
-              path: contains(containerImage, 'aci-helloworld') ? '/' : '/actuator/health' //initial deployment has an aci-helloworld from mcr deployed
+              path: contains(containerImage, 'aci-helloworld') ? '/' : '/actuator/health/liveness' //initial deployment has an aci-helloworld from mcr deployed
             }
             initialDelaySeconds: 50
             periodSeconds: 3
@@ -50,7 +50,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2021-10-
           readinessProbe: {
             httpGet: {
               port: 80
-              path: contains(containerImage, 'aci-helloworld') ? '/' : '/actuator/health' //initial deployment has an aci-helloworld from mcr deployed
+              path: contains(containerImage, 'aci-helloworld') ? '/' : '/actuator/health/readiness' //initial deployment has an aci-helloworld from mcr deployed
             }
             initialDelaySeconds: 50
             periodSeconds: 3
