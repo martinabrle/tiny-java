@@ -148,6 +148,7 @@ jobs:
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
           echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
           echo "Client IP: $clientIP"
+          echo "Deployment type: ${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}"
 
           createDB=false
           dbAdminName=`az postgres server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
@@ -173,14 +174,14 @@ jobs:
           echo "App user name: $dbAppUserName"
           
 
-          if [[ "${{steps.vars.outputs.DEPLOYMENT_ENVIRONMENT}}" -ne 'CLASSIC' ]]; then
+          if [[ "${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}" -ne 'CLASSIC' ]]; then
             if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
               echo "DBA Group name is not set"
               exit 1
             fi
           fi
 
-          if [[ "${{steps.vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'CLASSIC' ]]; then
+          if [[ "${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'CLASSIC' ]]; then
             dbAppUserPassword="`openssl rand -hex 25`#@"
             echo "::add-mask::$dbAppUserPassword"
             echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
@@ -208,12 +209,12 @@ jobs:
           echo "App service name: '${{secrets.AZURE_APP_NAME}}'"
           echo "App port: '${{secrets.AZURE_APP_PORT}}'"
 
-          if [[ "${{steps.vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'MANAGED_IDENTITIES' ]]; then
+          if [[ "${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'MANAGED_IDENTITIES' ]]; then
             az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-init.bicep \
                           --parameters location=${{secrets.AZURE_LOCATION}}  \
                                       appServiceName=${{secrets.AZURE_APP_NAME}} \
                                       appServicePort=${{secrets.AZURE_APP_PORT}}
-          elif [[ "${{steps.vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'VNET' ]]; then
+          elif [[ "${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'VNET' ]]; then
             az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-vnet-init.bicep \
                           --parameters location=${{secrets.AZURE_LOCATION}}  \
                                        appServiceName=${{secrets.AZURE_APP_NAME}} \
@@ -230,7 +231,7 @@ jobs:
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
 
-          if [[ "${{steps.vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'MANAGED_IDENTITIES' ]]; then
+          if [[ "${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'MANAGED_IDENTITIES' ]]; then
             az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi.bicep \
                           --parameters location=${{secrets.AZURE_LOCATION}}  \
                                        logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
