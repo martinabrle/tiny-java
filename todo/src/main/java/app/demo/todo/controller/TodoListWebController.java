@@ -85,7 +85,7 @@ public class TodoListWebController {
 		LOGGER.debug("TODO POST called with action '/update-refresh'");
 
 		initPageHeader(model, page != null && page.getTodoText() != null);
-		if (page.getTodoText() != null) {
+		if (page != null && page.getTodoText() != null) {
 			setFormTodoText(model, page.getTodoText());
 		}
 		processTodoList(model, page);
@@ -151,14 +151,17 @@ public class TodoListWebController {
 	}
 
 	private void setFormTodoText(Model model, String todoText) {
-		TodoPage page;
+		TodoPage page = null;
 
 		if (model.containsAttribute("page")) {
 			page = (TodoPage) model.getAttribute("page");
-		} else {
+		}
+		
+		if (page == null) {
 			page = new TodoPage();
 			model.addAttribute("page", page);
 		}
+
 		page.setTodoText(todoText);
 	}
 
@@ -167,11 +170,13 @@ public class TodoListWebController {
 	}
 
 	private void initPageTodoList(Model model) {
-		TodoPage page;
+		TodoPage page = null;
 
 		if (model.containsAttribute("page")) {
 			page = (TodoPage) model.getAttribute("page");
-		} else {
+		}
+		
+		if (page == null) {
 			page = new TodoPage();
 			model.addAttribute("page", page);
 		}

@@ -7,7 +7,7 @@ public class TodoIsEmptyException extends RuntimeException{
     private String technicalDetail;
 
     public TodoIsEmptyException(UUID id, String technicalDetail) {
-        super(String.format("Todo delete failed"));
+        super(String.format("Todo is empty"));
         this.technicalDetail = technicalDetail;
     }
 

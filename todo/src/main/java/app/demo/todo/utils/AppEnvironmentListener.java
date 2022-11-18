@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AppEnvironmentListener implements EnvironmentPostProcessor {
-    
+
     public static final AppLogger LOGGER = new AppLogger(AppEnvironmentListener.class);
 
     private static final boolean DEBUG_AUTH_TOKEN = getDebugAuthToken();
@@ -56,31 +56,35 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
 
             for (int i = 0; i < propertyNames.length; i++) {
                 try {
-                    String origPropertyValue = propertySource.getProperty(propertyNames[i]).toString();
-                    String propertyValue = origPropertyValue;
-                    if (propertyValue != null) {
+                    var propertyObject = propertySource.getProperty(propertyNames[i]);
+                    if (propertyObject != null) {
+                        String origPropertyValue = propertyObject.toString();
+                        String propertyValue = origPropertyValue;
+                        if (propertyValue != null) {
 
-                        String transformedPropertyValue = replaceEnvironmentVars(propertyValue);
-                        if (!propertyValue.equals(transformedPropertyValue)) {
-                            propertyTransformed = true;
-                            LOGGER.debug(String.format("Property transformation 1: '%s': '%s' -> '%s'",
-                                    propertyNames[i], origPropertyValue, transformedPropertyValue));
-                            propertyValue = transformedPropertyValue;
-                        }
-
-                        if (transformedPropertyValue != null) {
-                            String secondTransformedPropertyValue = replaceKeyVaultSecretReferences(
-                                    transformedPropertyValue);
-
-                            if (!transformedPropertyValue.equals(secondTransformedPropertyValue)) {
+                            String transformedPropertyValue = replaceEnvironmentVars(propertyValue);
+                            if (!propertyValue.equals(transformedPropertyValue)) {
                                 propertyTransformed = true;
-                                LOGGER.debug(String.format("Property transformation 2: '%s': '%s' -> '%s'",
-                                        propertyNames[i], transformedPropertyValue, secondTransformedPropertyValue));
-                                propertyValue = secondTransformedPropertyValue;
+                                LOGGER.debug(String.format("Property transformation 1: '%s': '%s' -> '%s'",
+                                        propertyNames[i], origPropertyValue, transformedPropertyValue));
+                                propertyValue = transformedPropertyValue;
+                            }
+
+                            if (transformedPropertyValue != null) {
+                                String secondTransformedPropertyValue = replaceKeyVaultSecretReferences(
+                                        transformedPropertyValue);
+
+                                if (!transformedPropertyValue.equals(secondTransformedPropertyValue)) {
+                                    propertyTransformed = true;
+                                    LOGGER.debug(String.format("Property transformation 2: '%s': '%s' -> '%s'",
+                                            propertyNames[i], transformedPropertyValue,
+                                            secondTransformedPropertyValue));
+                                    propertyValue = secondTransformedPropertyValue;
+                                }
                             }
                         }
+                        newProperties.put(propertyNames[i], propertyValue);
                     }
-                    newProperties.put(propertyNames[i], propertyValue);
                 } catch (Exception ignoreException) {
                     LOGGER.error(String.format("Failed to retrieve a configuration property '%s' (%s)",
                             propertyNames[i], ignoreException.getMessage()), ignoreException);

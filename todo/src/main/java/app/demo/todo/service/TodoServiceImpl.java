@@ -127,7 +127,7 @@ public class TodoServiceImpl implements TodoService {
 
         Todo retVal = null;
         if (todo == null || todo.getTodoText().isBlank())
-            throw new TodoIsEmptyException(todo.getId(), null);
+            throw new TodoIsEmptyException(null, null);
 
         try {
             LOGGER.debug(String.format("Updating an existing Todo '%s' synchronously using updateTodo(..)", todo.getId()));

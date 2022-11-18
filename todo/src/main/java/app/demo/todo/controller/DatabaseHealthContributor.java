@@ -3,7 +3,6 @@ package app.demo.todo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthContributor;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -11,7 +10,7 @@ import app.demo.todo.service.TodoService;
 import app.demo.todo.utils.AppLogger;
 
 @RestController
-public class DatabaseHealthContributor implements HealthIndicator, HealthContributor {
+public class DatabaseHealthContributor implements HealthIndicator {
 
 	@Autowired
 	private TodoService todoService;
