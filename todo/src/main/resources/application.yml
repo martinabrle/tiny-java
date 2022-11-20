@@ -7,22 +7,25 @@ server:
   port: ${PORT}
 management:
   endpoints:
+    enabled-by-default: false #new
     web:
       exposure:
         include: 'health,info,prometheus'
   endpoint:
     health:
+      info:
+        enabled: true
       probes:
         enabled: true
-  health:
-    livenessState:
-      enabled: true
-    readinessState:
-      enabled: true
-    diskspace:
-      enabled: true
-    database:
-      enabled: true
+      livenessState:
+        enabled: true
+      readinessState:
+        enabled: true
+      diskspace:
+        enabled: true
+      database:
+        enabled: true
       
+# https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/html/actuator.html
 # management.health.diskspace.enabled: true
 # management.health.database.enabled: true
