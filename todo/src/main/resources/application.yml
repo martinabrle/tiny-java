@@ -12,8 +12,9 @@ management:
       exposure:
         include: 'health,info,prometheus'
   endpoint:
-    health:
       info:
+        enabled: true
+      health:
         enabled: true
       probes:
         enabled: true
