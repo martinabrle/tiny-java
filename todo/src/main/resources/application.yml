@@ -16,9 +16,13 @@ management:
       enabled: true
     health:
       enabled: true
+    ping:
+      enabled: true
   info:
     git:
       enabled: false
+    ping:
+      enabled: true
   health:
     diskspace:
       enabled: true
