@@ -29,6 +29,4 @@ management:
     probes:
       enabled: true
       add-additional-paths: true
-# https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/html/actuator.html
-# management.health.diskspace.enabled: true
-# management.health.database.enabled: true
+
