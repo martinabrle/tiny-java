@@ -6,6 +6,10 @@ spring:
 server:
   port: ${PORT}
 management:
+  defaults:
+    metrics:
+      export:
+        enabled: true
   endpoints:
     enabled-by-default: false #new
     web:
@@ -15,6 +19,8 @@ management:
     info:
       enabled: true
     health:
+      enabled: true
+    prometheus:
       enabled: true
   info:
     git:
