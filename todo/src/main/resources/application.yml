@@ -16,6 +16,9 @@ management:
       enabled: true
     health:
       enabled: true
+  info:
+    git:
+      enabled: false
   health:
     diskspace:
       enabled: true
