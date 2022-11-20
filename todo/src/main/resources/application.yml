@@ -10,7 +10,7 @@ management:
     enabled-by-default: false #new
     web:
       exposure:
-        include: 'health,info,prometheus'
+        include: 'health,info,livenessState,readinessState,diskspace,database,prometheus'
   endpoint:
       info:
         enabled: true
