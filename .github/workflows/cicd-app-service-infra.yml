@@ -40,7 +40,7 @@ jobs:
         if: github.event.inputs.run_cleanup == 'true'
         run: |
           RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          if [[RG_EXISTS -eq true]]; then
+          if [[ "$RG_EXISTS" == "true" ]]; then
              echo "Deleting the Todo App app resource group"
              az group delete --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }} --yes
           fi
@@ -116,7 +116,10 @@ jobs:
       - name: Process input variables
         id: input_vars
         run: |
-          if [[ "${{github.event_name}}" -ne 'WORKFLOW_DISPATCH' ]]; then
+          if [[ "${{github.event_name}}" == 'workflow_dispatch' ]]; then
+            echo "Processing manual dispatch (${{github.event_name}}): ${{github.event.inputs.deployment_environment}}"
+            echo "::set-output name=DEPLOYMENT_ENVIRONMENT::${{github.event.inputs.deployment_environment}}"
+          else
             echo "Processing PUSH event: ${{github.event_name}}"
             if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
               echo "Nothing deployed yet, choosing MANAGED_IDENTITIES"
@@ -137,9 +140,6 @@ jobs:
                 echo "::set-output name=DEPLOYMENT_ENVIRONMENT::VNET"
               fi
             fi
-          else
-            echo "Processing manual dispatch (${{github.event_name}}): ${{github.event.inputs.deployment_environment}}"
-            echo "::set-output name=DEPLOYMENT_ENVIRONMENT::${{github.event.inputs.deployment_environment}}"
           fi
       - name: Create Azure resource group
         run: |
