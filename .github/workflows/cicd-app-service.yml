@@ -73,7 +73,7 @@ jobs:
         run: |
           pwd
           ls -la
-          ls -la ./${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
+          ls -la ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
       
       - name: Azure login
         uses: azure/login@v1
@@ -84,10 +84,13 @@ jobs:
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       - name: Deploy to AppService
-        uses: azure/webapps-deploy@v2
-        with: 
-          app-name: ${{secrets.AZURE_APP_NAME}}
-          package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+        run: az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_APP_NAME}} --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+      
+      # - name: Deploy to AppService
+      #   uses: azure/webapps-deploy@v2
+      #   with: 
+      #     app-name: ${{secrets.AZURE_APP_NAME}}
+      #     package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
       
       - name: Run integration test(s)
         run: |
