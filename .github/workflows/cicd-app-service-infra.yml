@@ -116,8 +116,8 @@ jobs:
       - name: Process input variables
         id: input_vars
         run: |
-          if [[ "${{github.event_name}}" -eq 'push' ]]; then
-            echo "Processing PUSH event"
+          if [[ "${{github.event_name}}" -ne "workflow_dispatch" ]]; then
+            echo "Processing PUSH event: ${{github.event_name}}"
             if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
               echo "Nothing deployed yet, choosing MANAGED_IDENTITIES"
               echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
@@ -138,7 +138,7 @@ jobs:
               fi
             fi
           else
-            echo "Processing manual dispatch: ${{github.event.inputs.deployment_environment}}"
+            echo "Processing manual dispatch (${{github.event_name}}): ${{github.event.inputs.deployment_environment}}"
             echo "::set-output name=DEPLOYMENT_ENVIRONMENT::${{github.event.inputs.deployment_environment}}"
           fi
       - name: Create Azure resource group
