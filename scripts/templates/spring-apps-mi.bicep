@@ -318,6 +318,7 @@ module rbacKVAppAppInsightsKey './components/role-assignment-kv-secret.bicep' = 
   }
 }
 
+
 module rbacKVAppAppInsightsInstrumentationKey './components/role-assignment-kv-secret.bicep' = {
   name: 'rbac-kv-app-app-insights-instrumentation-key'
   params: {
