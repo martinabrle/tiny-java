@@ -138,7 +138,7 @@ jobs:
               fi
             fi
           else
-            echo "Processing manual dispatch: ${{github.event.inputs.deployment_environment}}""
+            echo "Processing manual dispatch: ${{github.event.inputs.deployment_environment}}"
             echo "::set-output name=DEPLOYMENT_ENVIRONMENT::${{github.event.inputs.deployment_environment}}"
           fi
       - name: Create Azure resource group
