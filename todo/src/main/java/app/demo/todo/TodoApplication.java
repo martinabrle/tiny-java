@@ -46,4 +46,5 @@ public class TodoApplication {
 	public static boolean isInitialized() {
 		return STARTUP_FINISHED;
 	}
+	
 }
