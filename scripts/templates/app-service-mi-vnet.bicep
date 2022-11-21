@@ -28,8 +28,69 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12
   scope: resourceGroup(logAnalyticsWorkspaceRG)
 }
 
-resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' existing = {
+var vnetAddressPrefix = '10.0.0.0/16'
+
+var appSubnetAddressPrefix = '10.0.0.0/24'
+
+var bastionSubnetAddressPrefix = '10.0.1.0/24'
+var mgmtSubnetAddressPrefix = '10.0.2.0/24'
+
+var dbSubnetAddressPrefix = '10.0.4.0/24'
+
+resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
   name: '${appServiceName}-vnet'
+  location: location
+  tags: tagsArray
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        vnetAddressPrefix
+      ]
+    }
+    subnets: [
+      {
+        name: 'web'
+        properties: {
+          addressPrefix: appSubnetAddressPrefix
+          // TODO: why?
+          // delegations: [
+          //   {
+          //     name: 'delegation'
+          //     properties: {
+          //       serviceName: 'Microsoft.Web/serverFarms'
+          //     }
+          //   }
+          // ]
+        }
+      }
+      {
+        name: 'mgmt'
+        properties: {
+          addressPrefix: mgmtSubnetAddressPrefix
+        }
+      }
+      {
+        name: 'AzureBastionSubnet'
+        properties: {
+          addressPrefix: bastionSubnetAddressPrefix
+        }
+      }
+      {
+        name: 'db'
+        properties: {
+          addressPrefix: dbSubnetAddressPrefix
+          // delegations: [ <-- private link not happy with that
+          //   {
+          //     name: 'delegation'
+          //     properties: {
+          //       serviceName: 'Microsoft.DBforPostgreSQL/singleServers'
+          //     }
+          //   }
+          // ]
+        }
+      }
+    ]
+  }
 }
 
 resource dbSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' existing = {
@@ -41,6 +102,7 @@ resource webSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' existi
   parent: vnet
   name: 'web'
 }
+
 
 resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   name: appInsightsName
@@ -111,29 +173,10 @@ resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRule
   }
 }
 
-// resource dbPrivateEndpoint 'Microsoft.DBforPostgreSQL/servers/privateEndpointConnections@2018-06-01' = {
-//   name: 'PrivateEndpointConnection'
-//   parent: postgreSQLServer
-//   properties: {
-//     privateEndpoint: dbSubnet
-//   }
-// }
-
-// We deploy VNET with subnets
-// Subnet "web"
-// Subnet "db"
-//  Private endpoint '${dbServerName}-private-endpoint' connected to DB via a private link connection
-//  Private DNS Zone 'privatelink.postgres.database.azure.com', connected to the VNET / Subnet
-//    Private DNS Zone Group  '${privateEndpointPostgresqlServer.name}/default', connecting pgsql.id to that dns zone
-
-
 resource privateEndpointPostgresqlServer 'Microsoft.Network/privateEndpoints@2021-05-01' = {
   location: location
   name: '${dbServerName}-private-endpoint'
   tags: tagsArray
-  dependsOn: [
-    vnet
-  ]
   properties: {
     subnet: {
       id: dbSubnet.id
@@ -155,9 +198,6 @@ resource privateEndpointAppService 'Microsoft.Network/privateEndpoints@2021-05-0
   location: location
   name: '${appServiceName}-private-endpoint'
   tags: tagsArray
-  dependsOn: [
-    vnet
-  ]
   properties: {
     subnet: {
       id: webSubnet.id
@@ -225,9 +265,6 @@ resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneG
       }
     ]
   }
-  dependsOn: [
-    privateEndpointPostgresqlServer
-  ]
 }
 
 resource pvtEndpointDnsGroupAppService 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
@@ -242,9 +279,6 @@ resource pvtEndpointDnsGroupAppService 'Microsoft.Network/privateEndpoints/priva
       }
     ]
   }
-  dependsOn: [
-    privateEndpointAppService
-  ]
 }
 
 // https://docs.microsoft.com/en-us/azure/private-link/create-private-endpoint-bicep?tabs=CLI
@@ -283,8 +317,40 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
   }
 }
 
-resource appService 'Microsoft.Web/sites@2021-03-01' existing = {
+
+resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+  name: '${appServiceName}-plan'
+  location: location
+  tags: tagsArray
+  properties: {
+    reserved: true
+  }
+  sku: {
+    name: 'S1'
+  }
+  kind: 'linux'
+}
+
+resource appService 'Microsoft.Web/sites@2022-03-01' = {
   name: appServiceName
+  location: location
+  tags: tagsArray
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    //virtualNetworkSubnetId: vnet.properties.subnets[0].id
+    httpsOnly: true
+
+    siteConfig: {
+      linuxFxVersion: 'JAVA|11-java11'
+      scmType: 'None'
+      healthCheckPath: '/actuator/health/liveness'
+      vnetRouteAllEnabled: true
+      http20Enabled: true
+    }
+  }
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
@@ -355,7 +421,7 @@ resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
   dependsOn: [
-    appServiceConfig
+    appService
   ]
   properties: {
     logs: [
@@ -463,25 +529,44 @@ module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   }
 }
 
-module appServiceConfig 'app-service-mi-service.bicep' = {
-  name: 'deployment-app-service-mi-service'
-  dependsOn: [
-    rbacKVAppInsightsInstrKey
-    rbacKVApplicationInsightsConnectionString
-    rbacKVSecretAppClientId
-    rbacKVSecretDbUserName
-    rbacKVSpringDataSourceURL
-  ]
-  params: {
-    appClientId: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientId.name})'
-    appInsightsConnectionString: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
-    appInsightsInstrumentationKey: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
-    appServiceName: appServiceName
-    appServicePort: appServicePort
-    springDatasourceUrl: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
-    springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
-    location: location
-    springDatasourceShowSql: 'true'
-    tagsArray: tagsArray
+resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
+  name: 'web'
+  parent: appService
+  kind: 'string'
+  properties: {
+    appSettings: [
+      {
+        name: 'SPRING_DATASOURCE_URL'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
+      }
+      {
+        name: 'SPRING_DATASOURCE_USERNAME'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
+      }
+      {
+        name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientId.name})'
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
+      }
+      {
+        name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
+      }
+      {
+        name: 'SPRING_PROFILES_ACTIVE'
+        value: 'test-mi'
+      }
+      {
+        name: 'PORT'
+        value: appServicePort
+      }
+      {
+        name: 'SPRING_DATASOURCE_SHOW_SQL'
+        value: 'true'
+      }
+    ]
   }
 }

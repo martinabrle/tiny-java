@@ -117,8 +117,34 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
   }
 }
 
-resource appService 'Microsoft.Web/sites@2021-03-01' existing = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
+  name: '${appServiceName}-plan'
+  location: location
+  tags: tagsArray
+  properties: {
+    reserved: true
+  }
+  sku: {
+    name: 'S1'
+  }
+  kind: 'linux'
+}
+
+resource appService 'Microsoft.Web/sites@2021-03-01' = {
   name: appServiceName
+  location: location
+  tags: tagsArray
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    siteConfig: {
+      linuxFxVersion: 'JAVA|11-java11'
+      scmType: 'None'
+      healthCheckPath: '/actuator/health/liveness'
+    }
+  }
 }
 
 resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
@@ -189,7 +215,7 @@ resource kvDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-05-01-pre
   name: '${keyVaultName}-kv-logs'
   scope: keyVault
   dependsOn: [
-    appServiceConfig
+    appService
   ]
   properties: {
     logs: [
@@ -297,8 +323,9 @@ module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   }
 }
 
-module appServiceConfig 'app-service-mi-service.bicep' = {
-  name: 'deployment-app-service-mi-service'
+resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
+  name: 'web'
+  parent: appService
   dependsOn: [
     rbacKVAppInsightsInstrKey
     rbacKVApplicationInsightsConnectionString
@@ -306,16 +333,41 @@ module appServiceConfig 'app-service-mi-service.bicep' = {
     rbacKVSecretDbUserName
     rbacKVSpringDataSourceURL
   ]
-  params: {
-    appClientId: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientId.name})'
-    appInsightsConnectionString: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
-    appInsightsInstrumentationKey: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
-    appServiceName: appServiceName
-    appServicePort: appServicePort
-    springDatasourceUrl: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
-    springDatasourceUserName: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
-    location: location
-    springDatasourceShowSql: 'true'
-    tagsArray: tagsArray
+  kind: 'string'
+  properties: {
+    appSettings: [
+      {
+        name: 'SPRING_DATASOURCE_URL'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
+      }
+      {
+        name: 'SPRING_DATASOURCE_USERNAME'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserName.name})'
+      }
+      {
+        name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientId.name})'
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
+      }
+      {
+        name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
+      }
+      {
+        name: 'SPRING_PROFILES_ACTIVE'
+        value: 'test-mi'
+      }
+      {
+        name: 'PORT'
+        value: appServicePort
+      }
+      {
+        name: 'SPRING_DATASOURCE_SHOW_SQL'
+        value: 'true'
+      }
+    ]
   }
 }

@@ -58,14 +58,6 @@
             --l $AZURE_LOCATION \
             --template-file ./templates/components/rg.bicep \
             --parameters name=$AZURE_RESOURCE_GROUP location=$AZURE_LOCATION resourceTags="$AZURE_RESOURCE_TAGS"
-    ```   
-* Initial deployment (only creates an AppService in order to be able to use a SystemAssignedIdentity later on):
-    ```
-    az deployment group create \
-        --resource-group $AZURE_RESOURCE_GROUP \
-        --template-file ./templates/app-service-mi-init.bicep \
-        --parameters appServiceName=$AZURE_APP_NAME \
-                     appServicePort=$AZURE_APP_PORT
     ```
 * Deploy all services:
     ```
