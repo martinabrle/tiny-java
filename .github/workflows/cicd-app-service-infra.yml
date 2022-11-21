@@ -116,7 +116,7 @@ jobs:
       - name: Process input variables
         id: input_vars
         run: |
-          if [[ "${{github.event_name}}" -ne "workflow_dispatch" ]]; then
+          if [[ "${{github.event_name}}" -ne 'WORKFLOW_DISPATCH' ]]; then
             echo "Processing PUSH event: ${{github.event_name}}"
             if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
               echo "Nothing deployed yet, choosing MANAGED_IDENTITIES"
