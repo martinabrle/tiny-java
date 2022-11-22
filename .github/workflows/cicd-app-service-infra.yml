@@ -262,7 +262,7 @@ jobs:
         id: deployment_aad
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
-          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].id" --out tsv`
+          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
 
       - name: Deploy Azure resources (NO AAD Integration)
