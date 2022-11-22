@@ -211,53 +211,67 @@ jobs:
       
       - name: Deploy Azure resources (AAD Integration)
         id: deployment_aad
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
+        if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT == 'MANAGED_IDENTITIES'
         run: |
           echo "Deploying with the following parameters:"
           echo "App service name: '${{secrets.AZURE_APP_NAME}}'"
           echo "App port: '${{secrets.AZURE_APP_PORT}}'"
 
-          if [[ "${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'MANAGED_IDENTITIES' ]]; then
-            az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi.bicep \
-                          --parameters location=${{secrets.AZURE_LOCATION}}  \
-                                       logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
-                                       logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
-                                       keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
-                                       appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
-                                       dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
-                                       dbName=${{secrets.AZURE_DB_NAME}} \
-                                       createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
-                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
-                                       appServiceName=${{secrets.AZURE_APP_NAME}} \
-                                       appServicePort=${{secrets.AZURE_APP_PORT}} \
-                                       deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
-          else
-            az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-vnet.bicep \
-                          --parameters location=${{secrets.AZURE_LOCATION}}  \
-                                       logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
-                                       logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
-                                       keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
-                                       appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
-                                       dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
-                                       dbName=${{secrets.AZURE_DB_NAME}} \
-                                       createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
-                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
-                                       appServiceName=${{secrets.AZURE_APP_NAME}} \
-                                       appServicePort=${{secrets.AZURE_APP_PORT}} \
-                                       deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
-          fi
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                      logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
+                                      logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
+                                      keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                                      appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                                      dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                                      dbName=${{secrets.AZURE_DB_NAME}} \
+                                      createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
+                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                      appServiceName=${{secrets.AZURE_APP_NAME}} \
+                                      appServicePort=${{secrets.AZURE_APP_PORT}} \
+                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+      
+      - name: Deploy Azure resources (AAD Integration + VNET)
+        id: deployment_aad_mi_vnet
+        if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT == 'VNET'
+        run: |
+          echo "Deploying with the following parameters:"
+          echo "App service name: '${{secrets.AZURE_APP_NAME}}'"
+          echo "App port: '${{secrets.AZURE_APP_PORT}}'"
+          
+          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-vnet.bicep \
+                        --parameters location=${{secrets.AZURE_LOCATION}}  \
+                                      logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
+                                      logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
+                                      keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
+                                      appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
+                                      dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
+                                      dbName=${{secrets.AZURE_DB_NAME}} \
+                                      createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
+                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
+                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                      appServiceName=${{secrets.AZURE_APP_NAME}} \
+                                      appServicePort=${{secrets.AZURE_APP_PORT}} \
+                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+      
+      - name: Init AAD Integration variable (ClientId)
+        id: deployment_aad
+        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
+        run: |
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
-          cd ..
 
       - name: Deploy Azure resources (NO AAD Integration)
         id: deployment_no_aad
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
+        if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT == 'CLASSIC'
         run: |
+          echo "Deploying with the following parameters:"
+          echo "App service name: '${{secrets.AZURE_APP_NAME}}'"
+          echo "App port: '${{secrets.AZURE_APP_PORT}}'"
+
           az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-classic.bicep \
                         --parameters location=${{secrets.AZURE_LOCATION}}  \
                                      logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
