@@ -257,13 +257,14 @@ jobs:
                                       appServicePort=${{secrets.AZURE_APP_PORT}} \
                                       deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
       
-      #dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
       - name: Init AAD Integration variable (ClientId)
         id: deployment_aad
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
           dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
+          #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
+          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
 
       - name: Deploy Azure resources (NO AAD Integration)
         id: deployment_no_aad
