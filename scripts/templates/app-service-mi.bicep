@@ -197,7 +197,7 @@ resource authSettings 'Microsoft.Web/sites/config@2022-03-01' existing = {
   name: '${appService.name}/authsettingsV2'
 }
 
-resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
   properties: {
