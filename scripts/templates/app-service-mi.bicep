@@ -198,11 +198,13 @@ resource authSettings 'Microsoft.Web/sites/config@2022-03-01' existing = {
   parent: appService
 }
 
+var appClientId = authSettings.properties.identityProviders.azureActiveDirectory.registration.clientId
+
 resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
   properties: {
-    value: authSettings.properties.identityProviders.azureActiveDirectory.registration.clientId
+    value: appClientId
     contentType: 'string'
   }
 }
