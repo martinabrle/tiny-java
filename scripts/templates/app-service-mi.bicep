@@ -198,10 +198,17 @@ resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-
 //   parent: appService
 // }
 
+// resource authsettings 'Microsoft.Web/sites/config@2020-12-01' existing = {
+//   name: '${appService.name}/authsettingsV2'
+// }
+
 resource authsettings 'Microsoft.Web/sites/config@2020-12-01' existing = {
-  name: '${appServiceName}/authsettingsV2'
+  name: 'authsettings'
+  parent: appService
 }
-var appClientId = authsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
+
+// var appClientId = authsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
+var appClientId = authsettings.properties.microsoftAccountClientId
 
 resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
