@@ -117,7 +117,7 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
   }
 }
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   name: '${appServiceName}-plan'
   location: location
   tags: tagsArray
@@ -130,7 +130,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   kind: 'linux'
 }
 
-resource appService 'Microsoft.Web/sites@2022-03-01' = {
+resource appService 'Microsoft.Web/sites@2021-03-01' = {
   name: appServiceName
   location: location
   tags: tagsArray
@@ -202,19 +202,27 @@ resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-
 //   name: '${appService.name}/authsettingsV2'
 // }
 
-resource authsettings 'Microsoft.Web/sites/config@2022-03-01' existing = {
+resource authsettings 'Microsoft.Web/sites/config@2021-03-01' = {
   name: 'authsettingsV2'
   parent: appService
+  properties: {
+    identityProviders: {
+      azureActiveDirectory: {
+        enabled: true
+        isAutoProvisioned: true
+      }
+    }
+  }
 }
 
 // var appClientId = authsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
-//var appClientId = authsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
+var appClientId = authsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
 
 resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
   properties: {
-    value: appService.identity.principalId
+    value: appClientId //appService.identity.principalId
     contentType: 'string'
   }
 }
@@ -340,7 +348,7 @@ module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   }
 }
 
-resource appServicePARMS 'Microsoft.Web/sites/config@2022-03-01' = {
+resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
   name: 'web'
   parent: appService
   dependsOn: [
