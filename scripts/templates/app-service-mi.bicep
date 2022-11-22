@@ -385,6 +385,10 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2022-03-01' = {
         name: 'SPRING_DATASOURCE_SHOW_SQL'
         value: 'true'
       }
+      {
+        name: 'DEBUG_AUTH_TOKEN'
+        value: 'true'
+      }
     ]
   }
 }
