@@ -210,7 +210,7 @@ jobs:
           fi
       
       - name: Deploy Azure resources (AAD Integration)
-        id: deployment_aad
+        id: deployment_aad_mi
         if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT == 'MANAGED_IDENTITIES'
         run: |
           echo "Deploying with the following parameters:"
