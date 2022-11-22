@@ -23,7 +23,7 @@ param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' existing = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name: logAnalyticsWorkspaceName
   scope: resourceGroup(logAnalyticsWorkspaceRG)
 }
@@ -117,7 +117,7 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
   }
 }
 
-resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
+resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: '${appServiceName}-plan'
   location: location
   tags: tagsArray
@@ -130,7 +130,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
   kind: 'linux'
 }
 
-resource appService 'Microsoft.Web/sites@2021-03-01' = {
+resource appService 'Microsoft.Web/sites@2022-03-01' = {
   name: appServiceName
   location: location
   tags: tagsArray
@@ -147,7 +147,7 @@ resource appService 'Microsoft.Web/sites@2021-03-01' = {
   }
 }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
+resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   dependsOn: [
     appInsights
@@ -166,7 +166,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   }
 }
 
-resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'APPLICATIONINSIGHTS-CONNECTION-STRING'
   properties: {
@@ -175,7 +175,7 @@ resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secret
   }
 }
 
-resource kvSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'APPINSIGHTS-INSTRUMENTATIONKEY'
   properties: {
@@ -184,7 +184,7 @@ resource kvSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secret
   }
 }
 
-resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-URL'
   properties: {
@@ -193,16 +193,20 @@ resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-
   }
 }
 
+resource authSettings 'Microsoft.Web/sites/config@2022-03-01' existing = {
+  name: '${appService.name}/authsettingsV2'
+}
+
 resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
   properties: {
-    value: appService.identity.principalId
+    value: authSettings.properties.identityProviders.azureActiveDirectory.registration.clientId
     contentType: 'string'
   }
 }
 
-resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
@@ -263,7 +267,7 @@ resource appServiceDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-0
 }
 
 @description('This is the built-in Key Vault Secrets User role. See https://docs.microsoft.com/en-gb/azure/role-based-access-control/built-in-roles#key-vault-secrets-user')
-resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
+resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
   scope: keyVault
   name: '4633458b-17de-408a-b874-0445c86b69e6'
 }
@@ -323,7 +327,7 @@ module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   }
 }
 
-resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
+resource appServicePARMS 'Microsoft.Web/sites/config@2022-03-01' = {
   name: 'web'
   parent: appService
   dependsOn: [
