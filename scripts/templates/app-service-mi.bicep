@@ -443,9 +443,13 @@ module rbacKVSecretAppClientIdStaging './components/role-assignment-kv-secret.bi
   }
 }
 
-resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
+resource appServiceDefaultSlot 'Microsoft.Web/sites/slots@2021-03-01' existing = {
+  name: appService.name
+}
+
+resource appServicePARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = {
   name: 'web'
-  parent: appService
+  parent: appServiceDefaultSlot
   dependsOn: [
     rbacKVAppInsightsInstrKey
     rbacKVApplicationInsightsConnectionString
