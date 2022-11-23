@@ -14,10 +14,13 @@ param dbAdminPassword string
 @secure()
 param dbUserName string
 
+param appClientId string = ''
 param appServiceName string
 param appServicePort string
 
 param deploymentClientIPAddress string
+
+param healthCheckPath string = '/'
 
 param location string = resourceGroup().location
 
@@ -142,7 +145,7 @@ resource appService 'Microsoft.Web/sites@2021-03-01' = {
     siteConfig: {
       linuxFxVersion: 'JAVA|11-java11'
       scmType: 'None'
-      healthCheckPath: '/actuator/health/liveness'
+      healthCheckPath: healthCheckPath
     }
   }
 }
@@ -222,7 +225,7 @@ resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
   properties: {
-    value: appService.identity.principalId //appClientId
+    value: appClientId
     contentType: 'string'
   }
 }

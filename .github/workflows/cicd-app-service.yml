@@ -92,8 +92,13 @@ jobs:
         with: 
           app-name: ${{secrets.AZURE_APP_NAME}}
           package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
-      
+
+      - name: Set AppService Liveness probe
+        run: |
+          az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_APP_NAME}} --generic-configurations '{"healthCheckPath": "/actuator/health/liveness"}'
+
       - name: Run integration test(s)
         run: |
           echo "Run integration tests...."
+
   

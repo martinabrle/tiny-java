@@ -21,6 +21,8 @@ param appServicePort string
 
 param deploymentClientIPAddress string
 
+param healthCheckPath string = '/'
+
 param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
@@ -321,7 +323,7 @@ resource appService 'Microsoft.Web/sites@2021-03-01' = {
     siteConfig: {
       linuxFxVersion: 'JAVA|11-java11'
       scmType: 'None'
-      healthCheckPath: '/actuator/health/liveness'
+      healthCheckPath: healthCheckPath
     }
   }
 }

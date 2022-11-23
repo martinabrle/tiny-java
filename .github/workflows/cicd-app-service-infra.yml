@@ -205,8 +205,14 @@ jobs:
           export appName=`az webapp list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_APP_NAME}}'].name" -o tsv`
           if [[ -z "$appName" ]]; then
             echo "::set-output name=FIRST_DEPLOYMENT::true"
+            echo "::set-output name=HEALTH_CHECK_PATH::"
+            echo "::set-output name=APP_CLIENT_ID::"
           else
             echo "::set-output name=FIRST_DEPLOYMENT::false"
+            healthCheckPath=`az webapp show -g ${{secrets.AZURE_RESOURCE_GROUP}} -n "${{secrets.AZURE_APP_NAME}}" --query "siteConfig.healthCheckPath" -o tsv`
+            echo "::set-output name=HEALTH_CHECK_PATH::${healthCheckPath}"
+            appClientId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
+            echo "::set-output name=APP_CLIENT_ID::${appClientId}"
           fi
       
       - name: Deploy Azure resources (AAD Integration)
@@ -229,9 +235,11 @@ jobs:
                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                      appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
                                       appServiceName=${{secrets.AZURE_APP_NAME}} \
                                       appServicePort=${{secrets.AZURE_APP_PORT}} \
-                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
+                                      healthCheckPath="${{steps.vars.outputs.HEALTH_CHECK_PATH}}"
       
       - name: Deploy Azure resources (AAD Integration + VNET)
         id: deployment_aad_mi_vnet
@@ -253,11 +261,13 @@ jobs:
                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                      appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
                                       appServiceName=${{secrets.AZURE_APP_NAME}} \
                                       appServicePort=${{secrets.AZURE_APP_PORT}} \
-                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
+                                      healthCheckPath="${{steps.vars.outputs.HEALTH_CHECK_PATH}}"
       
-      - name: Init AAD Integration variable (ClientId)
+      - name: Init AAD ClientId
         id: deployment_aad
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
@@ -289,7 +299,8 @@ jobs:
                                      dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}}\
                                      appServiceName=${{secrets.AZURE_APP_NAME}} \
                                      appServicePort=${{secrets.AZURE_APP_PORT}} \
-                                     deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
+                                     deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
+                                     healthCheckPath="${{steps.vars.outputs.HEALTH_CHECK_PATH}}"
 
       - name: Set-up DB AAD Integration
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
