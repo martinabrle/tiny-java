@@ -84,14 +84,14 @@ jobs:
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       # Sometimes it helps to use the following - as azure/webapps-deploy@v2 are a bit confusing
-      # - name: Deploy to AppService
-      #   run: az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_APP_NAME}} --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
-      
       - name: Deploy to AppService
-        uses: azure/webapps-deploy@v2
-        with: 
-          app-name: ${{secrets.AZURE_APP_NAME}}
-          package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+        run: az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_APP_NAME}} --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
+      
+      # - name: Deploy to AppService
+      #   uses: azure/webapps-deploy@v2
+      #   with: 
+      #     app-name: ${{secrets.AZURE_APP_NAME}}
+      #     package: ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
 
       - name: Set AppService Liveness probe
         run: |
