@@ -134,7 +134,7 @@ jobs:
       
       - name: Swap STAGING and PRODUCTION
         run:  |
-          deployment slot swap -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_APP_NAME}} --slot staging
+          az webapp deployment slot swap -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_APP_NAME}} --slot staging
           sleep 180
 
       - name: Check the new PRODUCTION has warmed-up
