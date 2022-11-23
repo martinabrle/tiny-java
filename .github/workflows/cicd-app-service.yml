@@ -98,6 +98,7 @@ jobs:
             noOfAttempts=$(($noOfAttempts+1))
             sleep 10
           done
+          echo "Service warmed up after ${noOfAttempts} attempts"
       # - name: Deploy to AppService
       #   uses: azure/webapps-deploy@v2
       #   with: 
