@@ -89,6 +89,7 @@ jobs:
       
       - name: Wait for AppService warm-up
         run: |
+          sleep 240 #First wait for 4 mins, sometimes it may take time for the deployment process to start
           noOfAttempts=0
           until $(curl --silent --output /dev/null --head --fail https://${{secrets.AZURE_APP_NAME}}.azurewebsites.net/actuator/health/readiness); do
             if [[ ${noOfAttempts} -eq 60 ]];then
