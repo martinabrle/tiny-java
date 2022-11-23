@@ -91,7 +91,6 @@ jobs:
         run: |
           noOfAttempts=0
           until $(curl --silent --output /dev/null --head --fail https://${{secrets.AZURE_APP_NAME}}.azurewebsites.net/actuator/health/readiness); do
-          https://mabr-tiny-java-as
             if [[ ${noOfAttempts} -eq 60 ]];then
               echo "Web site failed to come online within 10 mins"
               exit 1
