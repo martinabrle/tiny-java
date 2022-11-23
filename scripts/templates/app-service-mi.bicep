@@ -454,6 +454,8 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
     rbacKVSpringDataSourceURL
     rbacKVAppInsightsInstrKey2
     rbacKVApplicationInsightsConnectionString2
+    rbacKVSecretAppClientIdStaging
+    rbacKVSecretDbStagingUserName
     rbacKVSpringDataSourceURL2
   ]
   kind: 'string'
@@ -503,19 +505,55 @@ resource appServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = 
   name: 'web'
   parent: appServiceStaging
   dependsOn: [
+    rbacKVAppInsightsInstrKey
+    rbacKVApplicationInsightsConnectionString
+    rbacKVSecretAppClientId
+    rbacKVSecretDbUserName
+    rbacKVSpringDataSourceURL
+    rbacKVAppInsightsInstrKey2
+    rbacKVApplicationInsightsConnectionString2
     rbacKVSecretAppClientIdStaging
     rbacKVSecretDbStagingUserName
+    rbacKVSpringDataSourceURL2
   ]
   kind: 'string'
   properties: {
     appSettings: [
       {
-        name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientIdStaging.name})'
+        name: 'SPRING_DATASOURCE_URL'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
       }
       {
         name: 'SPRING_DATASOURCE_USERNAME'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbStagingUserName.name})'
+      }
+      {
+        name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientIdStaging.name})'
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
+      }
+      {
+        name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
+      }
+      {
+        name: 'SPRING_PROFILES_ACTIVE'
+        value: 'test-mi'
+      }
+      {
+        name: 'PORT'
+        value: appServicePort
+      }
+      {
+        name: 'SPRING_DATASOURCE_SHOW_SQL'
+        value: 'true'
+      }
+      {
+        name: 'DEBUG_AUTH_TOKEN'
+        value: 'true'
       }
     ]
   }
