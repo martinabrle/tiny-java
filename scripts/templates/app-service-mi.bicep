@@ -443,14 +443,21 @@ module rbacKVSecretAppClientIdStaging './components/role-assignment-kv-secret.bi
   }
 }
 
-resource appServiceProduction 'Microsoft.Web/sites/slots@2021-03-01' existing = {
+resource appServiceSlotConfigNames 'Microsoft.Web/sites/config@2021-03-01' = {
+  name: 'slotConfigNames'
+  kind: 'string'
   parent: appService
-  name: ''
+  dependsOn: [appServicePARMS]
+  properties: {
+    appSettingNames: [
+      'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_APP_CLIENT_ID', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'SPRING_PROFILES_ACTIVE', 'PORT', 'SPRING_DATASOURCE_SHOW_SQL', 'DEBUG_AUTH_TOKEN'
+    ]
+  }
 }
 
-resource appServicePARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = {
+resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
   name: 'web'
-  parent: appServiceProduction
+  parent: appService
   dependsOn: [
     rbacKVAppInsightsInstrKey
     rbacKVApplicationInsightsConnectionString
@@ -469,6 +476,7 @@ resource appServicePARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = {
       {
         name: 'SPRING_DATASOURCE_URL'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
+        
       }
       {
         name: 'SPRING_DATASOURCE_USERNAME'
@@ -506,10 +514,23 @@ resource appServicePARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = {
   }
 }
 
+// resource appServiceStagingSlotConfigNames 'Microsoft.Web/sites/slots/config@2021-03-01' = {
+//   name: 'slotConfigNames'
+//   kind: 'string'
+//   parent: appServiceStaging
+//   dependsOn: [appServicePARMS]
+//   properties: {
+//     appSettingNames: [
+//       'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_APP_CLIENT_ID', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'SPRING_PROFILES_ACTIVE', 'PORT', 'SPRING_DATASOURCE_SHOW_SQL', 'DEBUG_AUTH_TOKEN'
+//     ]
+//   }
+// }
+
 resource appServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = {
   name: 'web'
   parent: appServiceStaging
   dependsOn: [
+    appServiceSlotConfigNames
     rbacKVAppInsightsInstrKey
     rbacKVApplicationInsightsConnectionString
     rbacKVSecretAppClientId
