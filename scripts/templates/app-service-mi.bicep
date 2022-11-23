@@ -445,7 +445,7 @@ module rbacKVSecretAppClientIdStaging './components/role-assignment-kv-secret.bi
 
 resource appServiceProduction 'Microsoft.Web/sites/slots@2021-03-01' existing = {
   parent: appService
-  name: 'Production'
+  name: ''
 }
 
 resource appServicePARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = {
