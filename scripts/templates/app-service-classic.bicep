@@ -306,7 +306,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
     reserved: true
   }
   sku: {
-    name: 'S1'
+    name: 'S2'
   }
   kind: 'linux'
 }
