@@ -158,7 +158,7 @@ jobs:
           echo "Deployment type: ${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}"
 
           createDB=false
-          dbAdminName=`az postgres server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
+          dbAdminName=`az postgres server list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"

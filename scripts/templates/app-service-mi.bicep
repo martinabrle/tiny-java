@@ -514,18 +514,6 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
   }
 }
 
-// resource appServiceStagingSlotConfigNames 'Microsoft.Web/sites/slots/config@2021-03-01' = {
-//   name: 'slotConfigNames'
-//   kind: 'string'
-//   parent: appServiceStaging
-//   dependsOn: [appServicePARMS]
-//   properties: {
-//     appSettingNames: [
-//       'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_APP_CLIENT_ID', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'SPRING_PROFILES_ACTIVE', 'PORT', 'SPRING_DATASOURCE_SHOW_SQL', 'DEBUG_AUTH_TOKEN'
-//     ]
-//   }
-// }
-
 resource appServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = {
   name: 'web'
   parent: appServiceStaging
