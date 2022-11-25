@@ -91,8 +91,35 @@ jobs:
       - name: Deploy to STAGING AppService
         run: az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_APP_NAME}} --slot staging --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
       
+      - name: Process input variables
+        id: input_vars
+        run: |
+          echo "Processing PUSH event: ${{github.event_name}}"
+          if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
+            echo "Nothing deployed yet, choosing MANAGED_IDENTITIES"
+            echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+          else
+            vnetList=`az network vnet list -g "${{secrets.AZURE_RESOURCE_GROUP}}" -o tsv`
+            if [[ -z $vnetList ]]; then
+              appClientIdExists=$(az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "contains([].id, 'https://${{secrets.AZURE_KEY_VAULT_NAME}}.vault.azure.net/secrets/SPRING-DATASOURCE-APP-CLIENT-ID')")
+              if [ $appClientIdExists == true ]; then
+                echo "App client ID exists, setting MANAGED_IDENTITIES"
+                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+              else
+                echo "App client ID does not exist, setting CLASSIC"
+                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::CLASSIC"
+              fi
+            else
+              echo "VNET Deployed, setting VNET"
+              echo "::set-output name=DEPLOYMENT_ENVIRONMENT::VNET"
+            fi
+          fi
+      
       - name: Wait for STAGING AppService warm-up
         run: |
+          ###################################################
+          #TODO:set firewall exception for the staging slot
+          ###################################################
           currentDateTime=`date`
           echo "Starting the warm-up wait: ${currentDateTime}"
           sleep 240 #First wait for 4 mins, sometimes it may take time for the deployment process to start
@@ -138,6 +165,7 @@ jobs:
           sleep 180
 
       - name: Check the new PRODUCTION has warmed-up
+        if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT != 'VNET'
         run: |
           currentDateTime=`date`
           echo "Production: starting the warm-up wait: ${currentDateTime}"
@@ -166,3 +194,6 @@ jobs:
       - name: Stop STAGING slot
         run: |
           az webapp stop -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_APP_NAME}} --slot staging
+          ###################################################
+          #TODO:unset firewall exception for the staging slot
+          ###################################################

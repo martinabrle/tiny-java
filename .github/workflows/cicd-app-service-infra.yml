@@ -389,17 +389,3 @@ jobs:
           echo "List of existing users:"
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "SELECT * FROM pg_roles;"
 
-      # - name: Set-up user permissions
-      #   run: |      
-      #     echo "Granting user access"
-
-      #     dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          
-      #     psql "${dbConnectionString}" -tAc "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
-      #     psql "${dbConnectionString}" -tAc "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
-      #     psql "${dbConnectionString}" -tAc "GRANT SELECT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"
-      #     psql "${dbConnectionString}" -tAc "GRANT INSERT ON todo TO ${{steps.vars.outputs.DB_APP_USER_NAME}};" 
-
-      # 
-      #Debug: - name: Setup tmate session
-      #         uses: mxschmitt/action-tmate@v3.11

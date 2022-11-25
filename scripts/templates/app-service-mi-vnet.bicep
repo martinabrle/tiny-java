@@ -718,7 +718,10 @@ resource appServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = 
       }
       {
         name: 'SPRING_PROFILES_ACTIVE'
-        value: 'test-mi'
+        value: 'local' // as we do not have an access to the database from the staging slot,
+                       // here I will only run the tests against the local in-memory storage.
+                       // If I will ever get to deploying my own GitHub runner into the VNET,
+                       // than this can be changed again to 'test-mi'
       }
       {
         name: 'PORT'
