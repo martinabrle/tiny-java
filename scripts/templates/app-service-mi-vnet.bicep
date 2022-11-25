@@ -696,18 +696,18 @@ resource appServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = 
   kind: 'string'
   properties: {
     appSettings: [
-      {
-        name: 'SPRING_DATASOURCE_URL'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
-      }
-      {
-        name: 'SPRING_DATASOURCE_USERNAME'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbStagingUserName.name})'
-      }
-      {
-        name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientIdStaging.name})'
-      }
+      // {
+      //   name: 'SPRING_DATASOURCE_URL'
+      //   value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
+      // }
+      // {
+      //   name: 'SPRING_DATASOURCE_USERNAME'
+      //   value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbStagingUserName.name})'
+      // }
+      // {
+      //   name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
+      //   value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientIdStaging.name})'
+      // }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
