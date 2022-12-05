@@ -417,3 +417,6 @@ jobs:
           echo "List of existing users:"
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "SELECT * FROM pg_roles;"
 
+      - name: Remove DB Firewall exception used for Schema sync
+        run: |
+          az postgres server firewall-rule delete --name "AllowDeploymentClientIP" --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --server-name ${{secrets.AZURE_DB_SERVER_NAME}}
