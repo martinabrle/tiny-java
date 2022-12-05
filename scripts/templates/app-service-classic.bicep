@@ -15,6 +15,10 @@ param dbAdminPassword string
 param dbUserName string
 @secure()
 param dbUserPassword string
+@secure()
+param dbStagingUserName string
+@secure()
+param dbStagingUserPassword string
 
 param appServiceName string
 param appServicePort string
@@ -177,11 +181,29 @@ resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-previe
   }
 }
 
+resource kvSecretDbStagingUserName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
+  parent: keyVault
+  name: 'SPRING-DATASOURCE-USERNAME-STAGING'
+  properties: {
+    value: dbStagingUserName
+    contentType: 'string'
+  }
+}
+
 resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-PASSWORD'
   properties: {
     value: dbUserPassword
+    contentType: 'string'
+  }
+}
+
+resource kvSecretDbStagingUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+  parent: keyVault
+  name: 'SPRING-DATASOURCE-PASSWORD-STAGING'
+  properties: {
+    value: dbStagingUserPassword
     contentType: 'string'
   }
 }
@@ -254,12 +276,34 @@ module rbacKVApplicationInsightsConnectionString './components/role-assignment-k
   }
 }
 
+module rbacKVApplicationInsightsConnectionString2 './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-app-insights-con-str2'
+  params: {
+    roleDefinitionId: keyVaultSecretsUser.id
+    principalId: appServiceStaging.identity.principalId
+    roleAssignmentNameGuid: guid(appServiceStaging.id, kvApplicationInsightsConnectionString.id, keyVaultSecretsUser.id)
+    kvName: keyVault.name
+    kvSecretName: kvApplicationInsightsConnectionString.name
+  }
+}
+
 module rbacKVAppInsightsInstrKey './components/role-assignment-kv-secret.bicep' = {
   name: 'deployment-rbac-kv-secret-app-insights-instr'
   params: {
     roleDefinitionId: keyVaultSecretsUser.id
     principalId: appService.identity.principalId
     roleAssignmentNameGuid: guid(appService.id, kvSecretAppInsightsInstrumentationKey.id, keyVaultSecretsUser.id)
+    kvName: keyVault.name
+    kvSecretName: kvSecretAppInsightsInstrumentationKey.name
+  }
+}
+
+module rbacKVAppInsightsInstrKey2 './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-app-insights-instr2'
+  params: {
+    roleDefinitionId: keyVaultSecretsUser.id
+    principalId: appServiceStaging.identity.principalId
+    roleAssignmentNameGuid: guid(appServiceStaging.id, kvSecretAppInsightsInstrumentationKey.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: kvSecretAppInsightsInstrumentationKey.name
   }
@@ -276,6 +320,17 @@ module rbacKVSpringDataSourceURL './components/role-assignment-kv-secret.bicep' 
   }
 }
 
+module rbacKVSpringDataSourceURL2 './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-app-spring-datasource-url2'
+  params: {
+    roleDefinitionId: keyVaultSecretsUser.id
+    principalId: appServiceStaging.identity.principalId
+    roleAssignmentNameGuid: guid(appServiceStaging.id, kvSecretSpringDataSourceURL.id, keyVaultSecretsUser.id)
+    kvName: keyVault.name
+    kvSecretName: kvSecretSpringDataSourceURL.name
+  }
+}
+
 module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   name: 'deployment-rbac-kv-secret-db-user-name'
   params: {
@@ -287,6 +342,17 @@ module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   }
 }
 
+module rbacKVSecretDbStagingUserName './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-db-stage-user-name'
+  params: {
+    roleDefinitionId: keyVaultSecretsUser.id
+    principalId: appServiceStaging.identity.principalId
+    roleAssignmentNameGuid: guid(appServiceStaging.id, kvSecretDbStagingUserName.id, keyVaultSecretsUser.id)
+    kvName: keyVault.name
+    kvSecretName: kvSecretDbStagingUserName.name
+  }
+}
+
 module rbacKVSecretDbUserPassword './components/role-assignment-kv-secret.bicep' = {
   name: 'deployment-rbac-kv-secret-app-client-id'
   params: {
@@ -295,6 +361,17 @@ module rbacKVSecretDbUserPassword './components/role-assignment-kv-secret.bicep'
     roleAssignmentNameGuid: guid(appService.id, kvSecretDbUserPassword.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: kvSecretDbUserPassword.name
+  }
+}
+
+module rbacKVSecretDbStagingUserPassword './components/role-assignment-kv-secret.bicep' = {
+  name: 'deployment-rbac-kv-secret-stage-app-client-id'
+  params: {
+    roleDefinitionId: keyVaultSecretsUser.id
+    principalId: appServiceStaging.identity.principalId
+    roleAssignmentNameGuid: guid(appServiceStaging.id, kvSecretDbStagingUserPassword.id, keyVaultSecretsUser.id)
+    kvName: keyVault.name
+    kvSecretName: kvSecretDbStagingUserPassword.name
   }
 }
 
@@ -328,6 +405,36 @@ resource appService 'Microsoft.Web/sites@2021-03-01' = {
   }
 }
 
+resource appServiceStaging 'Microsoft.Web/sites/slots@2021-03-01' = {
+  parent: appService
+  name: 'staging'
+  location: location
+  tags: tagsArray
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    siteConfig: {
+      linuxFxVersion: 'JAVA|11-java11'
+      scmType: 'None'
+    }
+  }
+}
+
+resource appServiceSlotConfigNames 'Microsoft.Web/sites/config@2021-03-01' = {
+  name: 'slotConfigNames'
+  kind: 'string'
+  parent: appService
+  dependsOn: [appServicePARMS]
+  properties: {
+    appSettingNames: [
+      'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_PASSWORD', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'SPRING_PROFILES_ACTIVE', 'PORT', 'SPRING_DATASOURCE_SHOW_SQL', 'DEBUG_AUTH_TOKEN'
+    ]
+  }
+}
+
+
 resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
   name: 'web'
   parent: appService
@@ -352,6 +459,57 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
       {
         name: 'SPRING_DATASOURCE_PASSWORD'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbUserPassword.name})'
+      }
+      {
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
+      }
+      {
+        name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
+      }
+      {
+        name: 'SPRING_PROFILES_ACTIVE'
+        value: 'test'
+      }
+      {
+        name: 'PORT'
+        value: appServicePort
+      }
+      {
+        name: 'SPRING_DATASOURCE_SHOW_SQL'
+        value: 'true'
+      }
+    ]
+  }
+}
+
+
+resource appServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = {
+  name: 'web'
+  parent: appServiceStaging
+  dependsOn: [
+    appServiceSlotConfigNames
+    rbacKVAppInsightsInstrKey2
+    rbacKVApplicationInsightsConnectionString2
+    rbacKVSecretDbStagingUserName
+    rbacKVSecretDbStagingUserPassword
+    rbacKVSpringDataSourceURL2
+  ]
+  kind: 'string'
+  properties: {
+    appSettings: [
+      {
+        name: 'SPRING_DATASOURCE_URL'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
+      }
+      {
+        name: 'SPRING_DATASOURCE_USERNAME'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbStagingUserName.name})'
+      }
+      {
+        name: 'SPRING_DATASOURCE_PASSWORD'
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbStagingUserPassword.name})'
       }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
