@@ -13,6 +13,7 @@ param dbAdminName string
 param dbAdminPassword string
 @secure()
 param dbUserName string
+@secure()
 param dbStagingUserName string
 param appClientId string = ''
 param stagingAppClientId string = ''
