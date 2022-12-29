@@ -39,9 +39,7 @@ public class FileCache {
                 LOGGER.error(String.format("Exception ocurred while querying user's current directory (%s)",
                         ex.getMessage()), ex);
             }
-        } else
-
-        {
+        } else {
             LOGGER.debug(String.format("Resource file '%s' is already cached as '%s'.", fileName,
                     Paths.get(fileName).getFileName().toAbsolutePath().toString()));
         }
