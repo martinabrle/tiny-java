@@ -56,7 +56,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-
   tags: tagsArray
   sku: {
     name: 'B_Gen5_1'
-    tier: 'Basic'
+    tier: 'Burstable'
 
   }
   properties: {
