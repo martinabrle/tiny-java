@@ -31,7 +31,7 @@ param location string = resourceGroup().location
 
 param tagsArray object = resourceGroup().tags
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-12-01-preview' existing = {
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name: logAnalyticsWorkspaceName
   scope: resourceGroup(logAnalyticsWorkspaceRG)
 }
@@ -55,9 +55,9 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-
   location: location
   tags: tagsArray
   sku: {
-    name: 'B_Gen5_1'
+    name: 'Standard_B4ms'
     tier: 'Burstable'
-
+    Standard_B4ms
   }
   properties: {
     backup: {
@@ -125,7 +125,55 @@ resource postgreSQLServerDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@
   }
 }
 
-resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
+
+resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
+  name: '${appServiceName}-plan'
+  location: location
+  tags: tagsArray
+  properties: {
+    reserved: true
+  }
+  sku: {
+    name: 'S2'
+  }
+  kind: 'linux'
+}
+
+resource appService 'Microsoft.Web/sites@2021-03-01' = {
+  name: appServiceName
+  location: location
+  tags: tagsArray
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    siteConfig: {
+      linuxFxVersion: 'JAVA|11-java11'
+      scmType: 'None'
+      healthCheckPath: healthCheckPath
+    }
+  }
+}
+
+resource appServiceStaging 'Microsoft.Web/sites/slots@2021-03-01' = {
+  parent: appService
+  name: 'staging'
+  location: location
+  tags: tagsArray
+  identity: {
+    type: 'SystemAssigned'
+  }
+  properties: {
+    serverFarmId: appServicePlan.id
+    siteConfig: {
+      linuxFxVersion: 'JAVA|11-java11'
+      scmType: 'None'
+    }
+  }
+}
+
+resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
   name: keyVaultName
   dependsOn: [
     appInsights
@@ -144,7 +192,7 @@ resource keyVault 'Microsoft.KeyVault/vaults@2021-11-01-preview' = {
   }
 }
 
-resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'APPLICATIONINSIGHTS-CONNECTION-STRING'
   properties: {
@@ -153,7 +201,7 @@ resource kvApplicationInsightsConnectionString 'Microsoft.KeyVault/vaults/secret
   }
 }
 
-resource kvSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'APPINSIGHTS-INSTRUMENTATIONKEY'
   properties: {
@@ -162,7 +210,7 @@ resource kvSecretAppInsightsInstrumentationKey 'Microsoft.KeyVault/vaults/secret
   }
 }
 
-resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-URL'
   properties: {
@@ -189,7 +237,7 @@ resource kvSecretDbStagingUserName 'Microsoft.KeyVault/vaults/secrets@2022-07-01
   }
 }
 
-resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-PASSWORD'
   properties: {
@@ -198,7 +246,7 @@ resource kvSecretDbUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-pr
   }
 }
 
-resource kvSecretDbStagingUserPassword 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
+resource kvSecretDbStagingUserPassword 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault
   name: 'SPRING-DATASOURCE-PASSWORD-STAGING'
   properties: {
@@ -259,7 +307,7 @@ resource appServiceDiagnotsicsLogs 'Microsoft.Insights/diagnosticSettings@2021-0
 }
 
 @description('This is the built-in Key Vault Secrets User role. See https://docs.microsoft.com/en-gb/azure/role-based-access-control/built-in-roles#key-vault-secrets-user')
-resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2018-01-01-preview' existing = {
+resource keyVaultSecretsUser 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
   scope: keyVault
   name: '4633458b-17de-408a-b874-0445c86b69e6'
 }
@@ -371,53 +419,6 @@ module rbacKVSecretDbStagingUserPassword './components/role-assignment-kv-secret
     roleAssignmentNameGuid: guid(appServiceStaging.id, kvSecretDbStagingUserPassword.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: kvSecretDbStagingUserPassword.name
-  }
-}
-
-resource appServicePlan 'Microsoft.Web/serverfarms@2021-03-01' = {
-  name: '${appServiceName}-plan'
-  location: location
-  tags: tagsArray
-  properties: {
-    reserved: true
-  }
-  sku: {
-    name: 'S2'
-  }
-  kind: 'linux'
-}
-
-resource appService 'Microsoft.Web/sites@2021-03-01' = {
-  name: appServiceName
-  location: location
-  tags: tagsArray
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    serverFarmId: appServicePlan.id
-    siteConfig: {
-      linuxFxVersion: 'JAVA|11-java11'
-      scmType: 'None'
-      healthCheckPath: healthCheckPath
-    }
-  }
-}
-
-resource appServiceStaging 'Microsoft.Web/sites/slots@2021-03-01' = {
-  parent: appService
-  name: 'staging'
-  location: location
-  tags: tagsArray
-  identity: {
-    type: 'SystemAssigned'
-  }
-  properties: {
-    serverFarmId: appServicePlan.id
-    siteConfig: {
-      linuxFxVersion: 'JAVA|11-java11'
-      scmType: 'None'
-    }
   }
 }
 
