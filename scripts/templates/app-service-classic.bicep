@@ -50,35 +50,35 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
+resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-preview' = {
   name: dbServerName
   location: location
   tags: tagsArray
   sku: {
     name: 'B_Gen5_1'
     tier: 'Basic'
-    family: 'Gen5'
-    capacity: 1
+
   }
   properties: {
-    storageProfile: {
-      storageMB: 5120
+    backup: {
       backupRetentionDays: 7
       geoRedundantBackup: 'Disabled'
-      storageAutogrow: 'Disabled'
     }
     createMode: 'Default'
-    version: '11'
-    sslEnforcement: 'Enabled'
-    minimalTlsVersion: 'TLSEnforcementDisabled'
-    infrastructureEncryption: 'Disabled'
-    publicNetworkAccess: 'Enabled'
+    version: '14'
+    storage: {
+      storageSizeGB: 5
+    }
+    highAvailability: {
+      mode: 'Disabled'
+    }
+
     administratorLogin: dbAdminName
     administratorLoginPassword: dbAdminPassword
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = if (createDB) {
+resource postgreSQLDatabase 'Microsoft.DBForPostgreSql/flexibleServers/databases@2020-11-05-preview' = {
   parent: postgreSQLServer
   name: dbName
   properties: {
@@ -87,7 +87,7 @@ resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12
   }
 }
 
-resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
+resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-03-08-preview' = {
   name: 'AllowDeploymentClientIP'
   parent: postgreSQLServer
   properties: {
@@ -96,7 +96,7 @@ resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRu
   }
 }
 
-resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
+resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-03-08-preview' = {
   name: 'AllowAllWindowsAzureIps'
   parent: postgreSQLServer
   properties: {
@@ -170,7 +170,6 @@ resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-
     contentType: 'string'
   }
 }
-
 
 resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
   parent: keyVault
@@ -426,14 +425,13 @@ resource appServiceSlotConfigNames 'Microsoft.Web/sites/config@2021-03-01' = {
   name: 'slotConfigNames'
   kind: 'string'
   parent: appService
-  dependsOn: [appServicePARMS]
+  dependsOn: [ appServicePARMS ]
   properties: {
     appSettingNames: [
       'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_PASSWORD', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'SPRING_PROFILES_ACTIVE', 'PORT', 'SPRING_DATASOURCE_SHOW_SQL', 'DEBUG_AUTH_TOKEN'
     ]
   }
 }
-
 
 resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
   name: 'web'
@@ -483,7 +481,6 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
     ]
   }
 }
-
 
 resource appServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = {
   name: 'web'
