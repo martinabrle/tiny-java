@@ -313,9 +313,9 @@ jobs:
                                      createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                     dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                      dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}}\
-                                     dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                     dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                      dbStagingUserPassword=${{steps.vars.outputs.DB_STAGING_APP_USER_PASSWORD}}\
                                      appServiceName=${{secrets.AZURE_APP_NAME}} \
                                      appServicePort=${{secrets.AZURE_APP_PORT}} \
@@ -330,13 +330,13 @@ jobs:
   
       - name: Synchronize DB Schema
         run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           psql "${dbConnectionString}" --file=./db.sql
         
       - name: If not AAD, set-up traditional DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
         run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           
           dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${{steps.vars.outputs.DB_APP_USER_NAME}}';"`
           if [[ $dbUserExists -ne '1' ]]; then
@@ -359,7 +359,7 @@ jobs:
       - name: If not AAD, set-up traditional Staging DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
         run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           
           dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}';"`
           if [[ $dbUserExists -ne '1' ]]; then
