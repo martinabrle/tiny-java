@@ -157,19 +157,14 @@ jobs:
           echo "Client IP: $clientIP"
           echo "Deployment type: ${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}"
 
-          createDB=false
-          dbAdminName=`az postgres server list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
+          dbAdminName=`az postgres flexible-server list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
-            createDB=true
           fi
           echo "Admin name: $dbAdminName"
           echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
-          
-          echo "Create DB: $createDB"
-          echo "::set-output name=DB_NOT_INITIALIZED::${createDB}"
 
           dbAdminPassword="`openssl rand -hex 25`#@"
           echo "::add-mask::$dbAdminPassword"
@@ -240,7 +235,6 @@ jobs:
                                       appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                                       dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                                       dbName=${{secrets.AZURE_DB_NAME}} \
-                                      createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
@@ -268,7 +262,6 @@ jobs:
                                       appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                                       dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                                       dbName=${{secrets.AZURE_DB_NAME}} \
-                                      createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
@@ -310,7 +303,6 @@ jobs:
                                      appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
                                      dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                                      dbName=${{secrets.AZURE_DB_NAME}} \
-                                     createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
@@ -419,4 +411,4 @@ jobs:
 
       - name: Remove DB Firewall exception used for Schema sync
         run: |
-          az postgres server firewall-rule delete --name "AllowDeploymentClientIP" --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --server-name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
+          az postgres flexible-server firewall-rule delete --name "AllowDeploymentClientIP" --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --server-name ${{secrets.AZURE_DB_SERVER_NAME}} --yes
