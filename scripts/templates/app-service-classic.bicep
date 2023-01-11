@@ -66,7 +66,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-
     createMode: 'Default'
     version: '14'
     storage: {
-      storageSizeGB: 5
+      storageSizeGB: 32
     }
     highAvailability: {
       mode: 'Disabled'
