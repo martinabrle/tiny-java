@@ -54,7 +54,6 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-
   sku: {
     name: 'Standard_B4ms'
     tier: 'Burstable'
-
   }
   properties: {
     backup: {
