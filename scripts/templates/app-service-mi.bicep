@@ -64,6 +64,10 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-
     storage: {
       storageSizeGB: 32
     }
+    authConfig: {
+      activeDirectoryAuthEnabled: true
+      passwordAuthEnabled: true
+    }
     highAvailability: {
       mode: 'Disabled'
     }
@@ -445,7 +449,7 @@ resource appServiceSlotConfigNames 'Microsoft.Web/sites/config@2021-03-01' = {
   name: 'slotConfigNames'
   kind: 'string'
   parent: appService
-  dependsOn: [appServicePARMS]
+  dependsOn: [ appServicePARMS ]
   properties: {
     appSettingNames: [
       'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_USERNAME', 'SPRING_DATASOURCE_APP_CLIENT_ID', 'APPLICATIONINSIGHTS_CONNECTION_STRING', 'APPINSIGHTS_INSTRUMENTATIONKEY', 'SPRING_PROFILES_ACTIVE', 'PORT', 'SPRING_DATASOURCE_SHOW_SQL', 'DEBUG_AUTH_TOKEN'
@@ -473,7 +477,7 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
     appSettings: [
       {
         name: 'SPRING_DATASOURCE_URL'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'  
+        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
       }
       {
         name: 'SPRING_DATASOURCE_USERNAME'
