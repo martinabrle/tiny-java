@@ -196,7 +196,7 @@ jobs:
             echo "::set-output name=DB_AAD_INTEGRATION::false"
             echo "::set-output name=APP_SPRING_PROFILE::test"
           else
-            dbaGroupId=`az ad group show --group "All TEST PGSQL Admins" --query '[id]' -o tsv`
+            dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
             echo "DBA Group Id: $dbaGroupId"
             echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
             echo "::set-output name=DB_AAD_INTEGRATION::true"
@@ -317,9 +317,11 @@ jobs:
       - name: Set-up DB AAD Integration
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
-          echo "Setting AAD DB Admin Group"
-          az postgres flexible-server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
-  
+          dbAdminName=`az postgres flexible-server ad-admin list -g ${{ secrets.AZURE_RESOURCE_GROUP }} -s ${{ secrets.AZURE_DB_SERVER_NAME }} --query "[?principalName == '${{secrets.AZURE_DBA_GROUP_NAME}}'].principalName" -o tsv`
+          if [[ -z "$dbAdminName" ]]; then
+            echo "Setting AAD DB Admin Group"
+            az postgres flexible-server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
+          fi
       - name: Synchronize DB Schema
         run: |
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
