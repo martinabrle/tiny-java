@@ -318,7 +318,7 @@ jobs:
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
           echo "Setting AAD DB Admin Group"
-          az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
+          az postgres flexible-server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
   
       - name: Synchronize DB Schema
         run: |
