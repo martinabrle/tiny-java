@@ -381,7 +381,7 @@ jobs:
           
           echo "create role ${{steps.vars.outputs.DB_APP_USER_NAME}} login;" > ./create_user.sql
           echo "security label for 'pgaadauth' " >> ./create_user.sql
-          echo "    on role '${{steps.vars.outputs.DB_APP_USER_NAME}}' " >> ./create_user.sql
+          echo "    on role ${{steps.vars.outputs.DB_APP_USER_NAME}} " >> ./create_user.sql
           echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_APP_USER_ID}},type=service'; " >> ./create_user.sql
 
           echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
@@ -403,7 +403,7 @@ jobs:
         run: |
           echo "create role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} login;" > ./create_user.sql
           echo "security label for 'pgaadauth' " >> ./create_user.sql
-          echo "    on role '${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}' " >> ./create_user.sql
+          echo "    on role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} " >> ./create_user.sql
           echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}},type=service'; " >> ./create_user.sql
               
           echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
