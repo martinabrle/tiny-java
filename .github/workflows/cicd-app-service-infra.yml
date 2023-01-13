@@ -237,8 +237,8 @@ jobs:
                                       dbName=${{secrets.AZURE_DB_NAME}} \
                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                                       dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
-                                      dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
+                                      dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                       appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
                                       stagingAppClientId="${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}" \
                                       appServiceName=${{secrets.AZURE_APP_NAME}} \
@@ -387,10 +387,10 @@ jobs:
 
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" --file=./create_user.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_user.sql
 
           echo "List of existing users:"
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "SELECT * FROM pg_roles;"
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
 
       - name: If AAD, set-up STAGING AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
@@ -406,10 +406,10 @@ jobs:
 
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" --file=./create_user.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_user.sql
 
           echo "List of existing users:"
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "SELECT * FROM pg_roles;"
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
 
       - name: Remove DB Firewall exception used for Schema sync
         run: |
