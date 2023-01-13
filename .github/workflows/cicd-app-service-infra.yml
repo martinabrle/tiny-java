@@ -395,8 +395,10 @@ jobs:
       - name: If AAD, set-up STAGING AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
-          echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
-          echo "CREATE ROLE ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
+          ####echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
+          echo "select * from pgaadauth_create_principal_with_oid('${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}', '${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}}', 'service', false, false);;" > ./create_user.sql
+
+          ####echo "CREATE ROLE ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
           echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
