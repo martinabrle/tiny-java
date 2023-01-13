@@ -379,17 +379,24 @@ jobs:
           #echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
           #echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment_aad.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
           
-          echo "create role ${{steps.vars.outputs.DB_APP_USER_NAME}} login;" > ./create_user.sql
-          echo "security label for 'pgaadauth' " >> ./create_user.sql
-          echo "    on role ${{steps.vars.outputs.DB_APP_USER_NAME}} " >> ./create_user.sql
-          echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_APP_USER_ID}},type=service'; " >> ./create_user.sql
+          echo "create role ${{steps.vars.outputs.DB_APP_USER_NAME}} login;" > ./create_role.sql
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD role creation script:"
+          cat ./create_role.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_role.sql
 
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-          
-          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
-          cat ./create_user.sql
+          echo "security label for pgaadauth " > ./security_label.sql
+          echo "    on role ${{steps.vars.outputs.DB_APP_USER_NAME}} " >> ./security_label.sql
+          echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_APP_USER_ID}},type=service'; " >> ./security_label.sql
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running security label assignment script:"
+          cat ./security_label.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./security_label.sql
+
+          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"> ./grant_rights.sql
+          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./grant_rights.sql
+          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./grant_rights.sql
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running a script to GRANT permissions:"
+          cat ./grant_rights.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./grant_rights.sql
 
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
@@ -401,17 +408,24 @@ jobs:
       - name: If AAD, set-up STAGING AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
-          echo "create role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} login;" > ./create_user.sql
-          echo "security label for 'pgaadauth' " >> ./create_user.sql
-          echo "    on role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} " >> ./create_user.sql
-          echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}},type=service'; " >> ./create_user.sql
-              
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
-          
-          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
-          cat ./create_user.sql
+          echo "create role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} login;" > ./create_role.sql
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD role creation script:"
+          cat ./create_role.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_role.sql
+
+          echo "security label for pgaadauth " > ./security_label.sql
+          echo "    on role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} " >> ./security_label.sql
+          echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}},type=service'; " >> ./security_label.sql
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running security label assignment script:"
+          cat ./security_label.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./security_label.sql
+
+          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};"> ./grant_rights.sql
+          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./grant_rights.sql
+          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./grant_rights.sql
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running a script to GRANT permissions:"
+          cat ./grant_rights.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./grant_rights.sql
 
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
@@ -419,6 +433,25 @@ jobs:
 
           echo "List of existing users:"
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
+
+          # echo "create role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} login;" > ./create_user.sql
+          # echo "security label for 'pgaadauth' " >> ./create_user.sql
+          # echo "    on role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} " >> ./create_user.sql
+          # echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}},type=service'; " >> ./create_user.sql
+              
+          # echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
+          # echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
+          # echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
+          
+          # echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
+          # cat ./create_user.sql
+
+          # export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
+
+          # psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_user.sql
+
+          # echo "List of existing users:"
+          # psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
 
       - name: Remove DB Firewall exception used for Schema sync
         run: |
