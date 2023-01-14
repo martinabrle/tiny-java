@@ -322,7 +322,11 @@ jobs:
             echo "Setting AAD DB Admin Group"
             az postgres flexible-server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}" -t Group
           fi
-        
+      - name: Synchronize DB Schema (NON AAD version)
+        run: |
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          psql "${dbConnectionString}" --file=./db.sql
+
       - name: If not AAD, set-up traditional DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
         run: |
@@ -391,7 +395,9 @@ jobs:
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./grant_rights.sql
           echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running a script to GRANT permissions:"
           cat ./grant_rights.sql
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./grant_rights.sql
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          psql "${dbConnectionString}" --file=./grant_rights.sql
+          #psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./grant_rights.sql
 
           echo "List of existing users:"
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
@@ -413,12 +419,14 @@ jobs:
           cat ./security_label.sql
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./security_label.sql
 
-          #echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};"> ./grant_rights.sql
+          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};"> ./grant_rights.sql
           echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./grant_rights.sql
           echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./grant_rights.sql
           echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running a script to GRANT permissions:"
           cat ./grant_rights.sql
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./grant_rights.sql
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          psql "${dbConnectionString}" --file=./grant_rights.sql
+          #psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./grant_rights.sql
 
           echo "List of existing users:"
           psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
@@ -441,18 +449,6 @@ jobs:
 
           # echo "List of existing users:"
           # psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
-
-      - name: Synchronize DB Schema (NON AAD version)
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
-        run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          psql "${dbConnectionString}" --file=./db.sql
-
-      - name: Synchronize DB Schema (AAD version)
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
-        run: |
-          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./db.sql
 
       - name: Remove DB Firewall exception used for Schema sync
         run: |
