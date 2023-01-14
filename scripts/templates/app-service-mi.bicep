@@ -187,6 +187,8 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' = {
     }
     enableRbacAuthorization: true
     enableSoftDelete: true
+    enabledForTemplateDeployment: true
+    enabledForDeployment: true
   }
 }
 
@@ -216,31 +218,6 @@ resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2022-07-
     contentType: 'string'
   }
 }
-
-// resource authSettings 'Microsoft.Web/sites/config@2022-03-01' existing = {
-//   name: 'authsettingsV2'
-//   parent: appService
-// }
-
-// resource authSettings 'Microsoft.Web/sites/config@2020-12-01' existing = {
-//   name: '${appService.name}/authsettingsV2'
-// }
-
-// resource authsettings 'Microsoft.Web/sites/config@2021-03-01' = {
-//   name: 'authsettingsV2'
-//   parent: appService
-//   properties: {
-//     identityProviders: {
-//       azureActiveDirectory: {
-//         enabled: true
-//         isAutoProvisioned: true
-//       }
-//     }
-//   }
-// }
-
-// var appClientId = authsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
-// var appClientId = authsettings.properties.identityProviders.azureActiveDirectory.registration.clientId
 
 resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
   parent: keyVault

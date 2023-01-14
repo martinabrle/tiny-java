@@ -130,7 +130,6 @@ jobs:
           echo "::add-mask::$dbAdminPassword"
           echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
 
-          createDB=true
           dbAdminName=`az postgres server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           
           if [[ -z "$dbAdminName" ]]; then
@@ -139,14 +138,11 @@ jobs:
           else
             #echo "Re-setting password for an existing admin user"
             #az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
-            createDB=false
           fi
           echo "Admin name: $dbAdminName"
           echo "Admin password: $dbAdminPassword"
           
           echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
-          echo "::set-output name=DB_NOT_INITIALIZED::${createDB}"
-          echo "Create DB: $createDB"
 
           dbAppUserName=`echo "${{ secrets.AZURE_CONTAINER_APP_NAME }}" | tr '-' '_'`;
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
@@ -213,7 +209,7 @@ jobs:
       #        echo "AZURE_DB_NAME: ${{secrets.AZURE_DB_NAME}}" >>./tmp.txt
       #        echo "DB_ADMIN_NAME: ${{steps.vars.outputs.DB_ADMIN_NAME}}" >>./tmp.txt
       #        echo "DB_ADMIN_PASSWORD: ${{steps.vars.outputs.DB_ADMIN_PASSWORD}}" >>./tmp.txt
-      #        echo "DB_APP_USER_NAME@AZURE_DB_SERVER_NAME: ${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" >>./tmp.txt
+      #        echo "DB_APP_USER_NAME: ${{steps.vars.outputs.DB_APP_USER_NAME}}" >>./tmp.txt
       #        echo "AZURE_CONTAINER_REGISTRY_NAME: ${{secrets.AZURE_CONTAINER_REGISTRY_NAME}}" >>./tmp.txt
       #        echo "AZURE_CONTAINER_INSTANCE_NAME: ${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}" >>./tmp.txt
       #        echo "AZURE_CONTAINER_APP_NAME: ${{secrets.AZURE_CONTAINER_APP_NAME}}" >>./tmp.txt
@@ -246,19 +242,17 @@ jobs:
                            keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
                            dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                            dbName=${{secrets.AZURE_DB_NAME}} \
-                           createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}} \
                            dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                            dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                           dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                           dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                            containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
                            containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
                            containerInstanceIdentityName="${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}identity" \
                            containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
                            containerAppPort=${{secrets.AZURE_APP_PORT}} \
                            containerImageName=${{steps.vars.outputs.CONTAINER_NAME}}  \
-                           deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
+                           deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
                            
-
           dbAppUserId=`az ad sp list --display-name ${{ secrets.AZURE_CONTAINER_INSTANCE_NAME }} --query "[?displayName=='${{secrets.AZURE_CONTAINER_INSTANCE_NAME}}'].appId" --out tsv`
 
           echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
@@ -284,15 +278,14 @@ jobs:
                            dbName=${{secrets.AZURE_DB_NAME}} \
                            dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
                            dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                           dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
+                           dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                            dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}} \
                            containerRegistryName=${{secrets.AZURE_CONTAINER_REGISTRY_NAME}} \
                            containerInstanceName=${{secrets.AZURE_CONTAINER_INSTANCE_NAME}} \
                            containerAppName=${{secrets.AZURE_CONTAINER_APP_NAME}} \
                            containerAppPort=${{secrets.AZURE_APP_PORT}} \
                            containerImageName=${{steps.vars.outputs.CONTAINER_NAME}}  \
-                           deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
-                           createDB=${{steps.vars.outputs.DB_NOT_INITIALIZED}}
+                           deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}}
 
       - name: Set-up DB AAD Integration
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
@@ -302,13 +295,13 @@ jobs:
   
       - name: Synchronize DB Schema
         run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           psql "${dbConnectionString}" --file=./db.sql
         
       - name: If not AAD, set-up traditional DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
         run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
+          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
           
           dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${{steps.vars.outputs.DB_APP_USER_NAME}}';"`
           if [[ $dbUserExists -ne '1' ]]; then
@@ -331,18 +324,26 @@ jobs:
       - name: If AAD, set-up AAD DB User(s)
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
         run: |
-          echo "SET aad_validate_oids_in_tenant = off;" > ./create_user.sql
-          echo "CREATE ROLE ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH LOGIN PASSWORD '${{steps.deployment_aad.outputs.DB_APP_USER_ID}}' IN ROLE azure_ad_user;" >> ./create_user.sql
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-          
-          echo "User group {{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
-          cat ./create_user.sql
-
           export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
 
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" --file=./create_user.sql
+          echo "create role ${{steps.vars.outputs.DB_APP_USER_NAME}} login;" > ./create_role.sql
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD role creation script:"
+          cat ./create_role.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_role.sql
+
+          echo "security label for pgaadauth " > ./security_label.sql
+          echo "    on role ${{steps.vars.outputs.DB_APP_USER_NAME}} " >> ./security_label.sql
+          echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_APP_USER_ID}},type=service'; " >> ./security_label.sql
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running security label assignment script:"
+          cat ./security_label.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./security_label.sql
+
+          #echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"> ./grant_rights.sql
+          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./grant_rights.sql
+          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./grant_rights.sql
+          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running a script to GRANT permissions:"
+          cat ./grant_rights.sql
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./grant_rights.sql
 
           echo "List of existing users:"
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}}" -tAc "SELECT * FROM pg_roles;"
+          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
