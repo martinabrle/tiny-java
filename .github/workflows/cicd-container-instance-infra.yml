@@ -125,29 +125,27 @@ jobs:
           clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
           echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
           echo "Client IP: $clientIP"
-
           dbAdminPassword="`openssl rand -hex 25`#@"
           echo "::add-mask::$dbAdminPassword"
           echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
 
-          dbAdminName=`az postgres server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
+          dbAdminName=`az postgres flexible-server list --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
           
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
           else
             #echo "Re-setting password for an existing admin user"
-            #az postgres server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
+            #az postgres flexible-server update --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{ secrets.AZURE_DB_SERVER_NAME }} --admin-password $dbAdminPassword
           fi
           echo "Admin name: $dbAdminName"
           echo "Admin password: $dbAdminPassword"
           
           echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
-
+          
           dbAppUserName=`echo "${{ secrets.AZURE_CONTAINER_APP_NAME }}" | tr '-' '_'`;
           echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
-
           dbAppUserPassword=""
           if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
             echo "New app user password generated"
@@ -290,9 +288,11 @@ jobs:
       - name: Set-up DB AAD Integration
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
-          echo "Setting AAD DB Admin Group"
-          az postgres server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}"
-  
+          dbAdminName=`az postgres flexible-server ad-admin list -g ${{ secrets.AZURE_RESOURCE_GROUP }} -s ${{ secrets.AZURE_DB_SERVER_NAME }} --query "[?principalName == '${{secrets.AZURE_DBA_GROUP_NAME}}'].principalName" -o tsv`
+          if [[ -z "$dbAdminName" ]]; then
+            echo "Setting AAD DB Admin Group"
+            az postgres flexible-server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}" -t Group
+          fi
       - name: Synchronize DB Schema
         run: |
           dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
