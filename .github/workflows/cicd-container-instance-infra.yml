@@ -119,6 +119,35 @@ jobs:
            --template-file ./templates/components/rg.bicep \
            --parameters name=${{ secrets.AZURE_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
 
+      - name: Process input variables
+        id: input_vars
+        run: |
+          if [[ "${{github.event_name}}" == 'workflow_dispatch' ]]; then
+            echo "Processing manual dispatch (${{github.event_name}}): ${{github.event.inputs.deployment_environment}}"
+            echo "::set-output name=DEPLOYMENT_ENVIRONMENT::${{github.event.inputs.deployment_environment}}"
+          else
+            echo "Processing PUSH event: ${{github.event_name}}"
+            if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
+              echo "Nothing deployed yet, choosing MANAGED_IDENTITIES"
+              echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+            else
+              vnetList=`az network vnet list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[]" -o tsv`
+              if [[ -z "$vnetList" ]]; then
+                appClientIdExists=$(az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "contains([].id, 'https://${{secrets.AZURE_KEY_VAULT_NAME}}.vault.azure.net/secrets/SPRING-DATASOURCE-APP-CLIENT-ID')")
+                if [ $appClientIdExists == true ]; then
+                  echo "App client ID exists, setting MANAGED_IDENTITIES"
+                  echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
+                else
+                  echo "App client ID does not exist, setting CLASSIC"
+                  echo "::set-output name=DEPLOYMENT_ENVIRONMENT::CLASSIC"
+                fi
+              else
+                echo "VNET Deployed already, setting VNET"
+                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::VNET"
+              fi
+            fi
+          fi
+          
       - name: Initialize deployment variables
         id: vars
         run: |
