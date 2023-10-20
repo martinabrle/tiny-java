@@ -1,0 +1,19 @@
+az deployment group create \
+              --resource-group testcontainer_rg \
+              --template-file ./scripts/templates/container-mi.bicep \
+              --parameters location=eastus  \
+                           logAnalyticsWorkspaceName=  \
+                           logAnalyticsWorkspaceRG=  \
+                           appInsightsName=  \
+                           keyVaultName=  \
+                           dbServerName= \
+                           dbName=tododb \
+                           dbAdminName=martin \
+                           dbAdminPassword= \
+                           dbUserName=tinyjava \
+                           containerRegistryName= \
+                           containerInstanceName= \
+                           containerAppName=todoapp \
+                           containerAppPort=80 \
+                           containerImageName=mcr.microsoft.com/azuredocs/aci-helloworld:latest \
+                           deploymentClientIPAddress=192.168.1.1
