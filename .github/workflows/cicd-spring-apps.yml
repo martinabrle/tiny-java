@@ -68,7 +68,7 @@ jobs:
     environment: SPRING-APPS
     steps:
       - name: Download build artefacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4.1.7
         with:
           name: ${{needs.build_app.outputs.RELEASE_NAME}}
       - name: Check downloaded files
