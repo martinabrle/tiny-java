@@ -61,10 +61,10 @@ public class Token {
     public void setExpiresOn(String expiresOn) {
         this.expiresOn = expiresOn;
         try {
-            this.expiresOnEpochTimeMS = Long.parseLong(expiresOn) * 1000;
-        } catch (Exception ignoreException) {
-            LOGGER.error(String.format("Weird exception while converting '%s' to epoch time (%s)", expiresOn, ignoreException.getMessage()), ignoreException);
-            ignoreException.printStackTrace();
+            this.expiresOnEpochTimeMS = Math.multiplyExact(Long.parseLong(expiresOn), 1000L);
+        } catch (NumberFormatException | ArithmeticException ex) {
+            this.expiresOnEpochTimeMS = null;
+            LOGGER.error("The identity endpoint returned an invalid token expiration.");
         }
     }
 
@@ -93,11 +93,7 @@ public class Token {
     }
 
     public boolean isExpired() {
-        if (this.expiresOnEpochTimeMS < (System.currentTimeMillis() + 200))
-        {
-            return true;
-        }
-        return false;
+        return expiresOnEpochTimeMS == null || expiresOnEpochTimeMS <= System.currentTimeMillis() + 200;
     }
 
     @Override
@@ -163,9 +159,7 @@ public class Token {
 
     @Override
     public String toString() {
-        return "Token [accessToken=" + accessToken + ", expiresIn=" + expiresIn + ", expiresOn=" + expiresOn
-                + ", notBefore=" + notBefore + ", refreshToken=" + refreshToken + ", resource=" + resource
-                + ", tokenType=" + tokenType + "]";
+        return "Token [expiresOn=" + expiresOn + ", tokenType=" + tokenType + "]";
     }
 }
 

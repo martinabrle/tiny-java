@@ -1,7 +1,6 @@
 package app.demo.todo.controller;
 
 import java.util.ArrayList;
-import java.util.Date;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -14,6 +13,11 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import app.demo.todo.dto.Todo;
 import app.demo.todo.dto.TodoPage;
+import app.demo.todo.dto.TodoPatch;
+import app.demo.todo.exception.InvalidTodoException;
+import app.demo.todo.exception.TodoCreationFailedException;
+import app.demo.todo.exception.TodoNotFoundException;
+import app.demo.todo.exception.TodoUpdateFailedException;
 import app.demo.todo.service.TodoService;
 import app.demo.todo.utils.AppLogger;
 import app.demo.todo.utils.Utils;
@@ -62,9 +66,10 @@ public class TodoListWebController {
 
 	@RequestMapping(value = "/close-msg-box", method = RequestMethod.POST)
 	public String closeMsgBox(@ModelAttribute TodoPage page, Model model) {
-		LOGGER.debug("TODO POST called with action '/cancel'");
+		LOGGER.debug("TODO POST called with action '/close-msg-box'");
 
-		initPageHeader(model, false);
+		initPageHeader(model, page.getTodoText() != null);
+		setFormTodoText(model, page.getTodoText());
 		processTodoList(model, page);
 
 		return "todo";
@@ -96,29 +101,21 @@ public class TodoListWebController {
 	@RequestMapping(value = "/submit", method = RequestMethod.POST)
 	public String submit(@ModelAttribute TodoPage page, Model model) {
 
-		LOGGER.debug(String.format("TODO POST called with action '/submit' :\n%s", page.toString()));
+		LOGGER.debug("TODO POST called with action '/submit'");
 
 		initPageHeader(model, true);
 
-		if (page.getTodoText() == null || page.getTodoText().trim() == "") {
-			LOGGER.error("Unable to save a new TODO; TODO is empty.");
-			setCreateTodoMode(model, true);
-			setFormMessage(model, "error", "New Todo cannot be empty. Please fill in the text.");
-		} else {
-			try {
-				var todo = todoService.createTodo(page.getTodoText());
-
-				setFormMessage(model, "saved",
-						String.format("Task '%s' has been saved.", Utils.shortenString(page.getTodoText())));
-
-				setCreateTodoMode(model, false);
-				LOGGER.debug(String.format("TODO POST with action '/submit' finished successfully (%s)", todo.getId()));
-
-			} catch (Exception ex) {
-				LOGGER.error(String.format("Failed to save a new TODO (%s)", ex.getMessage()), ex);
-				setCreateTodoMode(model, true);
-				setFormMessage(model, "error", "Error while saving the new task. Please try again later.");
-			}
+		try {
+			var todo = todoService.createTodo(page.getTodoText());
+			setFormMessage(model, "saved",
+					String.format("Task '%s' has been saved.", Utils.shortenString(todo.getTodoText())));
+			setCreateTodoMode(model, false);
+		} catch (InvalidTodoException ex) {
+			setFormTodoText(model, page.getTodoText());
+			setFormMessage(model, "error", ex.getMessage());
+		} catch (TodoCreationFailedException ex) {
+			setFormTodoText(model, page.getTodoText());
+			setFormMessage(model, "error", "Error while saving the new task. Please try again later.");
 		}
 
 		processTodoList(model, page);
@@ -166,7 +163,7 @@ public class TodoListWebController {
 	}
 
 	private boolean hasTodoListError(Model model) {
-		return model != null && model.getAttribute("todoListStatus") == "error";
+		return "error".equals(model.getAttribute("todoListStatus"));
 	}
 
 	private void initPageTodoList(Model model) {
@@ -199,39 +196,27 @@ public class TodoListWebController {
 	}
 
 	private void processTodoList(Model model, TodoPage page) {
-		LOGGER.debug("Starting to process Todo List changes");
-		try {
-			var todoList = page.getTodoList();
-			if (todoList != null) {
-				for (Todo todo : todoList) {
-					if (todo.getCompleted() != todo.getCompletedOrig()) {
-						LOGGER.debug(String.format("Changes in completed status of TODO '%s' detected", todo.getId()));
-						var retrievedTodo = todoService.getTodo(todo.getId());
-
-						if (todo.getCompleted() && retrievedTodo.getCompletedDateTime() == null) {
-							retrievedTodo.setCompletedDateTime(new Date());
-							var updatedTodo = todoService.updateTodo(retrievedTodo);
-							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'true'",
-									updatedTodo.getId()));
-						} else if (!todo.getCompleted() && retrievedTodo.getCompletedDateTime() != null) {
-							retrievedTodo.setCompletedDateTime(null);
-							var updatedTodo = todoService.updateTodo(retrievedTodo);
-							LOGGER.debug(String.format("Processing TODO '%s': completed set to 'false'",
-									updatedTodo.getId()));
-						} else if (todo.getCompletedDateTime() != retrievedTodo.getCompletedDateTime()) {
-							LOGGER.debug(String.format("Processing TODO '%s': no update needed (1)", todo.getId()));
-						}
-					} else {
-						LOGGER.debug(String.format("Processing TODO '%s': no update needed (2)", todo.getId()));
-					}
+		var changes = new ArrayList<TodoPatch>();
+		if (page.getTodoList() != null) {
+			for (Todo todo : page.getTodoList()) {
+				if (todo != null && todo.getCompleted() != todo.getCompletedOrig()) {
+					var patch = new TodoPatch();
+					patch.setId(todo.getId());
+					patch.setCompleted(todo.getCompleted());
+					changes.add(patch);
 				}
 			}
-			initPageTodoList(model);
-		} catch (Exception ex) {
-			LOGGER.error(String.format("An error has occured while updating TODO (%s)", ex.getMessage()), ex);
-			setTodoListMessage(model,
-					"error",
-					"An error has occured while updating Todos. Please try again later.");
 		}
+
+		try {
+			if (!changes.isEmpty()) {
+				todoService.updateTodos(changes);
+			}
+		} catch (InvalidTodoException | TodoNotFoundException ex) {
+			setTodoListMessage(model, "error", ex.getMessage());
+		} catch (TodoUpdateFailedException ex) {
+			setTodoListMessage(model, "error", "Failed to update Todos. Please try again later.");
+		}
+		initPageTodoList(model);
 	}
 }

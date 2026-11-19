@@ -52,18 +52,15 @@ public class Todo {
             return false;
         Todo todo = (Todo) o;
         return Objects.equals(id, todo.id) &&
-                ((createdDateTime == null && todo.createdDateTime == null)
-                        || (createdDateTime != null && createdDateTime.compareTo(todo.createdDateTime) == 0))
-                &&
+                Objects.equals(Utils.epochMillis(createdDateTime), Utils.epochMillis(todo.createdDateTime)) &&
                 Objects.equals(todoText, todo.todoText) &&
-                ((completedDateTime == null && todo.completedDateTime == null)
-                        || (completedDateTime != null && completedDateTime.compareTo(todo.completedDateTime) == 0));
+                Objects.equals(Utils.epochMillis(completedDateTime), Utils.epochMillis(todo.completedDateTime));
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(id, createdDateTime, todoText, completedDateTime);
+        return Objects.hash(id, Utils.epochMillis(createdDateTime), todoText, Utils.epochMillis(completedDateTime));
     }
 
     public UUID getId() {

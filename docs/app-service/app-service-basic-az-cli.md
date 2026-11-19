@@ -37,9 +37,7 @@
     echo "Save for later use:"
     echo "-------------------"
     echo "DB Admin: ${dbAdminName}"
-    echo "DB Admins password: ${dbAdminPassword}"
     echo "DB App user: ${AZURE_DB_APP_USER_NAME}"
-    echo "DB App users password: ${AZURE_DB_APP_USER_PASSWORD}"   
     ```
 
 * Create a new resource group to deploy resources into
@@ -71,8 +69,7 @@
     CREATE USER ${AZURE_DB_APP_USER_NAME} WITH PASSWORD '${AZURE_DB_APP_USER_PASSWORD}';
     GRANT CONNECT ON DATABASE tododb TO ${AZURE_DB_APP_USER_NAME};
     GRANT USAGE ON SCHEMA public TO ${AZURE_DB_APP_USER_NAME};
-    GRANT SELECT ON todo TO ${AZURE_DB_APP_USER_NAME};
-    GRANT INSERT ON todo TO ${AZURE_DB_APP_USER_NAME};
+    GRANT SELECT, INSERT, UPDATE, DELETE ON todo TO ${AZURE_DB_APP_USER_NAME};
     ```
 
 * Change your current directory to ```tiny-java/todo```:
@@ -94,7 +91,7 @@
   az webapp config appsettings set -g $AZURE_RESOURCE_GROUP -n $AZURE_APP_NAME --settings SPRING_DATASOURCE_SHOW_SQL=true
   ```
 
-*  Build the app using ```./mvnw clean``` and ```./mvnw build```
+* Build and test the app using `SPRING_PROFILES_ACTIVE=local PORT=8080 ./mvnw clean package`.
 
 * Configure the application with Maven Plugin by running ```./mvnw com.microsoft.azure:azure-webapp-maven-plugin:2.2.0:config```. This maven goal will first authenticate with Azure and than it will ask you which App Service (or in other words, which Java WebApp) do you want to deploy the app into. Confirm the selection and you will find an updated configuration in the project's ```pom.xml```.
 

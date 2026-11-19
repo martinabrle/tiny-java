@@ -1,22 +1,26 @@
 package app.demo.todo.service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import app.demo.todo.dto.Todo;
-import app.demo.todo.exception.NewTodoIsEmptyException;
+import app.demo.todo.dto.TodoPatch;
+import app.demo.todo.exception.InvalidTodoException;
 import app.demo.todo.exception.TodoCreationFailedException;
 import app.demo.todo.exception.TodoDeleteFailedException;
-import app.demo.todo.exception.TodoIdCannotBeEmptyException;
-import app.demo.todo.exception.TodoIsEmptyException;
 import app.demo.todo.exception.TodoNotFoundException;
 import app.demo.todo.exception.TodoUpdateFailedException;
 import app.demo.todo.exception.TodosRetrievalFailedException;
@@ -25,6 +29,8 @@ import app.demo.todo.utils.AppLogger;
 
 @Service
 public class TodoServiceImpl implements TodoService {
+
+    private static final int MAX_TODO_TEXT_LENGTH = 255;
 
     @Autowired
     private TodoRepository repository;
@@ -93,149 +99,113 @@ public class TodoServiceImpl implements TodoService {
     }
 
     public Todo createTodo(String todoText)
-            throws TodoCreationFailedException, NewTodoIsEmptyException {
+            throws TodoCreationFailedException, InvalidTodoException {
 
-        Todo todo = null;
-
-        if (todoText == null || todoText.trim() == "") {
-            throw new NewTodoIsEmptyException();
-        }
+        validateTodoText(todoText);
 
         try {
-            LOGGER.debug(String.format("Create a new Todo synchronously using createTodo('%s')", todoText));
-
             var todoEntity = new app.demo.todo.entity.Todo(UUID.randomUUID(), todoText, new Date(), null);
-
-            var todoEntitySaved = repository.save(todoEntity);
-
-            todo = new Todo(todoEntitySaved.getId(), todoEntitySaved.getTodoText(),
-                    todoEntitySaved.getCreatedDateTime(), todoEntitySaved.getCompletedDateTime(),
-                    todoEntitySaved.getCompletedDateTime() != null);
-
+            Todo todo = new Todo(repository.save(todoEntity));
             LOGGER.debug(String.format("Created a new Todo with Id '%s'", todo.getId()));
-        } catch (NewTodoIsEmptyException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            LOGGER.error(String.format("Todo creation failed (%s)", ex.getMessage()), ex);
+            return todo;
+        } catch (DataAccessException ex) {
+            LOGGER.error("Todo creation failed", ex);
             throw new TodoCreationFailedException(ex.getMessage());
         }
-        return todo;
     }
 
-    public Todo updateTodo(Todo todo)
-            throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException {
+    @Override
+    @Transactional
+    public Todo updateTodo(TodoPatch patch) {
+        return updateTodos(Collections.singletonList(patch)).get(0);
+    }
 
-        Todo retVal = null;
-        if (todo == null || todo.getTodoText().isBlank())
-            throw new TodoIsEmptyException(null, null);
+    @Override
+    public void deleteTodo(UUID id) {
+        if (id == null) {
+            throw new InvalidTodoException("Todo ID cannot be empty.");
+        }
 
         try {
-            LOGGER.debug(String.format("Updating an existing Todo '%s' synchronously using updateTodo(..)", todo.getId()));
+            repository.deleteById(id);
+        } catch (EmptyResultDataAccessException ex) {
+            throw notFound(id);
+        } catch (DataAccessException ex) {
+            LOGGER.error(String.format("Deleting Todo '%s' failed", id), ex);
+            throw new TodoDeleteFailedException(ex.getMessage());
+        }
+    }
 
-            var existingTodoEntityLookup = repository.findById(todo.getId());
+    @Override
+    @Transactional
+    public List<Todo> updateTodos(List<TodoPatch> patches) {
+        if (patches == null) {
+            throw new InvalidTodoException("Todo updates cannot be null.");
+        }
 
-            if (!existingTodoEntityLookup.isPresent())
-                throw new TodoNotFoundException(String.format("Todo '%s' does not exist.", todo.getId()));
+        Map<UUID, TodoPatch> updates = new LinkedHashMap<>();
+        for (TodoPatch patch : patches) {
+            if (patch == null || patch.getId() == null) {
+                throw new InvalidTodoException("Each Todo update must have an ID.");
+            }
+            if (patch.getTodoText() != null) {
+                validateTodoText(patch.getTodoText());
+            }
+            if (updates.putIfAbsent(patch.getId(), patch) != null) {
+                throw new InvalidTodoException("A Todo can only appear once in an update.");
+            }
+        }
 
-            var existingTodoEntity = existingTodoEntityLookup.get();
-            existingTodoEntity.setTodoText(todo.getTodoText());
-            existingTodoEntity.setCompletedDateTime(todo.getCompletedDateTime());
+        if (updates.isEmpty()) {
+            return Collections.emptyList();
+        }
 
-            var savedTodoEntity = repository.save(existingTodoEntity);
+        try {
+            Map<UUID, app.demo.todo.entity.Todo> existing = new HashMap<>();
+            for (var entity : repository.findAllById(updates.keySet())) {
+                existing.put(entity.getId(), entity);
+            }
+            for (UUID id : updates.keySet()) {
+                if (!existing.containsKey(id)) {
+                    throw notFound(id);
+                }
+            }
 
-            retVal = new Todo(savedTodoEntity.getId(), savedTodoEntity.getTodoText(),
-                    savedTodoEntity.getCreatedDateTime(), savedTodoEntity.getCompletedDateTime(),
-                    savedTodoEntity.getCompletedDateTime() != null);
-        } catch (NoSuchElementException ex) {
-            throw new TodoNotFoundException(String.format("Todo '%s' does not exist.", todo.getId()));
-        } catch (TodoIsEmptyException ex) {
-            throw ex;
-        } catch (TodoNotFoundException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            LOGGER.error(String.format("Todo update failed (%s)", ex.getMessage()), ex);
+            List<Todo> result = new ArrayList<>(updates.size());
+            for (TodoPatch patch : updates.values()) {
+                var entity = existing.get(patch.getId());
+                if (patch.getTodoText() != null) {
+                    entity.setTodoText(patch.getTodoText());
+                }
+                if (Boolean.FALSE.equals(patch.getCompleted())) {
+                    entity.setCompletedDateTime(null);
+                } else if (Boolean.TRUE.equals(patch.getCompleted())) {
+                    if (entity.getCompletedDateTime() == null) {
+                        entity.setCompletedDateTime(new Date());
+                    }
+                } else if (patch.hasCompletedDateTime()) {
+                    entity.setCompletedDateTime(patch.getCompletedDateTime());
+                }
+                result.add(new Todo(entity));
+            }
+            repository.flush();
+            return result;
+        } catch (DataAccessException ex) {
+            LOGGER.error("Todo update failed", ex);
             throw new TodoUpdateFailedException(ex.getMessage());
         }
-
-        LOGGER.debug(String.format("Updated an existing Todo '%s' synchronously using updateTodo(..)", todo.getId()));
-
-        return retVal;
     }
 
-    @Override
-    public void deleteTodo(UUID id)
-            throws TodoNotFoundException, TodoDeleteFailedException, TodoIdCannotBeEmptyException {
-
-        LOGGER.debug(String.format("Deleting a TODO synchronously using deleteTodo('%s')", id));
-
-        try {
-            if (!repository.existsById(id)) {
-                throw new TodoNotFoundException("Unable to retrieve the Todo; Todo does not exist (1).");
-            }
-
-            repository.deleteById(id);
-
-        } catch (IllegalArgumentException ex) {
-            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()), ex);
-            throw new TodoIdCannotBeEmptyException(ex.getMessage());
-        } catch (TodoNotFoundException ex) {
-            throw ex;
-        } catch (Exception ex) {
-            LOGGER.error(String.format("Retrieving the TODO '%s' failed (%s)", id, ex.getMessage()), ex);
-            throw new TodosRetrievalFailedException(ex.getMessage());
+    private static void validateTodoText(String todoText) {
+        if (todoText == null || todoText.isBlank()) {
+            throw new InvalidTodoException("Todo text cannot be empty.");
         }
-        LOGGER.debug(String.format("Deleted a TODO synchronously using deleteTodo('%s')", id));
+        if (todoText.length() > MAX_TODO_TEXT_LENGTH) {
+            throw new InvalidTodoException("Todo text cannot exceed " + MAX_TODO_TEXT_LENGTH + " characters.");
+        }
     }
 
-    @Override
-    public List<Todo> updateTodos(List<Todo> todos)
-            throws TodoIsEmptyException, TodoUpdateFailedException, TodoNotFoundException {
-
-        var todoListHashMap = new HashMap<UUID, Todo>();
-        var todoEntities = new ArrayList<app.demo.todo.entity.Todo>();
-
-        for (var todo : todos) {
-            todoListHashMap.put(todo.getId(), todo);
-        }
-
-        var retrievedTodoEntities = repository.findAllById(todoListHashMap.keySet());
-        for (var retrievedTodoEntity : retrievedTodoEntities) {
-            var updatedTodo = todoListHashMap.get(retrievedTodoEntity.getId());
-            boolean valuesModified = false;
-            if (updatedTodo.getCompleted() && retrievedTodoEntity.getCompletedDateTime() == null) {
-                retrievedTodoEntity.setCompletedDateTime(new Date());
-                valuesModified = true;
-            } else if (!updatedTodo.getCompleted() && retrievedTodoEntity.getCompletedDateTime() != null) {
-                retrievedTodoEntity.setCompletedDateTime(null);
-                valuesModified = true;
-            } else if (retrievedTodoEntity.getCompletedDateTime() != updatedTodo.getCompletedDateTime()) {
-                retrievedTodoEntity.setCompletedDateTime(updatedTodo.getCompletedDateTime());
-                valuesModified = true;
-            }
-            if (updatedTodo.getTodoText() != null) {
-                if (updatedTodo.getTodoText().isBlank()) {
-                    throw new TodoIsEmptyException(updatedTodo.getId(), null);
-                }
-                if (!retrievedTodoEntity.getTodoText().equals(updatedTodo.getTodoText())) {
-                    retrievedTodoEntity.setTodoText(updatedTodo.getTodoText());
-                    valuesModified = true;
-                }
-            }
-            if (valuesModified) {
-                todoEntities.add(retrievedTodoEntity);
-            }
-        }
-
-        var resultingTodoEntities = repository.saveAll(todoEntities);
-
-        var retVal = new ArrayList<Todo>();
-        for (var resultingTodoEntity : resultingTodoEntities) {
-            retVal.add(new Todo(resultingTodoEntity.getId(), resultingTodoEntity.getTodoText(),
-                    resultingTodoEntity.getCreatedDateTime(), resultingTodoEntity.getCompletedDateTime(),
-                    resultingTodoEntity.getCompletedDateTime() != null));
-        }
-
-        return retVal;
+    private static TodoNotFoundException notFound(UUID id) {
+        return new TodoNotFoundException(String.format("Todo '%s' does not exist.", id));
     }
-
 }

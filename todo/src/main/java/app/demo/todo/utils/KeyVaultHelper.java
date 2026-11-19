@@ -6,6 +6,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpResponse.BodyHandlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 //How to debug:
@@ -62,6 +63,9 @@ public class KeyVaultHelper {
             if (secret == null) {
                 return null;
             }
+        } catch (JsonProcessingException ex) {
+            LOGGER.error("Key Vault returned an unreadable secret response.");
+            return null;
         } catch (Exception ex) {
             LOGGER.error(String.format("KeyVault secret retrieval request failed: (%s)", ex.getMessage()), ex);
             return null;
@@ -73,7 +77,7 @@ public class KeyVaultHelper {
     public static Token getLocalToken(boolean debugAuthToken) {
 
         if (currentToken != null && !currentToken.isExpired()) {
-            LOGGER.debug(String.format("Reusing a not-yet expired token: %s", currentToken));
+            LOGGER.debug("Reusing an unexpired Key Vault token.");
             return currentToken;
         }
 
@@ -94,19 +98,16 @@ public class KeyVaultHelper {
                         String.format("Received '%d' from the local identity endpoint.", httpResponse.statusCode()));
                 return null;
             }
-            String responseString = httpResponse.body();
-            if (debugAuthToken) {
-                LOGGER.debug(String.format("Received identity endpoint's response: %s", responseString));
-            }
-
             ObjectMapper objMapper = new ObjectMapper();
 
             currentToken = objMapper.readValue(httpResponse.body(), Token.class);
 
             if (debugAuthToken) {
-                LOGGER.debug(String.format("Received token: %s", currentToken));
+                LOGGER.debug("Received a Key Vault token from the identity endpoint.");
             }
-
+        } catch (JsonProcessingException ex) {
+            LOGGER.error("The identity endpoint returned an unreadable token response.");
+            return null;
         } catch (Exception ex) {
             LOGGER.error(String.format("Token retrieval request failed (%s)", ex.getMessage()), ex);
             return null;

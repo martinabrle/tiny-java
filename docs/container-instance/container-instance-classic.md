@@ -49,7 +49,6 @@
     echo "Save for later use:"
     echo "-------------------"
     echo "DB Admin: ${dbAdminName}"
-    echo "DB Admins password: ${dbAdminPassword}"
     echo "DB App user: ${AZURE_DB_APP_USER_NAME}"
     ```
 
@@ -123,8 +122,7 @@
     CREATE USER ${AZURE_DB_APP_USER_NAME} WITH PASSWORD '${AZURE_DB_APP_USER_PASSWORD}';
     GRANT CONNECT ON DATABASE tododb TO ${AZURE_DB_APP_USER_NAME};
     GRANT USAGE ON SCHEMA public TO ${AZURE_DB_APP_USER_NAME};
-    GRANT SELECT ON todo TO ${AZURE_DB_APP_USER_NAME};
-    GRANT INSERT ON todo TO ${AZURE_DB_APP_USER_NAME};
+    GRANT SELECT, INSERT, UPDATE, DELETE ON todo TO ${AZURE_DB_APP_USER_NAME};
     ```
 
 * Change your current directory to ```tiny-java/todo```:

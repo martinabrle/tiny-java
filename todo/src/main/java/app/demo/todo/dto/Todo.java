@@ -61,18 +61,15 @@ public class Todo {
             return false;
         Todo todo = (Todo) o;
         return Objects.equals(id, todo.id) &&
-                ((createdDateTime == null && todo.createdDateTime == null)
-                        || (createdDateTime != null && createdDateTime.compareTo(todo.createdDateTime) == 0))
-                &&
+                Objects.equals(Utils.epochMillis(createdDateTime), Utils.epochMillis(todo.createdDateTime)) &&
                 Objects.equals(todoText, todo.todoText) &&
-                ((completedDateTime == null && todo.completedDateTime == null)
-                        || (completedDateTime != null && completedDateTime.compareTo(todo.completedDateTime) == 0));
+                Objects.equals(Utils.epochMillis(completedDateTime), Utils.epochMillis(todo.completedDateTime));
     }
 
     @Override
     public int hashCode() {
 
-        return Objects.hash(id, createdDateTime, todoText, completedDateTime);
+        return Objects.hash(id, Utils.epochMillis(createdDateTime), todoText, Utils.epochMillis(completedDateTime));
     }
 
     public UUID getId() {
@@ -111,7 +108,7 @@ public class Todo {
         return completed;
     }
 
-    public void setCompleted(Boolean completed) {
+    public void setCompleted(boolean completed) {
         this.completed = completed;
     }
 
@@ -119,7 +116,7 @@ public class Todo {
         return completedOrig;
     }
 
-    public void setCompletedOrig(Boolean completedOrig) {
+    public void setCompletedOrig(boolean completedOrig) {
         this.completedOrig = completedOrig;
     }
 
@@ -132,7 +129,7 @@ public class Todo {
             return "";
         }
 
-        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.YYYY");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
 
         if (completedDateTime != null) {
             return "created: " + sdf.format(createdDateTime) + ", completed: " + sdf.format(completedDateTime);

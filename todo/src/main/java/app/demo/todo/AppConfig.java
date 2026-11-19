@@ -70,7 +70,6 @@ public class AppConfig {
     }
 
     public void setTestKeyvaultReference(String testKeyvaultReference) {
-        LOGGER.debug(String.format("TEST_KEYVAULT_REFERENCE: '%s'", testKeyvaultReference));
         this.testKeyvaultReference = testKeyvaultReference;
     }
 

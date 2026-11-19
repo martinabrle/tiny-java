@@ -42,7 +42,6 @@
     echo "Save for later use:"
     echo "-------------------"
     echo "DB Admin: ${dbAdminName}"
-    echo "DB Admins password: ${dbAdminPassword}"
     echo "DB App user: ${AZURE_DB_APP_USER_NAME}"
     ```
 * If it there is no existing Log Analytics Workspace in a region you are deploying into, create a new resource group and a new Log Analytics Workspace in it:
@@ -111,7 +110,7 @@
     ```
     cd ../todo
     ```
-* Build the app using ```./mvnw clean``` and ```./mvnw build```
+* Build and test the app using `SPRING_PROFILES_ACTIVE=local PORT=8080 ./mvnw clean package`.
 * Configure the application with Maven Plugin by running ```./mvnw com.microsoft.azure:azure-webapp-maven-plugin:2.2.0:config```. This maven goal will first authenticate with Azure and than it will ask you which App Service (or in other words, which Java WebApp) do you want to deploy the app into. Confirm the selection and you will find an updated configuration in the project's ```pom.xml```.
 * Deploy the application by running ```./mvnw azure-webapp:deploy```
 * Open the app's URL (```https://${AZURE_APP_NAME}.azurewebsites.net/```) in the browser and test it by creating and reviewing tasks

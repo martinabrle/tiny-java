@@ -1,5 +1,5 @@
 # build using "docker build ./ -t tiny-java --build-arg VERSION=1.2.3.4"
-# run using docker run -p 8080:8080 docker.io/library/tiny-java -e SPRING_PROFILES_ACTIVE=local
+# run using docker run --rm -e SPRING_PROFILES_ACTIVE=local -p 8080:80 tiny-java
 ###############################################################################################
 # build stage
 # Works well with "FROM openjdk:11-slim as build",
@@ -35,8 +35,8 @@ WORKDIR /
 
 COPY --from=build ./target/todo-app.jar /todo-app.jar
 
+ENV PORT=80
 EXPOSE 80
-EXPOSE 443
 
 ENTRYPOINT ["java", "-jar", "/todo-app.jar" ]
 #The distroless images are based on the CBL-Mariner 2.0 distribution by Microsoft.

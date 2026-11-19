@@ -65,8 +65,8 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
                             String transformedPropertyValue = replaceEnvironmentVars(propertyValue);
                             if (!propertyValue.equals(transformedPropertyValue)) {
                                 propertyTransformed = true;
-                                LOGGER.debug(String.format("Property transformation 1: '%s': '%s' -> '%s'",
-                                        propertyNames[i], origPropertyValue, transformedPropertyValue));
+                                LOGGER.debug(String.format("Resolved environment references for property '%s'",
+                                        propertyNames[i]));
                                 propertyValue = transformedPropertyValue;
                             }
 
@@ -76,9 +76,8 @@ public class AppEnvironmentListener implements EnvironmentPostProcessor {
 
                                 if (!transformedPropertyValue.equals(secondTransformedPropertyValue)) {
                                     propertyTransformed = true;
-                                    LOGGER.debug(String.format("Property transformation 2: '%s': '%s' -> '%s'",
-                                            propertyNames[i], transformedPropertyValue,
-                                            secondTransformedPropertyValue));
+                                    LOGGER.debug(String.format("Resolved Key Vault references for property '%s'",
+                                            propertyNames[i]));
                                     propertyValue = secondTransformedPropertyValue;
                                 }
                             }

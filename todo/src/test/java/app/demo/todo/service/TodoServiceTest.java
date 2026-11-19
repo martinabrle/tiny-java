@@ -1,6 +1,7 @@
 package app.demo.todo.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.UUID;
@@ -14,10 +15,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import app.demo.todo.DatabaseLoader;
 import app.demo.todo.dto.Todo;
+import app.demo.todo.dto.TodoPatch;
+import app.demo.todo.exception.InvalidTodoException;
+import app.demo.todo.exception.TodoNotFoundException;
 import app.demo.todo.repository.TodoRepository;
 import app.demo.todo.utils.AppLogger;
 
-@SpringBootTest
+@SpringBootTest(properties = {"spring.profiles.active=local", "server.port=8080"})
 @AutoConfigureTestDatabase(connection = EmbeddedDatabaseConnection.H2)
 public class TodoServiceTest {
     
@@ -56,9 +60,7 @@ public class TodoServiceTest {
 
         assertDoesNotThrow(() -> {
             Todo retrievedTodo = todoService.getTodo(existingTodoId);
-            if (retrievedTodo.getId() != existingTodoId) {
-                throw new Exception("Invalid Todo retrieved.");
-            }
+            assertEquals(existingTodoId, retrievedTodo.getId());
         });
     }
 
@@ -67,32 +69,28 @@ public class TodoServiceTest {
 
         UUID todoId = UUID.fromString("11111111-0000-0000-0000-000000000002");
         
-        assertThrows(Exception.class,() -> {
-            todoService.getTodo(todoId);
-        });
+        assertThrows(TodoNotFoundException.class, () -> todoService.getTodo(todoId));
     }
 
     @Test
     void whenValidTodo_thenTodoShouldBeCreated() {
 
         assertDoesNotThrow(() -> {
-            Todo createdTodo = todoService.createTodo("Test it all");
-            if (createdTodo.getId() == null || createdTodo.getTodoText().compareTo("Test it all") != 0) {
-                throw new Exception("Invalid Todo created.");
+            String text = "x".repeat(255);
+            Todo createdTodo = todoService.createTodo(text);
+            try {
+                assertEquals(text, todoService.getTodo(createdTodo.getId()).getTodoText());
+            } finally {
+                todoService.deleteTodo(createdTodo.getId());
             }
-            todoService.deleteTodo(createdTodo.getId());
         });
     }
 
     @Test
     void whenInvalidTodo_thenTodoShouldNotBeCreated() {
 
-        assertThrows(Exception.class, () -> {
-            Todo createdTodo = todoService.createTodo("");
-            if (createdTodo != null) {
-                throw new Exception("Invalid Todo created.");
-            }
-        });
+        assertThrows(InvalidTodoException.class, () -> todoService.createTodo("  "));
+        assertThrows(InvalidTodoException.class, () -> todoService.createTodo("x".repeat(256)));
     }
 
     @Test
@@ -110,7 +108,7 @@ public class TodoServiceTest {
     @Test
     void whenInvalidTodoId_thenTodoShouldNotBeDeleted() {
 
-        assertThrows(Exception.class, () -> {
+        assertThrows(TodoNotFoundException.class, () -> {
             UUID todoId = UUID.fromString("11111111-0000-0000-0000-000000000002");
             
             todoService.deleteTodo(todoId);
@@ -126,14 +124,17 @@ public class TodoServiceTest {
                 throw new Exception("Invalid Todo created.");
             }
 
-            createdTodo.setTodoText("Update it all");
-            
-            Todo updatedTodo = todoService.updateTodo(createdTodo);
-            if (updatedTodo.getId() != createdTodo.getId() || updatedTodo.getTodoText().compareTo("Update it all") != 0) {
-                throw new Exception("Update failed.");
-            }
+            TodoPatch patch = new TodoPatch();
+            patch.setId(createdTodo.getId());
+            patch.setTodoText("Update it all");
 
-            todoService.deleteTodo(createdTodo.getId());
+            try {
+                Todo updatedTodo = todoService.updateTodo(patch);
+                assertEquals(createdTodo.getId(), updatedTodo.getId());
+                assertEquals("Update it all", todoService.getTodo(updatedTodo.getId()).getTodoText());
+            } finally {
+                todoService.deleteTodo(createdTodo.getId());
+            }
 
         });
     }
@@ -142,23 +143,9 @@ public class TodoServiceTest {
     @Test
     void whenInvalidTodo_thenTodoShouldNotBeUpdated() {
 
-        assertThrows(Exception.class, () -> {
-            Todo createdTodo = todoService.createTodo("Test it all");
-            if (createdTodo.getId() == null || createdTodo.getTodoText().compareTo("Test it all") != 0) {
-                throw new Exception("Invalid Todo created.");
-            }
-
-            createdTodo.setTodoText("");
-            
-            try
-            {
-                todoService.updateTodo(createdTodo);
-                todoService.deleteTodo(createdTodo.getId());
-            }
-            catch (Exception ex) {
-                todoService.deleteTodo(createdTodo.getId());
-                throw ex;
-            }
-        });
+        TodoPatch patch = new TodoPatch();
+        patch.setId(existingTodoId);
+        patch.setTodoText("");
+        assertThrows(InvalidTodoException.class, () -> todoService.updateTodo(patch));
     }
 }

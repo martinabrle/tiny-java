@@ -42,12 +42,11 @@ public class AzureAdDataSource extends HikariDataSource {
                 .blockOptional()
                 .orElseThrow(() -> new RuntimeException("Attempt to retrieve AAD token failed"));
 
-        var token = accessToken.getToken();
         if (debugAuthToken()) {
-            LOGGER.debug(String.format("Retrieved token for connecting to the datasource: '%s',", token.toString()));
+            LOGGER.debug("Retrieved a token for connecting to the datasource.");
         }
 
-        return token;
+        return accessToken.getToken();
     }
 
     private static TokenRequestContext createRequestContext() {

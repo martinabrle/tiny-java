@@ -16,7 +16,7 @@
           <div id="todo-create-form">
             <div class="form-control">
               <label id="todo-label" for="new-todo-input-text">New task</label>
-              <input type="text" id="new-todo-input-text" th:field="*{todoText}" />
+              <input type="text" id="new-todo-input-text" maxlength="255" th:field="*{todoText}" />
             </div>
             <div id="todo-create-form-message-box" class="message-box" th:if="${!#strings.isEmpty(formMessage)}">
               <div id="todo-create-form-message-box-text" class="message-text" th:text="${formMessage}" th:classappend="${#strings.isEmpty(formStatus) ? 'none' : formStatus}">Message text</div>
@@ -27,7 +27,7 @@
           </div>
         </section>
         <section id="todos">
-          <div th:if="${!createMode}" id="todos-command-bar" style="display: unset">
+          <div id="todos-command-bar" th:style="${createMode ? 'display: none' : 'display: unset'}">
             <button type="submit" class="button" th:formaction="@{/add-new}" id="todos-create-button">Add Task</button>
             <button type="submit" class="button right" th:formaction="@{/update-refresh}" id="todos-update-refresh-button">Update</button>
           </div>

@@ -23,6 +23,9 @@ param deploymentClientIPAddress string
 param location string = resourceGroup().location
 param tagsArray object = resourceGroup().tags
 
+var isPlaceholderImage = contains(containerImageName, 'aci-helloworld')
+var listenPort = isPlaceholderImage ? 80 : int(containerAppPort)
+
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' existing = {
   name: logAnalyticsWorkspaceName
   scope: resourceGroup(logAnalyticsWorkspaceRG)
@@ -179,7 +182,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2022-10-
       type: 'Public'
       ports: [
         {
-          port: int(containerAppPort)
+          port: listenPort
         }
       ]
       dnsNameLabel: replace(replace(containerInstanceName, '-', ''), '_', '')
@@ -191,8 +194,8 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2022-10-
           image: containerImageName
           livenessProbe: {
             httpGet: {
-              port: 80
-              path: contains(containerImageName, 'aci-helloworld') ? '/' : '/actuator/health/liveness' //initial deployment has an aci-helloworld from mcr deployed
+              port: listenPort
+              path: isPlaceholderImage ? '/' : '/actuator/health/liveness'
             }
             initialDelaySeconds: 50
             periodSeconds: 3
@@ -202,8 +205,8 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2022-10-
           }
           readinessProbe: {
             httpGet: {
-              port: 80
-              path: contains(containerImageName, 'aci-helloworld') ? '/' : '/actuator/health/readiness' //initial deployment has an aci-helloworld from mcr deployed
+              port: listenPort
+              path: isPlaceholderImage ? '/' : '/actuator/health/readiness'
             }
             initialDelaySeconds: 50
             periodSeconds: 3
@@ -238,7 +241,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2022-10-
             }
             {
               name: 'PORT'
-              value: string(containerAppPort)
+              value: string(listenPort)
             }
             {
               name: 'SPRING_DATASOURCE_SHOW_SQL'
@@ -251,7 +254,7 @@ resource containerInstance 'Microsoft.ContainerInstance/containerGroups@2022-10-
           ]
           ports: [
             {
-              port: int(containerAppPort)
+              port: listenPort
               protocol: 'TCP'
             }
           ]

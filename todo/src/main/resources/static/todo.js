@@ -1,81 +1,63 @@
-"use-strict";
+"use strict";
 
 const TIMEOUT_INFO=10000;
 const TIMEOUT_ERROR=20000;
 const TIMEOUT_PROGRESS=100000;
 
-function saveTodo(repeats) {
-  let newTodoInputTextElement = document.getElementById("new-todo-input-text");
-  let newTodoText = newTodoInputTextElement.value;
-  if (newTodoText == undefined || newTodoText.trim() == "") {
+async function saveTodo() {
+  const saveButton = document.getElementById("todo-save-button");
+  if (saveButton === null || saveButton.disabled) {
+    return;
+  }
+  const cancelButton = document.getElementById("todo-cancel-button");
+  const newTodoText = document.getElementById("new-todo-input-text").value;
+  if (newTodoText.trim() === "") {
     displayTaskCreateFormMessage("error", "New Todo text should not be empty.");
     return;
   }
+  if (newTodoText.length > 255) {
+    displayTaskCreateFormMessage("error", "Todo text cannot exceed 255 characters.");
+    return;
+  }
 
+  saveButton.disabled = true;
+  cancelButton.disabled = true;
   displayTaskCreateFormMessage("saving", "Saving the new Todo...");
 
-  fetch(`/api/todos/`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ todoText: newTodoText }),
-  })
-    .then((response) => {
-      if (response.ok) {
-        response
-          .text()
-          .then((text) => {
-            console.log(`Received '${response.status}', task has been saved, contining with parsing.`);
-            try {
-              let jsonTodo = JSON.parse(text);
-              if (jsonTodo == null || jsonTodo.todoText === undefined || jsonTodo.todoText == null || jsonTodo.todoText === "") {
-                throw "Empty task received from the server as a confirmation";
-              }
-
-              addTodoToList(jsonTodo);
-
-              let todoMsgText = jsonTodo.todoText;
-              if (todoMsgText.length > 5) {
-                todoMsgText = `${todoMsgText.substring(todoMsgText, 5)}...`;
-              }
-
-              displayTodoListMessage("saved", `Task '${todoMsgText}' has beed saved.`, 0);
-              hideAddTodoForm();
-              showCommandBar();
-            } catch (ex) {
-              //Unable to parse, but the task has been saved
-              console.log(`An exception '${ex}' ocurred, but the task was most likely saved.`);
-              hideAddTodoForm();
-              showCommandBar();
-              displayTodoListMessage("error", "Task has beed saved, but the server response is malformated. Try to refresh the page.", 0);
-            }
-          })
-          .catch((reason) => {
-            //Server returned another error, reduce number of requests and wait longer
-            if (repeats > 1) {
-              console.log(`An exception '${reason}' ocurred, will try again.`);
-              setTimeout(saveTodo, 100 + parseInt(Math.random() * 500), repeats - 1);
-            } else {
-              console.log(`An exception '${reason}' ocurred, giving up.`);
-              displayTaskCreateFormMessage("error", "An error has occured while retrieving the task status. Please try again later.");
-            }
-          });
-      } else {
-        if (repeats > 1) {
-          console.log(`Received '${response.status}', will try again.`);
-          setTimeout(saveTodo, 100 + parseInt(Math.random() * 500), repeats - 1);
-        } else {
-          console.log(`Received '${response.status}' and tried too many times already, giving up.`);
-          displayTaskCreateFormMessage("error", "An error has occured while saving the task. Please try again later.");
-        }
-      }
-    })
-    .catch((reason) => {
-      console.log(`Exception '${reason}', occured, giving up.`);
-      displayTaskCreateFormMessage("error", "An error has occured while saving the task. Please try again later.");
+  try {
+    // A failed response does not prove that the POST did not create a task.
+    const response = await fetch(`/api/todos/`, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ todoText: newTodoText }),
     });
+    if (response.status === 400) {
+      displayTaskCreateFormMessage("error", "The server rejected the task text. Please check it and try again.");
+      return;
+    }
+    if (!response.ok) {
+      throw new Error(`Unexpected save response: ${response.status}`);
+    }
+
+    const todo = await response.json();
+    if (!todo || !todo.id || typeof todo.todoText !== "string") {
+      throw new Error("Missing task in save response");
+    }
+    addTodoToList(todo);
+    const text = todo.todoText.length > 5 ? `${todo.todoText.slice(0, 5)}...` : todo.todoText;
+    displayTodoListMessage("saved", `Task '${text}' has been saved.`, 0);
+    hideAddTodoForm();
+    showCommandBar();
+  } catch (error) {
+    console.error("Could not confirm the task save", error);
+    displayTaskCreateFormMessage("error", "The task may have been saved. Refresh the page before trying again.");
+  } finally {
+    saveButton.disabled = false;
+    cancelButton.disabled = false;
+  }
 }
 
 function closeTodoListMessageBoxText(elementId) {
@@ -83,7 +65,7 @@ function closeTodoListMessageBoxText(elementId) {
   if (messageText === null) {
     return;
   }
-  parentElement = messageText.parentElement;
+  const parentElement = messageText.parentElement;
 
   if (parentElement.children.length > 2) {
     // min size = 1 + close-button
@@ -119,11 +101,10 @@ function closeMessageBox(elementId) {
 
 function onMessageBoxCloseClicked(e) {
   e.preventDefault();
-  let currentElement = e.target;
-  while (currentElement.type !== "div" && !currentElement.classList.contains("message-box")) {
-    currentElement = currentElement.parentElement;
+  const messageBox = e.currentTarget.closest(".message-box");
+  if (messageBox !== null) {
+    closeMessageBox(messageBox.id);
   }
-  closeMessageBox(currentElement.id);
 }
 
 function createProgressBar(elementId) {
@@ -247,7 +228,7 @@ function displayTaskCreateFormMessage(status, msgText) {
 let todoListMessageHidingTimer = [];
 
 function displayTodoListMessage(status, msgText, msgIdx) {
-  if (todoListMessageHidingTimer.includes(msgIdx) && todoListMessageHidingTimer[msgIdx]) {
+  if (todoListMessageHidingTimer[msgIdx]) {
     clearTimeout(todoListMessageHidingTimer[msgIdx]);
     todoListMessageHidingTimer[msgIdx] = 0;
   }
@@ -263,11 +244,7 @@ function displayTodoListMessage(status, msgText, msgIdx) {
     let textDiv = document.getElementById(`todo-list-message-box-text-${msgIdx}`);
     if (textDiv === null) {
       textDiv = createMessageBoxText(`todo-list-message-box-text-${msgIdx}`, status, msgText);
-      if (messageBox.children[0].length > 0) {
-        messageBox.insertBefore(textDiv, messageBox.children[0]);
-      } else {
-        messageBox.appendChild(textDiv);
-      }
+      messageBox.insertBefore(textDiv, messageBox.lastElementChild);
     } else {
       textDiv.innerText = msgText;
     }
@@ -323,11 +300,7 @@ function addTodoToList(todo) {
   newTodoElement.appendChild(origTodoCompleteCheckboxElement);
 
   let todoListElement = document.getElementById("todo-list");
-  if (todoListElement.children.length > 0) {
-    todoListElement.insertBefore(newTodoElement, todoListElement.children[0]);
-  } else {
-    todoListElement.appendChild(newTodoElemelement);
-  }
+  todoListElement.prepend(newTodoElement);
 
   let allTodosFinishedElement = document.getElementById("todo-list-empty");
   if (allTodosFinishedElement != undefined) {
@@ -362,6 +335,7 @@ function showAddTodoForm() {
   let inputTextElememt = document.createElement("input");
   inputTextElememt.setAttribute("type", "text");
   inputTextElememt.setAttribute("id", "new-todo-input-text");
+  inputTextElememt.setAttribute("maxlength", "255");
 
   formControlDivElement.appendChild(inputTextElememt);
   formControlDivElement.insertBefore(labelElememt, inputTextElememt);
@@ -420,7 +394,7 @@ function onTodosCreateButtonClick(e) {
 
 function onSaveConfirmButtonClick(e) {
   e.preventDefault();
-  saveTodo(5);
+  saveTodo();
 }
 
 function onSaveCancelButtonClick(e) {
@@ -437,7 +411,7 @@ function refreshUpdate(repeats) {
 
   let modifiedTodos = [];
   for (let i = 0; i < todoList.children.length; i++) {
-    const key = todoList.children.item(i).attributes["key"].value;
+    const key = todoList.children.item(i).getAttribute("key");
     if (key === null) {
       continue;
     }
@@ -491,7 +465,7 @@ function refreshUpdate(repeats) {
                   if (jsonTodo.completed !== null && completedElement !== null) {
                     completedElement.checked = jsonTodo.completed;
                   }
-                  if (jsonTodo.origCompleted !== null && origCompletedElement !== null) {
+                  if (typeof jsonTodo.completedOrig === "boolean" && origCompletedElement !== null) {
                     origCompletedElement.value = `${jsonTodo.completedOrig}`;
                   }
                   if (jsonTodo.todoText !== null && todoTextElement !== null) {
@@ -546,6 +520,10 @@ function onTodosRefreshUpdateButtonClick(e) {
 }
 
 function onDocumentLoad() {
+  for (const closeButton of document.querySelectorAll(".message-box .close-icon")) {
+    closeButton.addEventListener("click", onMessageBoxCloseClicked);
+  }
+
   let addButton = document.getElementById("todos-create-button");
   if (addButton !== null) {
     addButton.addEventListener("click", onTodosCreateButtonClick);

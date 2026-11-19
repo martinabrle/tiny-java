@@ -54,7 +54,7 @@ az role assignment list --assignee {SERVICE_PRINCIPAL_FROM_JSON_OUTPUT} -o table
 
 * Run the code deployment by running *Actions->cicd-container-instance* manually; this action is defined in ```./tiny-java/.github/workflows/cicd-container-instance.yml```
 
-* Open the app's URL (```http://${AZURE_APP_NAME}.${AZURE_LOCATION}.azurecontainer.io/```) in the browser and test it by creating and reviewing tasks; container instances do not offer TLS out of the box, hence the communication over plain HTTP
+* Look up the container group's `ipAddress.fqdn` and open `http://<fqdn>:<AZURE_APP_PORT>/` to test creating and updating tasks. `AZURE_APP_PORT` sets the Todo app's listener, exposed port, and health-probe port. Container instances do not offer TLS out of the box, so this URL uses plain HTTP.
 
 * Explore the console and logs feature in container apps
 

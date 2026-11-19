@@ -51,7 +51,6 @@
     echo "Save for later use:"
     echo "-------------------"
     echo "DB Admin: ${dbAdminName}"
-    echo "DB Admins password: ${dbAdminPassword}"
     echo "DB App user: ${AZURE_DB_APP_USER_NAME}"
     ```
 
