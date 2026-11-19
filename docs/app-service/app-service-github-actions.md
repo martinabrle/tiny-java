@@ -6,7 +6,6 @@
 * Add the following GitHub Actions secrets to the `APP-SERVICE` environment (`AZURE_DBA_GROUP_NAME` is required for `MANAGED_IDENTITIES` and `VNET`):
 ```
 AZURE_SUBSCRIPTION_ID
-AZURE_CREDENTIALS
 AZURE_DB_ADMIN_PASSWORD
 AZURE_DBA_GROUP_NAME
 AZURE_LOCATION
@@ -29,21 +28,10 @@ AZURE_APP_PORT
 
 ```
 * `AZURE_DB_ADMIN_PASSWORD` is required for `CLASSIC` and `MANAGED_IDENTITIES` only. Use the existing administrator password for a deployed server, or a new strong password for an isolated new server. The infrastructure and code workflows must use the same value.
-* `VNET` also requires a private deployment repository. Add `GH_RUNNER_ADMIN_TOKEN` as a secret scoped to that repository (fine-grained token with repository Administration: read/write) and `AZURE_RUNNER_SSH_PUBLIC_KEY` as an environment variable. Specify only a public SSH key.
-* Create a service principal and assigned roles needed for deploying resources, managing Key Vault secrets and assigning RBACs 
-```
-az ad sp create-for-rbac --name {YOUR_DEPLOYMENT_PRINCIPAL_NAME} --role "Key Vault Administrator" --scopes /subscriptions/{AZURE_SUBSCRIPTION_ID} --sdk-auth
-az ad sp create-for-rbac --name {YOUR_DEPLOYMENT_PRINCIPAL_NAME} --role contributor --scopes /subscriptions/{AZURE_SUBSCRIPTION_ID} --sdk-auth
-az ad sp create-for-rbac --name {YOUR_DEPLOYMENT_PRINCIPAL_NAME} --role owner --scopes /subscriptions/{AZURE_SUBSCRIPTION_ID} --sdk-auth
-```
-* Store the service principal JSON in the `AZURE_CREDENTIALS` environment secret. If Azure login reports `AADSTS5000224`, the configured Entra tenant is unavailable. Use credentials for an active tenant with a matching `AZURE_SUBSCRIPTION_ID`, or have the tenant administrator restore access before retrying.
-* Add ```Owner``` and ```Contributor``` roles to the newly created service principal
-* Check all three roles (Owner, Contributor and Key Vault Administrator) have been assigned correctly
-```
-az role assignment list --assignee {SERVICE_PRINCIPAL_FROM_JSON_OUTPUT} -o table
-```
-* If you are using managed identities, you will need to provide the newly created service principal with a Directory.Read.All AD role for the workflow to work
-* This may not be ideal, if you are not using a separated subscription for each workload as a part of your landing zones; the alternative is to modify deployment scripts so that these do not create resource groups and give RBAC contributor, owner and Key Vault administrator roles to the deployment service principal on the reasource group ```{YOUR_RG_NAME_rg}```. However, using a subscription per workload and giving the deployment service principle these roles allows us to have ```{YOUR_RG_NAME_rg}``` only automatically created and deleted. By deleting the resource group, Azure Resource Manager makes sure that resources have been deleted in the right order, otherwise you would have the responsibility  to delete resources in the right order. We should switch here to OICD as described [here](https://docs.microsoft.com/en-us/azure/developer/github/connect-from-azure#use-the-azure-login-action-with-openid-connect) to avoid relying on storing deployment credentials
+* `VNET` requires a private deployment repository. Restrict its `APP-SERVICE` environment to the trusted release branch. Add `GH_RUNNER_ADMIN_TOKEN` as a secret scoped to that repository (fine-grained token with repository Administration: read/write) and `AZURE_RUNNER_SSH_PUBLIC_KEY` as an environment variable. Specify only a public SSH key.
+* For VNET, use [workload identity federation](https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-azure). Bind the Azure identity to the private repository's exact `APP-SERVICE` subject, including the immutable owner and repository IDs for new repositories. Set `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, and the DBA group's `AZURE_DBA_GROUP_ID` as environment variables. This avoids an Azure client secret and lets the infrastructure workflow use the group ID without querying the directory. The private release runner continues to use its VM identity.
+* Grant the CI identity only the Azure permissions required by the approved deployment scope. The infrastructure workflow needs to provision the configured resource groups and their resources and assign roles within them. Creating an Entra identity or federated credential does not grant those permissions.
+* For the legacy login path, store service principal JSON as the `AZURE_CREDENTIALS` environment secret. The hosted Classic and Managed Identities code deployments and the optional cleanup still use it. If it reports `AADSTS5000224`, the configured tenant is unavailable; use a valid identity in the deployment subscription's tenant.
 * The [App Service infrastructure workflow](../../.github/workflows/cicd-app-service-infra.yml) compiles its Bicep templates on relevant pushes and on manual runs with **deploy** unchecked. To diagnose the existing Azure sign-in without provisioning, manually enable **check_credentials** and leave **deploy** unchecked.
 * To provision infrastructure, run *Actions -> cicd-app-service-infra* manually, check **deploy**, and select `CLASSIC`, `MANAGED_IDENTITIES`, or `VNET`. Leave **run_cleanup** unchecked unless you intend to delete the existing app resource group and purge its Key Vault.
 * The [code workflow](../../.github/workflows/cicd-app-service.yml) tests and packages the app on relevant pushes. For a release, run *Actions → cicd-app-service* manually with **deploy** enabled. Before publishing, it creates the database if absent, checks the schema, and ensures the application roles have the required access. Existing data is not reset.
