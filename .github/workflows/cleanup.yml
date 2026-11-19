@@ -17,7 +17,6 @@ jobs:
         include:
           - environment: APP-SERVICE
           - environment: CONTAINER-INSTANCE
-          - environment: SPRING-APPS
     environment: ${{matrix.environment}}
     steps:
       - name: Azure login

@@ -1,8 +1,9 @@
 # Spring Boot Todo App
 
-##  Running Todo App on different Azure services (PaaS):
-* [AppService deployments](./docs/app-service/)
-* [Container instances](./docs/container-instance/)
+## Azure deployment options
+
+* [Azure App Service](./docs/app-service/)
+* [Azure Container Instances](./docs/container-instance/)
 
 ## Running locally without Azure
 
