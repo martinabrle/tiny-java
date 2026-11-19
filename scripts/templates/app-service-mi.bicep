@@ -19,7 +19,7 @@ param stagingAppClientId string = ''
 param appServiceName string
 param appServicePort string
 
-param deploymentClientIPAddress string
+param deploymentClientIPAddress string = ''
 
 param healthCheckPath string = '/'
 
@@ -46,7 +46,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-preview' = {
+resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: dbServerName
   location: location
   tags: tagsArray
@@ -64,9 +64,13 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-
     storage: {
       storageSizeGB: 32
     }
+    network: {
+      publicNetworkAccess: 'Enabled'
+    }
     authConfig: {
-      activeDirectoryAuthEnabled: true
-      passwordAuthEnabled: true
+      activeDirectoryAuth: 'Enabled'
+      passwordAuth: 'Enabled'
+      tenantId: subscription().tenantId
     }
     highAvailability: {
       mode: 'Disabled'
@@ -77,16 +81,7 @@ resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2022-03-08-
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBForPostgreSql/flexibleServers/databases@2020-11-05-preview' = {
-  parent: postgreSQLServer
-  name: dbName
-  properties: {
-    charset: 'utf8'
-    collation: 'en_US.utf8'
-  }
-}
-
-resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-03-08-preview' = {
+resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2022-03-08-preview' = if (!empty(deploymentClientIPAddress)) {
   name: 'AllowDeploymentClientIP'
   parent: postgreSQLServer
   properties: {

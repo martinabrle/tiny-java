@@ -2,16 +2,34 @@ name: cicd-app-service
 
 on:
   push:
-   branches:
-     - main
-   paths:
-     - 'todo/**'  
-  workflow_dispatch:     
+    paths:
+      - '.github/workflows/cicd-app-service.yml'
+      - 'todo/**'
+      - 'scripts/bootstrap-app-service-db.sh'
+      - 'scripts/test-app-service-db.sh'
+      - 'scripts/db*.sql'
+  workflow_dispatch:
+    inputs:
+      deploy:
+        type: boolean
+        description: Deploy the tested JAR to the configured APP-SERVICE environment
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ inputs.deploy && 'app-service-release' || format('app-service-build-{0}', github.run_id) }}
+  cancel-in-progress: false
 
 jobs:  
   build_app:
     runs-on: ubuntu-latest
-    environment: APP-SERVICE
+    timeout-minutes: 15
+    env:
+      SPRING_PROFILES_ACTIVE: local
+      PORT: '8080'
+      AZURE_APPLICATION_INSIGHTS_ENABLED: 'false'
     defaults:
       run:
         working-directory: ./todo
@@ -21,17 +39,19 @@ jobs:
       RELEASE_FILE_NAME: ${{ steps.version.outputs.RELEASE_FILE_NAME }}
       
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Set up JDK 11
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: '11'
           distribution: 'microsoft'
       
       - name: Build the .jar
         run: |
-          ./mvnw clean package -DskipTests
+          ./mvnw -B -ntp clean package
       
       # Review: Implement some more mature mono repo versioning 
       - name: Figure out the version info
@@ -42,9 +62,8 @@ jobs:
           mv "$files" "./todo-${GITHUB_SHA}.jar"
           ls -la
           cd ..
-          echo "::set-output name=RELEASE_VERSION::${GITHUB_SHA}"
-          echo "::set-output name=RELEASE_NAME::todo-${GITHUB_SHA}"
-          echo "::set-output name=RELEASE_FILE_NAME::todo-${GITHUB_SHA}.jar"
+          printf 'RELEASE_VERSION=%s\nRELEASE_NAME=todo-%s\nRELEASE_FILE_NAME=todo-%s.jar\n' \
+            "$GITHUB_SHA" "$GITHUB_SHA" "$GITHUB_SHA" >> "$GITHUB_OUTPUT"
           
       - name: Display next version
         run: |
@@ -53,20 +72,94 @@ jobs:
           echo "Release file name: ${{ steps.version.outputs.RELEASE_FILE_NAME }}"
       
       - name: 'Upload build artifact'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.version.outputs.RELEASE_NAME }}
           path: ./todo/target/${{ steps.version.outputs.RELEASE_FILE_NAME }}
           if-no-files-found: error
           retention-days: 1
   
-  deploy_app:
-    needs: [build_app]
-    runs-on: ubuntu-latest
-    environment: APP-SERVICE
+  test_database_bootstrap:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test fresh and repeat deployment against local PostgreSQL
+        run: bash ./scripts/test-app-service-db.sh
+
+  select_target:
+    needs: [build_app, test_database_bootstrap]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: APP-SERVICE
+    outputs:
+      mode: ${{ steps.target.outputs.mode }}
+      runner_name: ${{ steps.target.outputs.runner_name }}
+      runner_labels: ${{ steps.target.outputs.runner_labels }}
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Resolve deployment mode and runner
+        id: target
+        env:
+          SUBSCRIPTION: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          APP_NAME: ${{ secrets.AZURE_APP_NAME }}
+          DB_SERVER: ${{ secrets.AZURE_DB_SERVER_NAME }}
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          az account set --subscription "$SUBSCRIPTION"
+          runner_name=$(az webapp show --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" \
+            --query tags.tinyJavaVnetRunner -o tsv)
+          server=$(az postgres flexible-server show --resource-group "$RESOURCE_GROUP" --name "$DB_SERVER" -o json)
+          public_access=$(jq -er '.network.publicNetworkAccess' <<< "$server")
+          if [[ "$public_access" == 'Disabled' || -n "$runner_name" ]]; then
+            if [[ "$public_access" != 'Disabled' || "$REPOSITORY_PRIVATE" != 'true' ||
+                  ! "$runner_name" =~ ^tinyjava-[a-z0-9]+$ ]]; then
+              echo "::error::VNET requires a private repository, a private database, and a provisioned runner label."
+              exit 1
+            fi
+            mode=VNET
+            labels=$(jq -cn --arg name "$runner_name" '["self-hosted","Linux","X64",$name]')
+          else
+            if [[ "$public_access" != 'Enabled' ]]; then
+              echo "::error::Unrecognized PostgreSQL public access setting."
+              exit 1
+            fi
+            case "$(jq -r '.authConfig.activeDirectoryAuth' <<< "$server")" in
+              Enabled) mode=MANAGED_IDENTITIES ;;
+              Disabled) mode=CLASSIC ;;
+              *) echo "::error::Could not determine PostgreSQL authentication mode."; exit 1 ;;
+            esac
+            labels='["ubuntu-latest"]'
+          fi
+          printf 'mode=%s\nrunner_name=%s\nrunner_labels=%s\n' "$mode" "$runner_name" "$labels" >> "$GITHUB_OUTPUT"
+
+  deploy_app:
+    needs: [build_app, select_target]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    runs-on: ${{ fromJSON(needs.select_target.outputs.runner_labels) }}
+    timeout-minutes: 25
+    environment: APP-SERVICE
+    env:
+      DEPLOYMENT_MODE: ${{ needs.select_target.outputs.mode }}
+      SUBSCRIPTION: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+      APP_NAME: ${{ secrets.AZURE_APP_NAME }}
+      DB_SERVER: ${{ secrets.AZURE_DB_SERVER_NAME }}
+      DB_NAME: ${{ secrets.AZURE_DB_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Download build artefacts
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: ${{needs.build_app.outputs.RELEASE_NAME}}
       - name: Check downloaded files
@@ -75,45 +168,67 @@ jobs:
           ls -la
           ls -la ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
       
+      - name: Use a job-specific Azure CLI cache
+        run: |
+          azure_config=$(mktemp -d "$RUNNER_TEMP/tinyjava-azure.XXXXXXXX")
+          printf 'AZURE_CONFIG_DIR=%s\n' "$azure_config" >> "$GITHUB_ENV"
+
       - name: Azure login
-        uses: azure/login@v1
+        if: env.DEPLOYMENT_MODE != 'VNET'
+        uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Azure login on the private runner
+        if: env.DEPLOYMENT_MODE == 'VNET'
+        env:
+          EXPECTED_RUNNER: ${{ needs.select_target.outputs.runner_name }}
+        run: |
+          if [[ "$RUNNER_NAME" != "$EXPECTED_RUNNER" ]]; then
+            echo "::error::The job is not running on the expected private VM."
+            exit 1
+          fi
+          az login --identity --output none
+
       - name: Set default Azure subscription
-        run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: az account set --subscription "$SUBSCRIPTION"
+
+      - name: Allow this hosted runner to initialize PostgreSQL
+        id: db_firewall
+        if: env.DEPLOYMENT_MODE != 'VNET'
+        run: |
+          runner_ip=$(dig +time=3 +tries=3 +short myip.opendns.com @resolver1.opendns.com.)
+          if [[ ! "$runner_ip" =~ ^([0-9]{1,3}\.){3}[0-9]{1,3}$ ]]; then
+            echo "::error::Could not determine the runner's public IPv4 address."
+            exit 1
+          fi
+          az postgres flexible-server firewall-rule create --resource-group "$RESOURCE_GROUP" --server-name "$DB_SERVER" \
+            --name "gha-code-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" \
+            --start-ip-address "$runner_ip" --end-ip-address "$runner_ip" --output none
+
+      - name: Ensure the database, schema, and application roles exist
+        env:
+          RUNNER_DB_ADMIN: ${{ needs.select_target.outputs.runner_name }}
+          DB_ADMIN_PASSWORD: ${{ needs.select_target.outputs.mode != 'VNET' && secrets.AZURE_DB_ADMIN_PASSWORD || '' }}
+          DBA_GROUP_NAME: ${{ secrets.AZURE_DBA_GROUP_NAME }}
+          VAULT_NAME: ${{ secrets.AZURE_KEY_VAULT_NAME }}
+        run: bash ./scripts/bootstrap-app-service-db.sh
+
+      - name: Remove this hosted runner's PostgreSQL firewall rule
+        if: always() && steps.db_firewall.outcome == 'success'
+        run: |
+          az postgres flexible-server firewall-rule delete --resource-group "$RESOURCE_GROUP" --server-name "$DB_SERVER" \
+            --name "gha-code-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" --yes --output none
       
       - name: Start the STAGING slot
+        id: staging
         run: |
-          az webapp start -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_APP_NAME}} --slot staging
+          az webapp start --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --slot staging --output none
+          echo 'started=true' >> "$GITHUB_OUTPUT"
 
       # Sometimes it helps to use the following - as azure/webapps-deploy@v2 output may be a bit confusing at times
       - name: Deploy to STAGING AppService
         run: az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_APP_NAME}} --slot staging --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
-      
-      - name: Process input variables
-        id: input_vars
-        run: |
-          echo "Processing PUSH event: ${{github.event_name}}"
-          if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
-            echo "Nothing deployed yet, should not happen here, choosing MANAGED_IDENTITIES"
-            echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
-          else
-            vnetList=`az network vnet list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[]" -o tsv`
-            if [[ -z "$vnetList" ]]; then
-              appClientIdExists=$(az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "contains([].id, 'https://${{secrets.AZURE_KEY_VAULT_NAME}}.vault.azure.net/secrets/SPRING-DATASOURCE-APP-CLIENT-ID')")
-              if [ $appClientIdExists == true ]; then
-                echo "App client ID exists, setting MANAGED_IDENTITIES"
-                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
-              else
-                echo "App client ID does not exist, setting CLASSIC"
-                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::CLASSIC"
-              fi
-            else
-              echo "VNET Deployed, setting VNET"
-              echo "::set-output name=DEPLOYMENT_ENVIRONMENT::VNET"
-            fi
-          fi
       
       - name: Wait for STAGING AppService warm-up
         run: |
@@ -151,8 +266,12 @@ jobs:
           fi
 
       - name: Remove AppService Liveness probe
+        id: disable_liveness
+        if: env.DEPLOYMENT_MODE != 'VNET'
         run: |
-          az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_APP_NAME}} --generic-configurations '{"healthCheckPath": ""}'
+          az webapp config set --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" \
+            --generic-configurations '{"healthCheckPath": ""}' --output none
+          echo 'disabled=true' >> "$GITHUB_OUTPUT"
           sleep 180
       
       # - name: Deploy to PRODUCTION AppService
@@ -160,40 +279,38 @@ jobs:
       #     az webapp deploy -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_APP_NAME}} --type jar --src-path ./${{needs.build_app.outputs.RELEASE_FILE_NAME}}
       
       - name: Swap STAGING and PRODUCTION
+        if: env.DEPLOYMENT_MODE != 'VNET'
         run:  |
           az webapp deployment slot swap -g ${{secrets.AZURE_RESOURCE_GROUP}} --name ${{secrets.AZURE_APP_NAME}} --slot staging
           sleep 180
 
-      - name: Check the new PRODUCTION has warmed-up
-        if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT != 'VNET'
+      - name: Deploy production from inside the VNET
+        if: env.DEPLOYMENT_MODE == 'VNET'
+        env:
+          JAR: ${{ needs.build_app.outputs.RELEASE_FILE_NAME }}
         run: |
-          currentDateTime=`date`
-          echo "Production: starting the warm-up wait: ${currentDateTime}"
-          sleep 240 #First wait for 4 mins, sometimes it may take time for the swap process to finish (unless warm up optimization has been done)
-          noOfAttempts=0
-          until $(curl --silent --output /dev/null --head --fail https://${{secrets.AZURE_APP_NAME}}.azurewebsites.net/actuator/health/readiness); do
-            if [[ ${noOfAttempts} -eq 60 ]];then
-              echo "Web site failed to come online within 10 mins"
-              exit 1
-            fi
-            noOfAttempts=$(($noOfAttempts+1))
-            sleep 10
-          done
-          currentDateTime=`date`
-          echo "Production: finnished the warm-up wait: ${currentDateTime}"
-          echo "Production: service warmed up after ${noOfAttempts} attempts"
+          az webapp deploy --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" \
+            --type jar --src-path "$JAR" --output none
 
-      - name: Set PRODUCTION AppService Liveness probe
+      - name: Smoke-test production
         run: |
-          currentDateTime=`date`
-          echo "Starting the probe set-up: ${currentDateTime}"
-          az webapp config set -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_APP_NAME}} --generic-configurations '{"healthCheckPath": "/actuator/health/liveness"}'
-          currentDateTime=`date`
-          echo "Finnished the probe set-up: ${currentDateTime}"
-      
+          production_host=$(az webapp show --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" \
+            --query defaultHostName -o tsv)
+          curl --fail --silent --show-error --connect-timeout 5 --max-time 15 \
+            --retry 30 --retry-all-errors --retry-delay 10 --retry-max-time 300 \
+            "https://$production_host/api/todos/" | jq -e 'type == "array"' > /dev/null
+
+      - name: Restore PRODUCTION App Service liveness probe
+        if: always() && steps.disable_liveness.outputs.disabled == 'true'
+        run: |
+          az webapp config set --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" \
+            --generic-configurations '{"healthCheckPath": "/actuator/health/liveness"}' --output none
+
       - name: Stop STAGING slot
+        if: always() && steps.staging.outputs.started == 'true'
         run: |
-          az webapp stop -g ${{secrets.AZURE_RESOURCE_GROUP}} -n ${{secrets.AZURE_APP_NAME}} --slot staging
-          ###################################################
-          #TODO:unset firewall exception for the staging slot
-          ###################################################
+          az webapp stop --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --slot staging --output none
+
+      - name: Clear the private runner's Azure login
+        if: always() && env.DEPLOYMENT_MODE == 'VNET' && env.AZURE_CONFIG_DIR != ''
+        run: az account clear

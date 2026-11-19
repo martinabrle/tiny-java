@@ -2,42 +2,114 @@ name: cicd-app-service-infra
 
 on:
   push:
-   branches:
-     - main
-   paths:
-     - 'scripts/**'     
+    paths:
+      - '.github/workflows/cicd-app-service-infra.yml'
+      - 'scripts/bootstrap-vnet-runner.sh'
+      - 'scripts/templates/app-service-*.bicep'
+      - 'scripts/templates/components/*.bicep'
   workflow_dispatch:
     inputs:
+      deploy:
+        type: boolean
+        description: Deploy to Azure after validation
+        default: false
+      check_credentials:
+        type: boolean
+        description: Test the configured Azure login without deploying
+        default: false
       run_cleanup:
         type: boolean
-        description: Delete all existing resources first
-        required: true
+        description: Delete the app resource group and purge its Key Vault first (deploy only)
+        default: false
       deployment_environment:
         type: choice
-        description: Deployment environment
+        description: Deployment environment (VNET requires a private GitHub repository)
         required: true
-        options: 
-        - CLASSIC
-        - MANAGED_IDENTITIES
-        - VNET
+        options:
+          - CLASSIC
+          - MANAGED_IDENTITIES
+          - VNET
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    env:
+      AZURE_BICEP_USE_BINARY_FROM_PATH: 'false'
+    steps:
+      - name: Reject unsupported deployment modes
+        if: github.event_name == 'workflow_dispatch' && inputs.deploy
+        env:
+          DEPLOYMENT_ENVIRONMENT: ${{ inputs.deployment_environment }}
+          REPOSITORY_PRIVATE: ${{ github.event.repository.private }}
+        run: |
+          case "$DEPLOYMENT_ENVIRONMENT" in
+            CLASSIC|MANAGED_IDENTITIES) ;;
+            VNET)
+              if [[ "$REPOSITORY_PRIVATE" != 'true' ]]; then
+                echo "::error::VNET provisions a privileged self-hosted runner and must be deployed from a private repository."
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::Unsupported deployment environment."
+              exit 1
+              ;;
+          esac
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Compile App Service Bicep templates
+        shell: bash
+        working-directory: ./scripts/templates
+        run: |
+          az bicep install --version v0.48.1
+          for template in app-service-classic.bicep app-service-mi.bicep app-service-mi-vnet.bicep components/rg.bicep components/logs.bicep; do
+            echo "Compiling $template"
+            az bicep build --file "$template" --stdout > /dev/null
+          done
+
+  check_azure_credentials:
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' && inputs.check_credentials && !inputs.deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: APP-SERVICE
+    steps:
+      - name: Azure login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Verify read access to the configured subscription
+        env:
+          SUBSCRIPTION: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          az account set --subscription "$SUBSCRIPTION"
+          az group list --output none
+
   cleanup_if_requested:
+    needs: validate
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
     runs-on: ubuntu-latest
     environment: APP-SERVICE
     steps:
       - name: Azure login
-        if: github.event.inputs.run_cleanup == 'true'
+        if: inputs.run_cleanup
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Set default Azure subscription
-        if: github.event.inputs.run_cleanup == 'true'
+        if: inputs.run_cleanup
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Remove the resource group
-        if: github.event.inputs.run_cleanup == 'true'
+        if: inputs.run_cleanup
         run: |
           RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
           if [[ "$RG_EXISTS" == "true" ]]; then
@@ -49,6 +121,7 @@ jobs:
     # Having this as a separte Job, as there are many situations where Log Analytics
     # workspace would be outside of the current subscription
     needs: [cleanup_if_requested]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
     runs-on: ubuntu-latest
     environment: APP-SERVICE
     defaults:
@@ -69,7 +142,7 @@ jobs:
         id: logs_rg_exists
         run: |
           LOGS_RG_EXISTS=$(az group exists --name ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }})
-          echo "::set-output name=LOGS_RG_EXISTS::${LOGS_RG_EXISTS}"
+          printf 'LOGS_RG_EXISTS=%s\n' "$LOGS_RG_EXISTS" >> "$GITHUB_OUTPUT"
 
       - name: Create Logs Workspace Azure resource group
         if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
@@ -79,8 +152,21 @@ jobs:
            --template-file ./templates/components/rg.bicep \
            --parameters name=${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} location=${{ secrets.AZURE_LOCATION }} resourceTags="${{ secrets.AZURE_RESOURCE_TAGS }}"
 
+      - name: Check whether the Log Analytics workspace exists
+        id: logs_workspace
+        env:
+          LOGS_RG: ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }}
+          LOGS_WORKSPACE: ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}
+        run: |
+          workspaceNames=$(az monitor log-analytics workspace list --resource-group "$LOGS_RG" --query '[].name' -o tsv)
+          if grep -Fxiq -- "$LOGS_WORKSPACE" <<< "$workspaceNames"; then
+            echo 'EXISTS=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'EXISTS=false' >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy Log Workspace
-        if: steps.logs_rg_exists.outputs.LOGS_RG_EXISTS == 'false'
+        if: steps.logs_workspace.outputs.EXISTS == 'false'
         run: |
           az deployment group create --resource-group ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }} --template-file ./templates/components/logs.bicep \
                         --parameters location=${{ secrets.AZURE_LOCATION }}  \
@@ -88,11 +174,14 @@ jobs:
 
   deploy_infra:
     needs: [deploy_log_analytics_if_needed]
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
     runs-on: ubuntu-latest
     environment: APP-SERVICE
     defaults:
       run:
         working-directory: ./scripts
+    env:
+      PGSSLMODE: require
     steps:
       - uses: actions/checkout@v3
 
@@ -105,42 +194,21 @@ jobs:
         run: az account set -s ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       
       - name: Purge deleted KV if found
+        if: inputs.run_cleanup
         run: |
           kvDeletedQuery="[?name == '${{secrets.AZURE_KEY_VAULT_NAME}}'].id"
           kvDeletedExists=`az keyvault list-deleted --query "$kvDeletedQuery" -o tsv`
           if [[ ! -z "$kvDeletedExists" ]]; then
-            echo "Deleted KeyVault exists, purging it and waiting for 10 mins"
+            echo "Purging the deleted Key Vault as requested."
             az keyvault purge -l ${{secrets.AZURE_LOCATION}} -n ${{secrets.AZURE_KEY_VAULT_NAME}}
           fi
 
       - name: Process input variables
         id: input_vars
+        env:
+          DEPLOYMENT_ENVIRONMENT: ${{ inputs.deployment_environment }}
         run: |
-          if [[ "${{github.event_name}}" == 'workflow_dispatch' ]]; then
-            echo "Processing manual dispatch (${{github.event_name}}): ${{github.event.inputs.deployment_environment}}"
-            echo "::set-output name=DEPLOYMENT_ENVIRONMENT::${{github.event.inputs.deployment_environment}}"
-          else
-            echo "Processing PUSH event: ${{github.event_name}}"
-            if [[ $(az group exists --name "${{secrets.AZURE_RESOURCE_GROUP}}") = false ]]; then
-              echo "Nothing deployed yet, choosing MANAGED_IDENTITIES"
-              echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
-            else
-              vnetList=`az network vnet list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[]" -o tsv`
-              if [[ -z "$vnetList" ]]; then
-                appClientIdExists=$(az keyvault secret list --vault-name ${{secrets.AZURE_KEY_VAULT_NAME}} --query "contains([].id, 'https://${{secrets.AZURE_KEY_VAULT_NAME}}.vault.azure.net/secrets/SPRING-DATASOURCE-APP-CLIENT-ID')")
-                if [ $appClientIdExists == true ]; then
-                  echo "App client ID exists, setting MANAGED_IDENTITIES"
-                  echo "::set-output name=DEPLOYMENT_ENVIRONMENT::MANAGED_IDENTITIES"
-                else
-                  echo "App client ID does not exist, setting CLASSIC"
-                  echo "::set-output name=DEPLOYMENT_ENVIRONMENT::CLASSIC"
-                fi
-              else
-                echo "VNET Deployed already, setting VNET"
-                echo "::set-output name=DEPLOYMENT_ENVIRONMENT::VNET"
-              fi
-            fi
-          fi
+          printf 'DEPLOYMENT_ENVIRONMENT=%s\n' "$DEPLOYMENT_ENVIRONMENT" >> "$GITHUB_OUTPUT"
       
       - name: Create Azure resource group
         run: |
@@ -151,77 +219,97 @@ jobs:
 
       - name: Initialize deployment variables
         id: vars
+        env:
+          DEPLOYMENT_ENVIRONMENT: ${{ steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT }}
+          DBA_GROUP_NAME: ${{ secrets.AZURE_DBA_GROUP_NAME }}
+          DB_ADMIN_PASSWORD: ${{ secrets.AZURE_DB_ADMIN_PASSWORD }}
+          RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          DB_SERVER: ${{ secrets.AZURE_DB_SERVER_NAME }}
+          APP_NAME: ${{ secrets.AZURE_APP_NAME }}
+          VAULT_NAME: ${{ secrets.AZURE_KEY_VAULT_NAME }}
         run: |
-          clientIP=`dig +short myip.opendns.com @resolver1.opendns.com.`
-          echo "::set-output name=DEPLOYMENT_CLIENT_IP::${clientIP}"
-          echo "Client IP: $clientIP"
-          echo "Deployment type: ${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}"
+          if [[ "$DEPLOYMENT_ENVIRONMENT" != 'CLASSIC' && -z "$DBA_GROUP_NAME" ]]; then
+            echo "::error::Set AZURE_DBA_GROUP_NAME for MANAGED_IDENTITIES and VNET deployments."
+            exit 1
+          fi
 
-          dbAdminName=`az postgres flexible-server list -g "${{secrets.AZURE_RESOURCE_GROUP}}" --query "[?fullyQualifiedDomainName == '${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com'].administratorLogin" -o tsv`
+          if [[ "$DEPLOYMENT_ENVIRONMENT" != 'CLASSIC' ]]; then
+            dbaGroupId=$(az ad group show --group "$DBA_GROUP_NAME" --query id -o tsv)
+            if [[ -z "$dbaGroupId" ]]; then
+              echo "::error::Could not resolve the configured Azure DBA group."
+              exit 1
+            fi
+            printf 'AZURE_DBA_GROUP_ID=%s\n' "$dbaGroupId" >> "$GITHUB_OUTPUT"
+          fi
+
+          dbAppUserName=${APP_NAME//-/_}
+          if [[ ${#dbAppUserName} -gt 55 ]]; then
+            echo "::error::App Service name is too long to derive the PostgreSQL roles."
+            exit 1
+          fi
+          printf 'DB_APP_USER_NAME=%s\n' "$dbAppUserName" >> "$GITHUB_OUTPUT"
+          if [[ "$DEPLOYMENT_ENVIRONMENT" == 'VNET' ]]; then
+            # Only ARM provisioning runs on the hosted runner for the private database.
+            exit 0
+          fi
+
+          : "${DB_ADMIN_PASSWORD:?Set AZURE_DB_ADMIN_PASSWORD for Classic and Managed Identities.}"
+          dbAdminName=$(az postgres flexible-server list --resource-group "$RESOURCE_GROUP" \
+            --query "[?name=='$DB_SERVER'].administratorLogin | [0]" -o tsv)
           
           if [[ -z "$dbAdminName" ]]; then
             echo "This is a new deployment, generating a new admin name"
             dbAdminName="a`openssl rand -hex 5`"
           fi
           echo "Admin name: $dbAdminName"
-          echo "::set-output name=DB_ADMIN_NAME::${dbAdminName}"
+          printf 'DB_ADMIN_NAME=%s\n' "$dbAdminName" >> "$GITHUB_OUTPUT"
 
-          dbAdminPassword="`openssl rand -hex 25`#@"
-          echo "::add-mask::$dbAdminPassword"
-          echo "::set-output name=DB_ADMIN_PASSWORD::${dbAdminPassword}"
-          echo "Admin password: $dbAdminPassword"
           
-          dbAppUserName=`echo "${{secrets.AZURE_APP_NAME}}" | tr '-' '_'`;
-          echo "::set-output name=DB_APP_USER_NAME::${dbAppUserName}"
           echo "App user name: $dbAppUserName"
 
-          dbStagingAppUserName=`echo "${{secrets.AZURE_APP_NAME}}-staging" | tr '-' '_'`;
-          echo "::set-output name=DB_STAGING_APP_USER_NAME::${dbStagingAppUserName}"
+          dbStagingAppUserName="${dbAppUserName}_staging"
+          printf 'DB_STAGING_APP_USER_NAME=%s\n' "$dbStagingAppUserName" >> "$GITHUB_OUTPUT"
           echo "Staging app user name: $dbStagingAppUserName"         
 
-          if [[ "${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}" -ne 'CLASSIC' ]]; then
-            if [[ -z "${{secrets.AZURE_DBA_GROUP_NAME}}" ]]; then
-              echo "DBA Group name is not set"
-              exit 1
+          if [[ "$DEPLOYMENT_ENVIRONMENT" == 'CLASSIC' ]]; then
+            vaults=$(az keyvault list --resource-group "$RESOURCE_GROUP" --query '[].name' -o tsv)
+            existing_secrets=
+            if grep -Fxiq -- "$VAULT_NAME" <<< "$vaults"; then
+              existing_secrets=$(az keyvault secret list --vault-name "$VAULT_NAME" --query '[].name' -o tsv)
             fi
-          fi
-
-          if [[ "${{steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT}}" == 'CLASSIC' ]]; then
-            dbAppUserPassword="`openssl rand -hex 25`#@"
-            echo "::add-mask::$dbAppUserPassword"
-            dbStagingAppUserPassword="`openssl rand -hex 25`#@"
-            echo "::add-mask::$dbStagingAppUserPassword"
-            echo "::set-output name=DB_APP_USER_PASSWORD::${dbAppUserPassword}"
-            echo "::set-output name=DB_STAGING_APP_USER_PASSWORD::${dbStagingAppUserPassword}"
-            echo "::set-output name=DB_AAD_INTEGRATION::false"
-            echo "::set-output name=APP_SPRING_PROFILE::test"
+            password_for() {
+              if grep -Fxiq -- "$1" <<< "$existing_secrets"; then
+                az keyvault secret show --vault-name "$VAULT_NAME" --name "$1" --query value -o tsv
+              else
+                printf '%s#@\n' "$(openssl rand -hex 25)"
+              fi
+            }
+            app_password=$(password_for SPRING-DATASOURCE-PASSWORD)
+            staging_password=$(password_for SPRING-DATASOURCE-PASSWORD-STAGING)
+            echo "::add-mask::$app_password"
+            echo "::add-mask::$staging_password"
+            printf 'DB_APP_USER_PASSWORD=%s\nDB_STAGING_APP_USER_PASSWORD=%s\n' "$app_password" "$staging_password" >> "$GITHUB_OUTPUT"
+            echo 'DB_AAD_INTEGRATION=false' >> "$GITHUB_OUTPUT"
           else
-            dbaGroupId=`az ad group show --group "${{secrets.AZURE_DBA_GROUP_NAME}}" --query '[id]' -o tsv`
-            echo "DBA Group Id: $dbaGroupId"
-            echo "::set-output name=AZURE_DBA_GROUP_ID::${dbaGroupId}"
-            echo "::set-output name=DB_AAD_INTEGRATION::true"
-            echo "::set-output name=APP_SPRING_PROFILE::test-mi"
+            echo 'DB_AAD_INTEGRATION=true' >> "$GITHUB_OUTPUT"
           fi
 
           export appName=`az webapp list -g ${{secrets.AZURE_RESOURCE_GROUP}} --query "[?name=='${{secrets.AZURE_APP_NAME}}'].name" -o tsv`
           if [[ -z "$appName" ]]; then
-            echo "::set-output name=FIRST_DEPLOYMENT::true"
-            echo "::set-output name=HEALTH_CHECK_PATH::"
-            echo "::set-output name=APP_CLIENT_ID::"
-            echo "::set-output name=STAGING_APP_CLIENT_ID::"
+            printf '%s\n' 'HEALTH_CHECK_PATH=' 'APP_CLIENT_ID=' 'STAGING_APP_CLIENT_ID=' >> "$GITHUB_OUTPUT"
           else
-            echo "::set-output name=FIRST_DEPLOYMENT::false"
             healthCheckPath=`az webapp show -g ${{secrets.AZURE_RESOURCE_GROUP}} -n "${{secrets.AZURE_APP_NAME}}" --query "siteConfig.healthCheckPath" -o tsv`
-            echo "::set-output name=HEALTH_CHECK_PATH::${healthCheckPath}"
+            printf 'HEALTH_CHECK_PATH=%s\n' "$healthCheckPath" >> "$GITHUB_OUTPUT"
             appClientId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
-            echo "::set-output name=APP_CLIENT_ID::${appClientId}"
+            printf 'APP_CLIENT_ID=%s\n' "$appClientId" >> "$GITHUB_OUTPUT"
             stagingAppClientId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}/slots/staging" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}/slots/staging'].appId" --out tsv`
-            echo "::set-output name=STAGING_APP_CLIENT_ID::${stagingAppClientId}"
+            printf 'STAGING_APP_CLIENT_ID=%s\n' "$stagingAppClientId" >> "$GITHUB_OUTPUT"
           fi
       
       - name: Deploy Azure resources (AAD Integration)
-        id: deployment_aad_mi
         if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT == 'MANAGED_IDENTITIES'
+        env:
+          DB_ADMIN_PASSWORD: ${{ secrets.AZURE_DB_ADMIN_PASSWORD }}
         run: |
           echo "Deploying with the following parameters:"
           echo "App service name: '${{secrets.AZURE_APP_NAME}}'"
@@ -236,60 +324,102 @@ jobs:
                                       dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                                       dbName=${{secrets.AZURE_DB_NAME}} \
                                       dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                      dbAdminPassword="$DB_ADMIN_PASSWORD" \
                                       dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
                                       dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
                                       appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
                                       stagingAppClientId="${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}" \
                                       appServiceName=${{secrets.AZURE_APP_NAME}} \
                                       appServicePort=${{secrets.AZURE_APP_PORT}} \
-                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                                       healthCheckPath="${{steps.vars.outputs.HEALTH_CHECK_PATH}}"
       
-      - name: Deploy Azure resources (AAD Integration + VNET)
-        id: deployment_aad_mi_vnet
-        if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT == 'VNET'
+      - name: Deploy private PostgreSQL and App Service (VNET)
+        if: inputs.deployment_environment == 'VNET'
+        env:
+          RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          LOCATION: ${{ secrets.AZURE_LOCATION }}
+          LOGS_WORKSPACE: ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME }}
+          LOGS_RG: ${{ secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP }}
+          VAULT_NAME: ${{ secrets.AZURE_KEY_VAULT_NAME }}
+          INSIGHTS_NAME: ${{ secrets.AZURE_APP_INSIGHTS_NAME }}
+          DB_SERVER: ${{ secrets.AZURE_DB_SERVER_NAME }}
+          DB_NAME: ${{ secrets.AZURE_DB_NAME }}
+          DBA_GROUP_NAME: ${{ secrets.AZURE_DBA_GROUP_NAME }}
+          DBA_GROUP_ID: ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }}
+          DB_APP_USER: ${{ steps.vars.outputs.DB_APP_USER_NAME }}
+          APP_NAME: ${{ secrets.AZURE_APP_NAME }}
+          APP_PORT: ${{ secrets.AZURE_APP_PORT }}
+          SSH_PUBLIC_KEY: ${{ vars.AZURE_RUNNER_SSH_PUBLIC_KEY || secrets.AZURE_RUNNER_SSH_PUBLIC_KEY }}
+          GH_TOKEN: ${{ secrets.GH_RUNNER_ADMIN_TOKEN }}
         run: |
-          echo "Deploying with the following parameters:"
-          echo "App service name: '${{secrets.AZURE_APP_NAME}}'"
-          echo "App port: '${{secrets.AZURE_APP_PORT}}'"
-          
-          az deployment group create --resource-group ${{secrets.AZURE_RESOURCE_GROUP}} --template-file ./templates/app-service-mi-vnet.bicep \
-                        --parameters location=${{secrets.AZURE_LOCATION}}  \
-                                      logAnalyticsWorkspaceName=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_NAME}}  \
-                                      logAnalyticsWorkspaceRG=${{secrets.AZURE_LOG_ANALYTICS_WRKSPC_RESOURCE_GROUP}} \
-                                      keyVaultName=${{secrets.AZURE_KEY_VAULT_NAME}}  \
-                                      appInsightsName=${{secrets.AZURE_APP_INSIGHTS_NAME}}  \
-                                      dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
-                                      dbName=${{secrets.AZURE_DB_NAME}} \
-                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                      dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
-                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
-                                      dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}@${{secrets.AZURE_DB_SERVER_NAME}} \
-                                      appClientId="${{steps.vars.outputs.APP_CLIENT_ID}}" \
-                                      stagingAppClientId="${{steps.vars.outputs.STAGING_APP_CLIENT_ID}}" \
-                                      appServiceName=${{secrets.AZURE_APP_NAME}} \
-                                      appServicePort=${{secrets.AZURE_APP_PORT}} \
-                                      deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
-                                      healthCheckPath="${{steps.vars.outputs.HEALTH_CHECK_PATH}}"
-      
-      - name: Init AAD ClientId
-        id: deployment_aad
+          : "${SSH_PUBLIC_KEY:?Set AZURE_RUNNER_SSH_PUBLIC_KEY.}" "${GH_TOKEN:?Set GH_RUNNER_ADMIN_TOKEN for this private repository.}"
+          [[ "$(gh api "repos/$GITHUB_REPOSITORY" --jq .private)" == 'true' ]]
+          runner_name=$(az deployment group create --resource-group "$RESOURCE_GROUP" --mode Incremental \
+            --template-file ./templates/app-service-mi-vnet.bicep --query properties.outputs.githubRunnerName.value -o tsv \
+            --parameters location="$LOCATION" logAnalyticsWorkspaceName="$LOGS_WORKSPACE" logAnalyticsWorkspaceRG="$LOGS_RG" \
+              keyVaultName="$VAULT_NAME" appInsightsName="$INSIGHTS_NAME" dbServerName="$DB_SERVER" dbName="$DB_NAME" \
+              dbAdminName="$DBA_GROUP_NAME" dbAdminObjectId="$DBA_GROUP_ID" dbUserName="$DB_APP_USER" \
+              appServiceName="$APP_NAME" appServicePort="$APP_PORT" runnerAdminSshPublicKey="$SSH_PUBLIC_KEY" \
+              healthCheckPath=/actuator/health/liveness)
+          [[ "$runner_name" =~ ^tinyjava-[a-z0-9]+$ ]]
+          registration_token=$(gh api --method POST "repos/$GITHUB_REPOSITORY/actions/runners/registration-token" --jq .token)
+          : "${registration_token:?GitHub did not return a registration token.}"
+          echo "::add-mask::$registration_token"
+          # Only the one-hour registration token goes to the VM, through a protected Run Command parameter.
+          az vm run-command create --resource-group "$RESOURCE_GROUP" --vm-name "$runner_name" \
+            --run-command-name configure-github-runner --location "$LOCATION" --timeout-in-seconds 900 \
+            --script "$(cat ./bootstrap-vnet-runner.sh)" \
+            --parameters "RUNNER_NAME=$runner_name" "RUNNER_REPOSITORY=$GITHUB_REPOSITORY" \
+              RUNNER_VERSION=2.338.2 RUNNER_SHA256=baebf204307bac6193480852732f0aba2ae97b6c5597c244f4d5558390147c40 \
+            --protected-parameters "RUNNER_REGISTRATION_TOKEN=$registration_token" --output none
+          unset registration_token
+          run_command_id=$(az vm run-command show --resource-group "$RESOURCE_GROUP" --vm-name "$runner_name" \
+            --run-command-name configure-github-runner --query id -o tsv)
+          exit_code=$(az rest --method get \
+            --url "${run_command_id}?api-version=2024-07-01&\$expand=instanceView" \
+            --query properties.instanceView.exitCode -o tsv)
+          if [[ "$exit_code" != '0' ]]; then
+            echo "::error::Bootstrapping the private runner failed. Check the VM Run Command status."
+            exit 1
+          fi
+          for attempt in {1..18}; do
+            online=$(gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runners?per_page=100" \
+              --jq ".runners[] | select(.name == \"$runner_name\" and .status == \"online\") | .name")
+            if [[ "$online" == "$runner_name" ]]; then
+              break
+            fi
+            if [[ "$attempt" -eq 18 ]]; then
+              echo "::error::GitHub did not report the private runner online."
+              exit 1
+            fi
+            sleep 5
+          done
+          printf 'VNET infrastructure and runner `%s` are ready. Database setup runs during code deployment.\n' "$runner_name" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Resolve managed identities
         if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
+        env:
+          RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          APP_NAME: ${{ secrets.AZURE_APP_NAME }}
+          VAULT_NAME: ${{ secrets.AZURE_KEY_VAULT_NAME }}
         run: |
-          dbAppUserId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}'].appId" --out tsv`
-          echo "::set-output name=DB_APP_USER_ID::${dbAppUserId}"
-
-          dbStagingAppUserId=`az ad sp list --display-name "${{secrets.AZURE_APP_NAME}}/slots/staging" --query "[?displayName=='${{secrets.AZURE_APP_NAME}}/slots/staging'].appId" --out tsv`
-          echo "::set-output name=DB_STAGING_APP_USER_ID::${dbStagingAppUserId}"
-
-          #Following is a workaround - I still did not figure out how to retrieve AppId in bicep
-          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID" --value "${dbAppUserId}"
-          az keyvault secret set --vault-name "${{secrets.AZURE_KEY_VAULT_NAME}}" --name "SPRING-DATASOURCE-APP-CLIENT-ID-STAGING" --value "${dbStagingAppUserId}"
+          appObjectId=$(az webapp identity show --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --query principalId -o tsv)
+          stagingObjectId=$(az webapp identity show --resource-group "$RESOURCE_GROUP" --name "$APP_NAME" --slot staging --query principalId -o tsv)
+          if [[ -z "$appObjectId" || -z "$stagingObjectId" ]]; then
+            echo "::error::Both App Service slots must have system-assigned managed identities."
+            exit 1
+          fi
+          appClientId=$(az ad sp show --id "$appObjectId" --query appId -o tsv)
+          stagingClientId=$(az ad sp show --id "$stagingObjectId" --query appId -o tsv)
+          az keyvault secret set --vault-name "$VAULT_NAME" --name SPRING-DATASOURCE-APP-CLIENT-ID --value "$appClientId" --output none
+          az keyvault secret set --vault-name "$VAULT_NAME" --name SPRING-DATASOURCE-APP-CLIENT-ID-STAGING --value "$stagingClientId" --output none
 
       - name: Deploy Azure resources (NO AAD Integration)
-        id: deployment_no_aad
         if: steps.input_vars.outputs.DEPLOYMENT_ENVIRONMENT == 'CLASSIC'
+        env:
+          DB_ADMIN_PASSWORD: ${{ secrets.AZURE_DB_ADMIN_PASSWORD }}
+          APP_PASSWORD: ${{ steps.vars.outputs.DB_APP_USER_PASSWORD }}
+          STAGING_PASSWORD: ${{ steps.vars.outputs.DB_STAGING_APP_USER_PASSWORD }}
         run: |
           echo "Deploying with the following parameters:"
           echo "App service name: '${{secrets.AZURE_APP_NAME}}'"
@@ -304,152 +434,20 @@ jobs:
                                      dbServerName=${{secrets.AZURE_DB_SERVER_NAME}} \
                                      dbName=${{secrets.AZURE_DB_NAME}} \
                                      dbAdminName=${{steps.vars.outputs.DB_ADMIN_NAME}} \
-                                     dbAdminPassword=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} \
+                                     dbAdminPassword="$DB_ADMIN_PASSWORD" \
                                      dbUserName=${{steps.vars.outputs.DB_APP_USER_NAME}} \
-                                     dbUserPassword=${{steps.vars.outputs.DB_APP_USER_PASSWORD}}\
+                                     dbUserPassword="$APP_PASSWORD" \
                                      dbStagingUserName=${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} \
-                                     dbStagingUserPassword=${{steps.vars.outputs.DB_STAGING_APP_USER_PASSWORD}}\
+                                     dbStagingUserPassword="$STAGING_PASSWORD" \
                                      appServiceName=${{secrets.AZURE_APP_NAME}} \
                                      appServicePort=${{secrets.AZURE_APP_PORT}} \
-                                     deploymentClientIPAddress=${{steps.vars.outputs.DEPLOYMENT_CLIENT_IP}} \
                                      healthCheckPath="${{steps.vars.outputs.HEALTH_CHECK_PATH}}"
 
       - name: Set-up DB AAD Integration
         if: (steps.vars.outputs.DB_AAD_INTEGRATION == 'true')
         run: |
-          dbAdminName=`az postgres flexible-server ad-admin list -g ${{ secrets.AZURE_RESOURCE_GROUP }} -s ${{ secrets.AZURE_DB_SERVER_NAME }} --query "[?principalName == '${{secrets.AZURE_DBA_GROUP_NAME}}'].principalName" -o tsv`
+          dbAdminName=`az postgres flexible-server microsoft-entra-admin list -g ${{ secrets.AZURE_RESOURCE_GROUP }} -s ${{ secrets.AZURE_DB_SERVER_NAME }} --query "[?principalName == '${{secrets.AZURE_DBA_GROUP_NAME}}'].principalName" -o tsv`
           if [[ -z "$dbAdminName" ]]; then
             echo "Setting AAD DB Admin Group"
-            az postgres flexible-server ad-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}" -t Group
+            az postgres flexible-server microsoft-entra-admin create -s ${{ secrets.AZURE_DB_SERVER_NAME }} -g ${{ secrets.AZURE_RESOURCE_GROUP }} --object-id ${{ steps.vars.outputs.AZURE_DBA_GROUP_ID }} --display-name "${{secrets.AZURE_DBA_GROUP_NAME}}" -t Group
           fi
-      - name: Synchronize DB Schema (NON AAD version)
-        run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          psql "${dbConnectionString}" --file=./db.sql
-
-      - name: If not AAD, set-up traditional DB User(s)
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
-        run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          
-          dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${{steps.vars.outputs.DB_APP_USER_NAME}}';"`
-          if [[ $dbUserExists -ne '1' ]]; then
-            echo "CREATE USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
-          else
-            echo "ALTER USER ${{steps.vars.outputs.DB_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_APP_USER_PASSWORD}}';" > ./create_user.sql
-          fi
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./create_user.sql
-
-          echo "User ${{steps.vars.outputs.DB_ADMIN_NAME}} is running a user creation script:"
-          cat ./create_user.sql
-
-          psql "${dbConnectionString}" --file=./create_user.sql
-
-          echo "List of existing users:"
-          psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
-
-      - name: If not AAD, set-up traditional Staging DB User(s)
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'false'
-        run: |
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          
-          dbUserExists=`psql "${dbConnectionString}" -tAc "SELECT 1 FROM pg_roles WHERE rolname='${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}}';"`
-          if [[ $dbUserExists -ne '1' ]]; then
-            echo "CREATE USER ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_STAGING_APP_USER_PASSWORD}}';" > ./create_user.sql
-          else
-            echo "ALTER USER ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} WITH PASSWORD '${{steps.vars.outputs.DB_STAGING_APP_USER_PASSWORD}}';" > ./create_user.sql
-          fi
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
-          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
-
-          echo "User ${{steps.vars.outputs.DB_ADMIN_NAME}} is running a user creation script:"
-          cat ./create_user.sql
-
-          psql "${dbConnectionString}" --file=./create_user.sql
-
-          echo "List of existing users:"
-          psql "${dbConnectionString}" -tAc "SELECT * FROM pg_roles;"
-      
-      - name: If AAD, set-up AAD DB User(s)
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
-        run: |
-          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-
-          echo "create role ${{steps.vars.outputs.DB_APP_USER_NAME}} login;" > ./create_role.sql
-          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD role creation script:"
-          cat ./create_role.sql
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_role.sql
-
-          echo "security label for pgaadauth " > ./security_label.sql
-          echo "    on role ${{steps.vars.outputs.DB_APP_USER_NAME}} " >> ./security_label.sql
-          echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_APP_USER_ID}},type=service'; " >> ./security_label.sql
-          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running security label assignment script:"
-          cat ./security_label.sql
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./security_label.sql
-
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_APP_USER_NAME}};"> ./grant_rights.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./grant_rights.sql
-          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_APP_USER_NAME}};">> ./grant_rights.sql
-          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running a script to GRANT permissions:"
-          cat ./grant_rights.sql
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          psql "${dbConnectionString}" --file=./grant_rights.sql
-          #psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./grant_rights.sql
-
-          echo "List of existing users:"
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
-
-      - name: If AAD, set-up STAGING AAD DB User(s)
-        if: steps.vars.outputs.DB_AAD_INTEGRATION == 'true'
-        run: |
-          export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-
-          echo "create role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} login;" > ./create_role.sql
-          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD role creation script:"
-          cat ./create_role.sql
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_role.sql
-
-          echo "security label for pgaadauth " > ./security_label.sql
-          echo "    on role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} " >> ./security_label.sql
-          echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}},type=service'; " >> ./security_label.sql
-          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running security label assignment script:"
-          cat ./security_label.sql
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./security_label.sql
-
-          echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};"> ./grant_rights.sql
-          echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./grant_rights.sql
-          echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./grant_rights.sql
-          echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running a script to GRANT permissions:"
-          cat ./grant_rights.sql
-          dbConnectionString="host=${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com port=5432 dbname=${{secrets.AZURE_DB_NAME}} user=${{steps.vars.outputs.DB_ADMIN_NAME}} password=${{steps.vars.outputs.DB_ADMIN_PASSWORD}} sslmode=require"
-          psql "${dbConnectionString}" --file=./grant_rights.sql
-          #psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./grant_rights.sql
-
-          echo "List of existing users:"
-          psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
-
-          # echo "create role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} login;" > ./create_user.sql
-          # echo "security label for 'pgaadauth' " >> ./create_user.sql
-          # echo "    on role ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}} " >> ./create_user.sql
-          # echo "    is 'aadauth,oid=${{steps.deployment_aad.outputs.DB_STAGING_APP_USER_ID}},type=service'; " >> ./create_user.sql
-              
-          # echo "GRANT CONNECT ON DATABASE ${{ secrets.AZURE_DB_NAME }} TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
-          # echo "GRANT USAGE ON SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
-          # echo "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${{steps.vars.outputs.DB_STAGING_APP_USER_NAME}};">> ./create_user.sql
-          
-          # echo "User group ${{secrets.AZURE_DB_SERVER_NAME}} is running AAD user creation script:"
-          # cat ./create_user.sql
-
-          # export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-
-          # psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" --file=./create_user.sql
-
-          # echo "List of existing users:"
-          # psql --set=sslmode=require -h ${{secrets.AZURE_DB_SERVER_NAME}}.postgres.database.azure.com -p 5432 -d ${{secrets.AZURE_DB_NAME}} -U "${{secrets.AZURE_DBA_GROUP_NAME}}" -tAc "SELECT * FROM pg_roles;"
-
-      - name: Remove DB Firewall exception used for Schema sync
-        run: |
-          az postgres flexible-server firewall-rule delete --rule-name "AllowDeploymentClientIP" --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} --name ${{secrets.AZURE_DB_SERVER_NAME}} --yes

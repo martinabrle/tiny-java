@@ -34,7 +34,6 @@
     export AZURE_APP_NAME=${ENV_PREFIX}-tinyjava-app-svc
     export AZURE_APP_PORT=443
     export clientIPAddress=`dig +short myip.opendns.com @resolver1.opendns.com.`
-    export createDB=true
     export AZURE_RESOURCE_TAGS="{ 'Department': 'RESEARCH', 'CostCentre': 'DEV', 'DeleteNightly': 'true',  'DeleteWeekly': 'true'}"
     export RESOURCE_TAGS='{ \"Department\": \"RESEARCH\", \"CostCentre\": \"DEV\", \"DeleteNightly\": \"true\",  \"DeleteWeekly\": \"true\"}'
 
@@ -69,7 +68,6 @@
                      keyVaultName=$AZURE_KEY_VAULT_NAME  \
                      dbServerName=$AZURE_DB_SERVER_NAME \
                      dbName=$AZURE_DB_NAME \
-                     createDB=true \
                      dbAdminName=$dbAdminName \
                      dbAdminPassword=$dbAdminPassword \
                      dbUserName=$AZURE_DB_APP_USER_NAME@$AZURE_DB_SERVER_NAME \
@@ -81,14 +79,22 @@
     ```
     export DB_APP_USER_ID=`az ad sp list --display-name $AZURE_APP_NAME --query "[?displayName=='${AZURE_APP_NAME}'].appId" --out tsv`
     ```
-* Assign AAD DBA group to the newly created Postgresql server:
+* Assign the Microsoft Entra DBA group to the newly created PostgreSQL server:
     ```
-    az postgres server ad-admin create -s $AZURE_DB_SERVER_NAME -g $AZURE_RESOURCE_GROUP --object-id $AZURE_DBA_GROUP_ID --display-name "${AZURE_DBA_GROUP_NAME}"
+    az postgres flexible-server microsoft-entra-admin create --server-name "$AZURE_DB_SERVER_NAME" \
+      --resource-group "$AZURE_RESOURCE_GROUP" --object-id "$AZURE_DBA_GROUP_ID" \
+      --display-name "$AZURE_DBA_GROUP_NAME" --type Group
     ```
-* Log-in into the newly created Postgresql server as an AAD admin user (assuming the current user is a member of the DBA group):
+* Before publishing the application, create the application database if it does not exist. The [GitHub code workflow](app-service-github-actions.md) performs this step automatically.
+    ```bash
+    az postgres flexible-server db create --resource-group "$AZURE_RESOURCE_GROUP" \
+      --server-name "$AZURE_DB_SERVER_NAME" --database-name "$AZURE_DB_NAME"
+    ```
+* Sign in to the application database as a member of the DBA group:
     ```
     export PGPASSWORD=`az account get-access-token --resource-type oss-rdbms --query "[accessToken]" --output tsv`
-    psql --set=sslmode=require -h ${AZURE_DB_SERVER_NAME}.postgres.database.azure.com -p 5432 -d postgres -U "${AZURE_DBA_GROUP_NAME}@${AZURE_DB_SERVER_NAME}"
+    PGSSLMODE=verify-full psql --host="${AZURE_DB_SERVER_NAME}.postgres.database.azure.com" \
+      --dbname="$AZURE_DB_NAME" --username="$AZURE_DBA_GROUP_NAME"
     ```
 * Initialize DB schema:
     ```

@@ -36,9 +36,11 @@ public class AppConfig {
     public ManagedIdentityCredential managedIdentityCredentialTest() {
 
         LOGGER.debug(String.format("Connecting to the database using Application ClientID '%s'", applicationClientId));
-        return new ManagedIdentityCredentialBuilder()
-                .clientId(applicationClientId)
-                .build();
+        ManagedIdentityCredentialBuilder builder = new ManagedIdentityCredentialBuilder();
+        if (applicationClientId != null && !applicationClientId.isBlank()) {
+            builder.clientId(applicationClientId);
+        }
+        return builder.build();
     }
 
     public void setApplicationClientId(String applicationClientId) {

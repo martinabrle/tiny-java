@@ -5,22 +5,16 @@ param appInsightsName string
 param keyVaultName string
 param dbServerName string
 param dbName string
-param createDB bool = true
+param runnerAdminSshPublicKey string
 
 @secure()
 param dbAdminName string
-@secure()
-param dbAdminPassword string
+@description('Object ID of the Microsoft Entra group that administers PostgreSQL.')
+param dbAdminObjectId string
 @secure()
 param dbUserName string
-@secure()
-param dbStagingUserName string
-param appClientId string = ''
-param stagingAppClientId string = ''
 param appServiceName string
 param appServicePort string
-
-param deploymentClientIPAddress string
 
 param healthCheckPath string = '/'
 
@@ -39,10 +33,41 @@ var appSubnetAddressPrefix = '10.0.0.0/24'
 
 var bastionSubnetAddressPrefix = '10.0.1.0/24'
 var mgmtSubnetAddressPrefix = '10.0.2.0/24'
-
+var integrationSubnetAddressPrefix = '10.0.3.0/24'
 var dbSubnetAddressPrefix = '10.0.4.0/24'
+var runnerName = 'tinyjava-${uniqueString(resourceGroup().id, appServiceName)}'
 
-resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
+output githubRunnerName string = runnerName
+
+resource runnerEgressIp 'Microsoft.Network/publicIPAddresses@2024-05-01' = {
+  name: '${runnerName}-egress'
+  location: location
+  tags: tagsArray
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+}
+
+resource runnerNat 'Microsoft.Network/natGateways@2024-05-01' = {
+  name: '${runnerName}-nat'
+  location: location
+  tags: tagsArray
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIpAddresses: [
+      {
+        id: runnerEgressIp.id
+      }
+    ]
+  }
+}
+
+resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
   name: '${appServiceName}-vnet'
   location: location
   tags: tagsArray
@@ -57,21 +82,17 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
         name: 'web'
         properties: {
           addressPrefix: appSubnetAddressPrefix
-          // TODO: why?
-          // delegations: [
-          //   {
-          //     name: 'delegation'
-          //     properties: {
-          //       serviceName: 'Microsoft.Web/serverFarms'
-          //     }
-          //   }
-          // ]
+          privateEndpointNetworkPolicies: 'Disabled'
         }
       }
       {
         name: 'mgmt'
         properties: {
           addressPrefix: mgmtSubnetAddressPrefix
+          defaultOutboundAccess: false
+          natGateway: {
+            id: runnerNat.id
+          }
         }
       }
       {
@@ -81,17 +102,24 @@ resource vnet 'Microsoft.Network/virtualNetworks@2022-01-01' = {
         }
       }
       {
+        name: 'integration'
+        properties: {
+          addressPrefix: integrationSubnetAddressPrefix
+          delegations: [
+            {
+              name: 'appService'
+              properties: {
+                serviceName: 'Microsoft.Web/serverFarms'
+              }
+            }
+          ]
+        }
+      }
+      {
         name: 'db'
         properties: {
           addressPrefix: dbSubnetAddressPrefix
-          // delegations: [ <-- private link not happy with that
-          //   {
-          //     name: 'delegation'
-          //     properties: {
-          //       serviceName: 'Microsoft.DBforPostgreSQL/singleServers'
-          //     }
-          //   }
-          // ]
+          privateEndpointNetworkPolicies: 'Disabled'
         }
       }
     ]
@@ -106,6 +134,41 @@ resource dbSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' existin
 resource webSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' existing = {
   parent: vnet
   name: 'web'
+}
+
+resource integrationSubnet 'Microsoft.Network/virtualNetworks/subnets@2022-01-01' existing = {
+  parent: vnet
+  name: 'integration'
+}
+
+resource mgmtSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-05-01' existing = {
+  parent: vnet
+  name: 'mgmt'
+}
+
+module runner './components/vnet-github-runner.bicep' = {
+  name: '${runnerName}-vm'
+  params: {
+    name: runnerName
+    subnetId: mgmtSubnet.id
+    sshPublicKey: runnerAdminSshPublicKey
+    location: location
+    tags: tagsArray
+  }
+}
+
+module runnerAccess './components/vnet-github-runner-access.bicep' = {
+  name: '${runnerName}-access'
+  params: {
+    runnerName: runnerName
+    runnerPrincipalId: runner.outputs.principalId
+    dbServerName: postgreSQLServer.name
+    appServiceName: appService.name
+  }
+  dependsOn: [
+    postgreSQLAdmin
+    appService
+  ]
 }
 
 
@@ -123,58 +186,42 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
-resource postgreSQLServer 'Microsoft.DBforPostgreSQL/servers@2017-12-01' = {
+resource postgreSQLServer 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
   name: dbServerName
   location: location
   tags: tagsArray
   sku: {
-    name: 'GP_Gen5_2' //Basic tier does not support private endpoints
+    name: 'Standard_D2s_v3'
     tier: 'GeneralPurpose'
-    family: 'Gen5'
-    capacity: 2
   }
   properties: {
-    storageProfile: {
-      storageMB: 5120
+    createMode: 'Default'
+    version: '16'
+    storage: {
+      storageSizeGB: 32
+    }
+    backup: {
       backupRetentionDays: 7
       geoRedundantBackup: 'Disabled'
-      storageAutogrow: 'Disabled'
     }
-    createMode: 'Default'
-    version: '11'
-    sslEnforcement: 'Enabled'
-    minimalTlsVersion: 'TLSEnforcementDisabled'
-    infrastructureEncryption: 'Disabled'
-    publicNetworkAccess: 'Enabled'
-    administratorLogin: dbAdminName
-    administratorLoginPassword: dbAdminPassword
+    network: {
+      publicNetworkAccess: 'Disabled'
+    }
+    authConfig: {
+      activeDirectoryAuth: 'Enabled'
+      passwordAuth: 'Disabled'
+      tenantId: subscription().tenantId
+    }
   }
 }
 
-resource postgreSQLDatabase 'Microsoft.DBforPostgreSQL/servers/databases@2017-12-01' = if (createDB) {
+resource postgreSQLAdmin 'Microsoft.DBforPostgreSQL/flexibleServers/administrators@2024-08-01' = {
   parent: postgreSQLServer
-  name: dbName
+  name: dbAdminObjectId
   properties: {
-    charset: 'utf8'
-    collation: 'en_US.utf8'
-  }
-}
-
-resource allowClientIPFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
-  name: 'AllowDeploymentClientIP'
-  parent: postgreSQLServer
-  properties: {
-    endIpAddress: deploymentClientIPAddress
-    startIpAddress: deploymentClientIPAddress
-  }
-}
-
-resource allowAllIPsFirewallRule 'Microsoft.DBforPostgreSQL/servers/firewallRules@2017-12-01' = {
-  name: 'AllowAllWindowsAzureIps'
-  parent: postgreSQLServer
-  properties: {
-    startIpAddress: '0.0.0.0'
-    endIpAddress: '0.0.0.0'
+    principalName: dbAdminName
+    principalType: 'Group'
+    tenantId: subscription().tenantId
   }
 }
 
@@ -259,7 +306,8 @@ resource privateLinkDNSZoneAppService 'Microsoft.Network/privateDnsZones/virtual
 }
 
 resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
-  name: '${privateEndpointPostgresqlServer.name}/default'
+  parent: privateEndpointPostgresqlServer
+  name: 'default'
   properties: {
     privateDnsZoneConfigs: [
       {
@@ -273,7 +321,8 @@ resource pvtEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneG
 }
 
 resource pvtEndpointDnsGroupAppService 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2021-05-01' = {
-  name: '${privateEndpointAppService.name}/default'
+  parent: privateEndpointAppService
+  name: 'default'
   properties: {
     privateDnsZoneConfigs: [
       {
@@ -339,13 +388,14 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
 resource appService 'Microsoft.Web/sites@2022-03-01' = {
   name: appServiceName
   location: location
-  tags: tagsArray
+  tags: union(tagsArray, { tinyJavaVnetRunner: runnerName })
   identity: {
     type: 'SystemAssigned'
   }
   properties: {
     serverFarmId: appServicePlan.id
-    //virtualNetworkSubnetId: vnet.properties.subnets[0].id
+    virtualNetworkSubnetId: integrationSubnet.id
+    publicNetworkAccess: 'Disabled'
     httpsOnly: true
 
     siteConfig: {
@@ -416,25 +466,7 @@ resource kvSecretSpringDataSourceURL 'Microsoft.KeyVault/vaults/secrets@2021-11-
   parent: keyVault
   name: 'SPRING-DATASOURCE-URL'
   properties: {
-    value: 'jdbc:postgresql://${dbServerName}.postgres.database.azure.com:5432/${dbName}'
-    contentType: 'string'
-  }
-}
-
-resource kvSecretAppClientId 'Microsoft.KeyVault/vaults/secrets@2021-11-01-preview' = {
-  parent: keyVault
-  name: 'SPRING-DATASOURCE-APP-CLIENT-ID'
-  properties: {
-    value: appClientId
-    contentType: 'string'
-  }
-}
-
-resource kvSecretAppClientIdStaging 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'SPRING-DATASOURCE-APP-CLIENT-ID-STAGING'
-  properties: {
-    value: stagingAppClientId
+    value: 'jdbc:postgresql://${postgreSQLServer.properties.fullyQualifiedDomainName}:5432/${dbName}'
     contentType: 'string'
   }
 }
@@ -444,15 +476,6 @@ resource kvSecretDbUserName 'Microsoft.KeyVault/vaults/secrets@2021-11-01-previe
   name: 'SPRING-DATASOURCE-USERNAME'
   properties: {
     value: dbUserName
-    contentType: 'string'
-  }
-}
-
-resource kvSecretDbStagingUserName 'Microsoft.KeyVault/vaults/secrets@2022-07-01' = {
-  parent: keyVault
-  name: 'SPRING-DATASOURCE-USERNAME-STAGING'
-  properties: {
-    value: dbStagingUserName
     contentType: 'string'
   }
 }
@@ -547,17 +570,6 @@ module rbacKVSpringDataSourceURL './components/role-assignment-kv-secret.bicep' 
   }
 }
 
-module rbacKVSecretAppClientId './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-app-client-id'
-  params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: appService.identity.principalId
-    roleAssignmentNameGuid: guid(appService.id, kvSecretAppClientId.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: kvSecretAppClientId.name
-  }
-}
-
 module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
   name: 'deployment-rbac-kv-secret-db-user-name'
   params: {
@@ -566,17 +578,6 @@ module rbacKVSecretDbUserName './components/role-assignment-kv-secret.bicep' = {
     roleAssignmentNameGuid: guid(appService.id, kvSecretDbUserName.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: kvSecretDbUserName.name
-  }
-}
-
-module rbacKVSecretDbStagingUserName './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-db-user-name-staging'
-  params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: appServiceStaging.identity.principalId
-    roleAssignmentNameGuid: guid(appServiceStaging.id, kvSecretDbStagingUserName.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: kvSecretDbStagingUserName.name
   }
 }
 
@@ -599,28 +600,6 @@ module rbacKVAppInsightsInstrKey2 './components/role-assignment-kv-secret.bicep'
     roleAssignmentNameGuid: guid(appServiceStaging.id, kvSecretAppInsightsInstrumentationKey.id, keyVaultSecretsUser.id)
     kvName: keyVault.name
     kvSecretName: kvSecretAppInsightsInstrumentationKey.name
-  }
-}
-
-module rbacKVSpringDataSourceURL2 './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-app-spring-datasource-url2'
-  params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: appServiceStaging.identity.principalId
-    roleAssignmentNameGuid: guid(appServiceStaging.id, kvSecretSpringDataSourceURL.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: kvSecretSpringDataSourceURL.name
-  }
-}
-
-module rbacKVSecretAppClientIdStaging './components/role-assignment-kv-secret.bicep' = {
-  name: 'deployment-rbac-kv-secret-app-client-id-staging'
-  params: {
-    roleDefinitionId: keyVaultSecretsUser.id
-    principalId: appServiceStaging.identity.principalId
-    roleAssignmentNameGuid: guid(appServiceStaging.id, kvSecretAppClientIdStaging.id, keyVaultSecretsUser.id)
-    kvName: keyVault.name
-    kvSecretName: kvSecretAppClientIdStaging.name
   }
 }
 
@@ -652,7 +631,7 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
       }
       {
         name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
-        value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientId.name})'
+        value: ''
       }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
@@ -664,7 +643,7 @@ resource appServicePARMS 'Microsoft.Web/sites/config@2021-03-01' = {
       }
       {
         name: 'SPRING_PROFILES_ACTIVE'
-        value: 'test-mi'
+        value: 'prod-mi'
       }
       {
         name: 'PORT'
@@ -685,44 +664,26 @@ resource appServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = 
     appServiceSlotConfigNames
     rbacKVAppInsightsInstrKey
     rbacKVApplicationInsightsConnectionString
-    rbacKVSecretAppClientId
     rbacKVSecretDbUserName
     rbacKVSpringDataSourceURL
     rbacKVAppInsightsInstrKey2
     rbacKVApplicationInsightsConnectionString2
-    rbacKVSecretAppClientIdStaging
-    rbacKVSecretDbStagingUserName
-    rbacKVSpringDataSourceURL2
   ]
   kind: 'string'
   properties: {
     appSettings: [
-      // {
-      //   name: 'SPRING_DATASOURCE_URL'
-      //   value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretSpringDataSourceURL.name})'
-      // }
-      // {
-      //   name: 'SPRING_DATASOURCE_USERNAME'
-      //   value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretDbStagingUserName.name})'
-      // }
-      // {
-      //   name: 'SPRING_DATASOURCE_APP_CLIENT_ID'
-      //   value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppClientIdStaging.name})'
-      // }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvApplicationInsightsConnectionString.name})'
       }
+
       {
         name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
         value: '@Microsoft.KeyVault(VaultName=${keyVaultName};SecretName=${kvSecretAppInsightsInstrumentationKey.name})'
       }
       {
         name: 'SPRING_PROFILES_ACTIVE'
-        value: 'local' // as we do not have an access to the database from the staging slot,
-                       // here I will only run the tests against the local in-memory storage.
-                       // If I will ever get to deploying my own GitHub runner into the VNET,
-                       // than this can be changed again to 'test-mi'
+        value: 'local' // Keep hosted-runner smoke tests independent of the private database.
       }
       {
         name: 'PORT'
@@ -730,10 +691,6 @@ resource appServiceStagingPARMS 'Microsoft.Web/sites/slots/config@2021-03-01' = 
       }
       {
         name: 'SPRING_DATASOURCE_SHOW_SQL'
-        value: 'true'
-      }
-      {
-        name: 'DEBUG_AUTH_TOKEN'
         value: 'true'
       }
     ]

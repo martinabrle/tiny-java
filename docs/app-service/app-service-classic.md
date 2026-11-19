@@ -32,7 +32,6 @@
     export AZURE_APP_NAME=${ENV_PREFIX}-tinyjava-app-svc
     export AZURE_APP_PORT=443
     export clientIPAddress=`dig +short myip.opendns.com @resolver1.opendns.com.`
-    export createDB=true
     export AZURE_RESOURCE_TAGS="{ 'Department': 'RESEARCH', 'CostCentre': 'DEV', 'DeleteNightly': 'true',  'DeleteWeekly': 'true'}"
     export RESOURCE_TAGS='{ \"Department\": \"RESEARCH\", \"CostCentre\": \"DEV\", \"DeleteNightly\": \"true\",  \"DeleteWeekly\": \"true\"}'
 
@@ -68,7 +67,6 @@
                      keyVaultName=$AZURE_KEY_VAULT_NAME  \
                      dbServerName=$AZURE_DB_SERVER_NAME \
                      dbName=$AZURE_DB_NAME \
-                     createDB=true \
                      dbAdminName=$dbAdminName \
                      dbAdminPassword=$dbAdminPassword \
                      dbUserName=$AZURE_DB_APP_USER_NAME@$AZURE_DB_SERVER_NAME \
@@ -78,9 +76,15 @@
                      deploymentClientIPAddress=$clientIPAddress
     ```
 
-* Connect to the the newly created Postgresql database:
+* Before publishing the application, create the application database if it does not exist. The template creates only the PostgreSQL server; the [GitHub code workflow](app-service-github-actions.md) performs this step automatically.
+    ```bash
+    az postgres flexible-server db create --resource-group "$AZURE_RESOURCE_GROUP" \
+      --server-name "$AZURE_DB_SERVER_NAME" --database-name "$AZURE_DB_NAME"
     ```
-    psql "host=${AZURE_DB_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=${AZURE_DB_NAME} user=${AZURE_DB_APP_USER_NAME}@${AZURE_DB_SERVER_NAME} password=${dbAdminPassword} sslmode=require"
+
+* Connect to the new database as the server administrator:
+    ```
+    psql "host=${AZURE_DB_SERVER_NAME}.postgres.database.azure.com port=5432 dbname=${AZURE_DB_NAME} user=${dbAdminName} sslmode=verify-full" -W
     ```
 
 * Initialize DB schema:
